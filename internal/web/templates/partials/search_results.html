@@ -1,0 +1,21 @@
+{{define "search_results"}}
+{{if .}}
+    {{range .}}
+    <div class="result-card">
+        <div class="item-name">{{.Name}}</div>
+        {{if or .Quantity .Notes}}
+        <div class="item-meta">
+            {{if .Quantity}}<span class="item-qty">{{.Quantity}}</span>{{end}}
+            {{if .Notes}}<span>{{.Notes}}</span>{{end}}
+        </div>
+        {{end}}
+        <a class="result-area-link" href="/areas/{{.AreaID}}">View area</a>
+    </div>
+    {{end}}
+{{else}}
+    <div class="empty-state">
+        <div class="empty-state-icon">🍃</div>
+        <div class="empty-state-text">No items found</div>
+    </div>
+{{end}}
+{{end}}

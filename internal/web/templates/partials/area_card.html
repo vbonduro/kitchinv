@@ -1,0 +1,7 @@
+{{define "area_card"}}
+<a class="area-card" href="/areas/{{.ID}}">
+    <div class="area-card-icon">{{areaIcon .Name}}</div>
+    <div class="area-card-name">{{.Name}}</div>
+    <div class="area-card-date">{{.CreatedAt.Format "Jan 2, 2006"}}</div>
+</a>
+{{end}}

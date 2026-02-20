@@ -1,0 +1,37 @@
+# Binaries
+kitchinv
+*.exe
+*.dll
+*.so
+
+# Test binaries
+*.test
+
+# Test cache
+.testcache
+
+# Vendor directory
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+
+# Photos
+/data/photos/*
+!/data/photos/.gitkeep
+
+# Downloaded files
+go1.*.linux-amd64.tar.gz

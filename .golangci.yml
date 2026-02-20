@@ -1,0 +1,15 @@
+run:
+  deadline: 5m
+  skip-dirs-use-default: true
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - misspell
+    - typecheck
+    - unused
+
+issues:
+  exclude-use-default: true

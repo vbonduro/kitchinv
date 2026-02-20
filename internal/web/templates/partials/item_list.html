@@ -1,0 +1,25 @@
+{{define "item_list"}}
+{{if .}}
+    <ul class="item-list">
+        {{range .}}
+        <li class="item-row">
+            <span class="item-dot"></span>
+            <div class="item-body">
+                <div class="item-name">{{.Name}}</div>
+                {{if or .Quantity .Notes}}
+                <div class="item-meta">
+                    {{if .Quantity}}<span class="item-qty">{{.Quantity}}</span>{{end}}
+                    {{if .Notes}}<span>{{.Notes}}</span>{{end}}
+                </div>
+                {{end}}
+            </div>
+        </li>
+        {{end}}
+    </ul>
+{{else}}
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-text">Upload a photo to extract items automatically</div>
+    </div>
+{{end}}
+{{end}}

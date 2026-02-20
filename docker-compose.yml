@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  kitchinv:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      LISTEN_ADDR: ":8080"
+      DB_PATH: "/data/kitchinv.db"
+      VISION_BACKEND: "ollama"
+      OLLAMA_HOST: "http://ollama:11434"
+      OLLAMA_MODEL: "moondream"
+      PHOTO_BACKEND: "local"
+      PHOTO_LOCAL_PATH: "/data/photos"
+    volumes:
+      - kitchinv_data:/data
+    depends_on:
+      - ollama
+    networks:
+      - kitchinv
+
+  ollama:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - kitchinv
+    # Note: To use the app, you need to pull a model first:
+    # docker compose exec ollama ollama pull moondream
+
+volumes:
+  kitchinv_data:
+  ollama_data:
+
+networks:
+  kitchinv:
+    driver: bridge

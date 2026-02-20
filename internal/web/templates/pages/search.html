@@ -1,0 +1,35 @@
+{{define "content"}}
+<header class="topbar">
+    <span class="topbar-wordmark">kit<em>ch</em>inv</span>
+</header>
+
+<main class="page">
+    <p class="section-label">Search inventory</p>
+
+    <form hx-get="/search"
+          hx-target="#search-results"
+          hx-trigger="input delay:280ms, search"
+          hx-push-url="true">
+        <div class="search-input-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="search" name="q" value="{{if .Query}}{{.Query}}{{end}}"
+                   placeholder="Milk, chicken, mustard…"
+                   autocomplete="off" autocorrect="off" spellcheck="false"
+                   autofocus>
+        </div>
+    </form>
+
+    <div id="search-results">
+        {{if .Results}}
+            {{template "search_results" .Results}}
+        {{else}}
+            <div class="empty-state" style="padding-top: 3rem;">
+                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-text">Start typing to search across all your areas</div>
+            </div>
+        {{end}}
+    </div>
+</main>
+{{end}}
