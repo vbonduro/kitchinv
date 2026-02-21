@@ -1,6 +1,7 @@
+version: "2"
+
 run:
-  deadline: 5m
-  skip-dirs-use-default: true
+  timeout: 5m
 
 linters:
   enable:
@@ -8,8 +9,4 @@ linters:
     - govet
     - ineffassign
     - misspell
-    - typecheck
     - unused
-
-issues:
-  exclude-use-default: true

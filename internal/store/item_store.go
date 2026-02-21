@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
@@ -57,7 +58,11 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 	if err != nil {
 		return nil, fmt.Errorf("failed to list items: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("failed to close rows: %v", err)
+		}
+	}()
 
 	var items []*domain.Item
 	for rows.Next() {
@@ -87,7 +92,11 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to search items: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("failed to close rows: %v", err)
+		}
+	}()
 
 	var items []*domain.Item
 	for rows.Next() {

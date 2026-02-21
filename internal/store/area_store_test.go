@@ -51,7 +51,7 @@ func openTestDB(t *testing.T) *sql.DB {
 
 func TestAreaStoreCreate(t *testing.T) {
 	d := openTestDB(t)
-	defer d.Close()
+	t.Cleanup(func() { _ = d.Close() })
 
 	store := NewAreaStore(d)
 	ctx := context.Background()
@@ -64,7 +64,7 @@ func TestAreaStoreCreate(t *testing.T) {
 
 func TestAreaStoreGetByID(t *testing.T) {
 	d := openTestDB(t)
-	defer d.Close()
+	t.Cleanup(func() { _ = d.Close() })
 
 	store := NewAreaStore(d)
 	ctx := context.Background()
@@ -80,7 +80,7 @@ func TestAreaStoreGetByID(t *testing.T) {
 
 func TestAreaStoreList(t *testing.T) {
 	d := openTestDB(t)
-	defer d.Close()
+	t.Cleanup(func() { _ = d.Close() })
 
 	store := NewAreaStore(d)
 	ctx := context.Background()
@@ -99,7 +99,7 @@ func TestAreaStoreList(t *testing.T) {
 
 func TestAreaStoreDelete(t *testing.T) {
 	d := openTestDB(t)
-	defer d.Close()
+	t.Cleanup(func() { _ = d.Close() })
 
 	store := NewAreaStore(d)
 	ctx := context.Background()
