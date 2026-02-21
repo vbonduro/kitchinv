@@ -1,5 +1,5 @@
 # Binaries
-kitchinv
+/kitchinv
 *.exe
 *.dll
 *.so
