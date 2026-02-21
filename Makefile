@@ -59,7 +59,8 @@ all: lint vet test build
 
 ## ci: run the full GitHub Actions CI workflow locally via act
 ci: $(ACT)
-	$(ACT) --workflows .github/workflows/ci.yml
+	$(ACT) --workflows .github/workflows/ci.yml \
+		-P ubuntu-latest=catthehacker/ubuntu:act-latest
 
 # ---------------------------------------------------------------------------
 # Docker helpers
