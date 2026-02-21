@@ -25,6 +25,11 @@
         animation: spin 0.7s linear infinite;
         flex-shrink: 0;
     }
+    .file-label.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        cursor: default;
+    }
 </style>
 <main class="page">
     <a href="/areas" class="detail-back">
@@ -55,7 +60,7 @@
                 </label>
                 <button type="submit" class="btn btn-primary btn-sm" id="upload-btn">
                     <span id="upload-btn-label">Analyse</span>
-                    <span id="upload-btn-spinner" style="display:none"><span class="spinner" style="border-top-color:var(--void)"></span></span>
+                    <span id="upload-btn-spinner" style="display:none;width:11px;height:11px;border:1.5px solid rgba(9,12,16,0.3);border-top-color:var(--void);border-radius:50%;animation:spin 0.7s linear infinite"></span>
                 </button>
             </form>
         </div>
@@ -93,25 +98,31 @@ function startStream(evt, areaID) {
     const btnSpinner = document.getElementById('upload-btn-spinner');
     const uploadBtn = document.getElementById('upload-btn');
     const photoBlock = document.getElementById('photo-block');
+    const fileLabel = form.querySelector('.file-label');
+    const fileInput = form.querySelector('input[type="file"]');
 
-    // Show uploading state
-    btnLabel.style.display = 'none';
-    btnSpinner.style.display = 'inline-flex';
-    uploadBtn.disabled = true;
+    // Capture form data and preview BEFORE disabling inputs
+    const formData = new FormData(form);
 
     // Preview selected photo immediately
-    const fileInput = form.querySelector('input[type="file"]');
     if (fileInput.files[0]) {
         const url = URL.createObjectURL(fileInput.files[0]);
         photoBlock.innerHTML = '<img src="' + url + '" alt="Uploaded photo" style="width:100%;height:100%;object-fit:cover;display:block;">';
     }
+
+    // Show uploading state — replace button label with spinner, disable file picker
+    btnLabel.style.display = 'none';
+    btnSpinner.style.display = 'inline-block';
+    uploadBtn.disabled = true;
+    fileLabel.classList.add('disabled');
+    fileInput.disabled = true;
 
     // Clear items and show scanning indicator
     itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div><ul class="item-list" id="stream-list"></ul>';
     const list = document.getElementById('stream-list');
     let itemIndex = 0;
 
-    const formData = new FormData(form);
+    let streamFinished = false;
 
     fetch('/areas/' + areaID + '/photos/stream', {
         method: 'POST',
@@ -177,6 +188,9 @@ function startStream(evt, areaID) {
     }
 
     function finishStream(error) {
+        if (streamFinished) return;
+        streamFinished = true;
+
         // Remove scanning indicator
         const scanning = itemsEl.querySelector('.analyse-scanning');
         if (scanning) scanning.remove();
@@ -190,10 +204,12 @@ function startStream(evt, areaID) {
             }
         }
 
-        // Restore button
+        // Restore button and file picker
         btnLabel.style.display = '';
         btnSpinner.style.display = 'none';
         uploadBtn.disabled = false;
+        fileLabel.classList.remove('disabled');
+        fileInput.disabled = false;
     }
 
     function esc(str) {

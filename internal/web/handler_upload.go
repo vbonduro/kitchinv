@@ -126,7 +126,6 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 		log.Printf("upload photo stream error: %v", err)
 		return
 	}
-
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("X-Accel-Buffering", "no")

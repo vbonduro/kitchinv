@@ -153,7 +153,6 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image: %w", err)
 	}
-
 	body := streamRequest{
 		Stream: true,
 		request: request{
