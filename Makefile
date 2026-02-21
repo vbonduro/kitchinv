@@ -1,27 +1,13 @@
-.PHONY: build test test-cover lint vet staticcheck all ci tools docker-build docker-up docker-pull-model
+.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model
 
 # ---------------------------------------------------------------------------
 # Tool discovery
+# Prefer tools on $PATH; fall back to well-known local install paths.
 # ---------------------------------------------------------------------------
-# Prefer the system go; fall back to the well-known local install path.
-GO ?= $(shell which go 2>/dev/null || echo $(HOME)/.local/bin/go/bin/go)
-
-# Per-project tool cache so we never pollute the system PATH.
-TOOLS_DIR := .tools
-ACT := $(TOOLS_DIR)/act
-
-# ---------------------------------------------------------------------------
-# Tool installation
-# ---------------------------------------------------------------------------
-$(TOOLS_DIR):
-	mkdir -p $(TOOLS_DIR)
-
-$(ACT): | $(TOOLS_DIR)
-	@echo "Installing act → $(ACT)"
-	curl -sSfL https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s -- -b $(TOOLS_DIR)
-
-## tools: install act into .tools/
-tools: $(ACT)
+GO             ?= $(shell which go 2>/dev/null || echo $(HOME)/.local/bin/go/bin/go)
+GOLANGCI_LINT  ?= $(shell which golangci-lint 2>/dev/null || echo $(HOME)/.local/bin/golangci-lint)
+STATICCHECK    ?= $(shell which staticcheck 2>/dev/null || echo $(shell $(GO) env GOPATH)/bin/staticcheck)
+GOVULNCHECK    ?= $(shell which govulncheck 2>/dev/null || echo $(shell $(GO) env GOPATH)/bin/govulncheck)
 
 # ---------------------------------------------------------------------------
 # Build & test
@@ -37,19 +23,19 @@ test-cover:
 	$(GO) tool cover -html=coverage.out -o coverage.html
 
 # ---------------------------------------------------------------------------
-# Static analysis (local, using system tools if available)
+# Static analysis
 # ---------------------------------------------------------------------------
 lint:
-	golangci-lint run ./...
+	$(GOLANGCI_LINT) run ./...
 
 vet:
 	$(GO) vet ./...
 
 staticcheck:
-	staticcheck ./...
+	$(STATICCHECK) ./...
 
 govulncheck:
-	govulncheck ./...
+	$(GOVULNCHECK) ./...
 
 # ---------------------------------------------------------------------------
 # Aggregate targets
@@ -57,10 +43,8 @@ govulncheck:
 ## all: lint + vet + test + build
 all: lint vet test build
 
-## ci: run the full GitHub Actions CI workflow locally via act
-ci: $(ACT)
-	$(ACT) --workflows .github/workflows/ci.yml \
-		-P ubuntu-latest=catthehacker/ubuntu:act-latest
+## ci: run every check that GitHub Actions runs (lint, vet, staticcheck, govulncheck, test)
+ci: lint vet staticcheck govulncheck test
 
 # ---------------------------------------------------------------------------
 # Docker helpers

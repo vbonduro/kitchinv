@@ -179,12 +179,28 @@ The Claude model defaults to `claude-opus-4-6`. Override with `CLAUDE_MODEL=clau
 
 ## Local development
 
-**Requirements:** Go 1.26.
+### Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Go | 1.26+ | [go.dev/dl](https://go.dev/dl/) — extract to `~/.local/bin/go` or anywhere on `$PATH` |
+| golangci-lint | v2.10.1 | See below |
+| staticcheck | latest | `go install honnef.co/go/tools/cmd/staticcheck@latest` |
+| govulncheck | latest | `go install golang.org/x/vuln/cmd/govulncheck@latest` |
+
+Install golangci-lint (the official way — do **not** `go install` it):
+```bash
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+  | sh -s -- -b ~/.local/bin v2.10.1
+```
+
+If Go is not on your `$PATH`, the Makefile will fall back to `~/.local/bin/go/bin/go` automatically.
+
+### Common commands
 
 ```bash
 # Build binary
 make build
-./kitchinv
 
 # Run tests (with race detector)
 make test
@@ -192,7 +208,10 @@ make test
 # Coverage report (opens coverage.html)
 make test-cover
 
-# Vet + lint + test + build in one shot
+# Run all CI checks locally (lint, vet, staticcheck, govulncheck, test)
+make ci
+
+# Vet + lint + test + build
 make all
 ```
 
