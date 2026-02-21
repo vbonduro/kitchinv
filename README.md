@@ -141,8 +141,10 @@ Data is persisted in two named Docker volumes:
 
 | Volume | Contents |
 |--------|----------|
-| `kitchinv_data` | SQLite database + uploaded photos |
-| `ollama_data` | Downloaded Ollama model weights |
+| `kitchinv_kitchinv_data` | SQLite database + uploaded photos |
+| `kitchinv_ollama_data` | Downloaded Ollama model weights |
+
+> Docker prefixes volume names with the project name (`kitchinv_`), so the names above reflect what you'll see in `docker volume ls`.
 
 To wipe everything: `docker compose down -v`.
 
@@ -194,12 +196,28 @@ make test-cover
 make all
 ```
 
-For a live Ollama during development, run the Docker sidecar separately:
+For a live Ollama during development, you have two options:
 
+**Option A — local Ollama install (recommended):**
 ```bash
-docker compose up ollama
-# then in another terminal:
-OLLAMA_HOST=http://localhost:11434 ./kitchinv
+# Install Ollama from https://ollama.com, then pull the model once:
+ollama pull moondream
+# Run the app — it connects to localhost:11434 by default:
+DB_PATH=./dev.db PHOTO_LOCAL_PATH=./dev-photos ./kitchinv
+```
+
+**Option B — Docker sidecar with published port:**
+```bash
+# The compose file does not publish Ollama's port to the host.
+# Run the container manually to expose it:
+docker run -d --rm \
+  -v kitchinv_ollama_data:/root/.ollama \
+  -p 11434:11434 \
+  ollama/ollama:latest
+# Pull the model into it (one-time):
+docker exec <container-id> ollama pull moondream
+# Then run the app:
+OLLAMA_HOST=http://localhost:11434 DB_PATH=./dev.db PHOTO_LOCAL_PATH=./dev-photos ./kitchinv
 ```
 
 The server defaults to `DB_PATH=/data/kitchinv.db` and `PHOTO_LOCAL_PATH=/data/photos`. Override for local runs:

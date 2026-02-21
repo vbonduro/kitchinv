@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/vbonduro/kitchinv/internal/service"
 )
 
 func (s *Server) handleListAreas(w http.ResponseWriter, r *http.Request) {
-	areas, err := s.service.ListAreas(r.Context())
+	areas, err := s.service.ListAreasWithItems(r.Context())
 	if err != nil {
 		http.Error(w, "failed to list areas", http.StatusInternalServerError)
 		log.Printf("list areas error: %v", err)
@@ -37,7 +39,8 @@ func (s *Server) handleCreateArea(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.renderPartial(w, "partials/area_card.html", area); err != nil {
+	summary := &service.AreaSummary{Area: area}
+	if err := s.renderPartial(w, "partials/area_card.html", summary); err != nil {
 		log.Printf("render partial error: %v", err)
 	}
 }

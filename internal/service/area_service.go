@@ -44,6 +44,33 @@ func (s *AreaService) ListAreas(ctx context.Context) ([]*domain.Area, error) {
 	return s.areaStore.List(ctx)
 }
 
+// AreaSummary bundles an area with its latest photo and items for list rendering.
+type AreaSummary struct {
+	*domain.Area
+	Photo *domain.Photo
+	Items []*domain.Item
+}
+
+func (s *AreaService) ListAreasWithItems(ctx context.Context) ([]*AreaSummary, error) {
+	areas, err := s.areaStore.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	summaries := make([]*AreaSummary, 0, len(areas))
+	for _, area := range areas {
+		items, err := s.itemStore.ListByAreaID(ctx, area.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list items for area %d: %w", area.ID, err)
+		}
+		photo, err := s.photoStore.GetLatestByAreaID(ctx, area.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get photo for area %d: %w", area.ID, err)
+		}
+		summaries = append(summaries, &AreaSummary{Area: area, Photo: photo, Items: items})
+	}
+	return summaries, nil
+}
+
 func (s *AreaService) GetArea(ctx context.Context, areaID int64) (*domain.Area, error) {
 	return s.areaStore.GetByID(ctx, areaID)
 }

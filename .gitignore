@@ -32,6 +32,10 @@ Thumbs.db
 # Photos
 /data/photos/*
 !/data/photos/.gitkeep
+/dev-photos/
+
+# Local dev artifacts
+good_inventory.txt
 
 # Downloaded files
 go1.*.linux-amd64.tar.gz

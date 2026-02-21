@@ -1,54 +1,61 @@
 {{define "content"}}
-<header class="topbar">
-    <a href="/areas" class="topbar-back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        Areas
-    </a>
-    <span class="topbar-title">{{.Area.Name}}</span>
-    <button class="btn btn-danger"
-            hx-delete="/areas/{{.Area.ID}}"
-            hx-confirm="Delete {{.Area.Name}} and all its items?"
-            hx-push-url="/areas">
-        Delete
-    </button>
-</header>
-
 <main class="page">
-    <p class="section-label">Photo</p>
+    <a href="/areas" class="detail-back">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        All areas
+    </a>
 
-    <div class="photo-block">
-        {{if .Photo}}
-            <img src="/areas/{{.Area.ID}}/photo" alt="Photo of {{.Area.Name}}">
-        {{else}}
-            <div class="photo-empty">
-                <span class="photo-empty-icon">📷</span>
-                <span class="photo-empty-text">No photo yet</span>
+    <div class="detail-layout">
+        <!-- Photo column -->
+        <div class="detail-photo-col">
+            <div class="detail-photo-block">
+                {{if .Photo}}
+                    <img src="/areas/{{.Area.ID}}/photo" alt="Photo of {{.Area.Name}}">
+                {{else}}
+                    <div class="photo-empty">
+                        <span class="photo-empty-icon">📷</span>
+                        <span class="photo-empty-text">No photo yet</span>
+                    </div>
+                {{end}}
             </div>
-        {{end}}
-    </div>
+            <form hx-post="/areas/{{.Area.ID}}/photos"
+                  hx-target="#items"
+                  hx-swap="innerHTML"
+                  hx-indicator="#upload-btn"
+                  enctype="multipart/form-data"
+                  class="detail-upload">
+                <label class="file-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span class="file-label-text" id="file-name-display">Choose photo</span>
+                    <input type="file" name="image" accept="image/*" capture="environment" required
+                           onchange="document.getElementById('file-name-display').textContent = this.files[0]?.name || 'Choose photo'">
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm" id="upload-btn">
+                    <span class="htmx-hide">Analyse</span>
+                    <span class="htmx-indicator"><span class="spinner"></span></span>
+                </button>
+            </form>
+        </div>
 
-    <form hx-post="/areas/{{.Area.ID}}/photos"
-          hx-target="#items"
-          hx-swap="innerHTML"
-          hx-indicator="#upload-btn"
-          enctype="multipart/form-data"
-          class="upload-row">
-        <label class="file-label" id="file-pick-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-            <span class="file-label-text" id="file-name-display">Choose photo</span>
-            <input type="file" name="image" accept="image/*" capture="environment" required
-                   onchange="document.getElementById('file-name-display').textContent = this.files[0]?.name || 'Choose photo'">
-        </label>
-        <button type="submit" class="btn btn-primary" id="upload-btn">
-            <span class="htmx-hide">Analyse</span>
-            <span class="htmx-indicator"><span class="spinner"></span> Working…</span>
-        </button>
-    </form>
+        <!-- Content column -->
+        <div class="detail-content-col">
+            <div class="detail-header">
+                <div>
+                    <div class="detail-title">{{.Area.Name}}</div>
+                    <div class="detail-date">Added {{.Area.CreatedAt.Format "02 Jan 2006"}}</div>
+                </div>
+                <button class="btn btn-danger btn-sm"
+                        hx-delete="/areas/{{.Area.ID}}"
+                        hx-confirm="Delete {{.Area.Name}} and all its items?"
+                        hx-push-url="/areas">
+                    Delete
+                </button>
+            </div>
 
-    <p class="section-label">Items</p>
-    <div class="card" style="padding: 0 1rem;">
-        <div id="items">
-            {{template "item_list" .Items}}
+            <p class="section-label">Items</p>
+            <div id="items">
+                {{template "item_list" .Items}}
+            </div>
         </div>
     </div>
 </main>

@@ -1,7 +1,50 @@
 {{define "area_card"}}
-<a class="area-card" href="/areas/{{.ID}}">
-    <div class="area-card-icon">{{areaIcon .Name}}</div>
-    <div class="area-card-name">{{.Name}}</div>
-    <div class="area-card-date">{{.CreatedAt.Format "Jan 2, 2006"}}</div>
-</a>
+<div class="area-row">
+    <!-- Photo side -->
+    <div class="area-row-photo">
+        {{if .Photo}}
+            <img src="/areas/{{.ID}}/photo" alt="Photo of {{.Name}}">
+        {{else}}
+            <div class="area-row-photo-empty">
+                <div class="icon">{{areaIcon .Name}}</div>
+                <div class="label">No photo</div>
+            </div>
+        {{end}}
+    </div>
+
+    <!-- Content side -->
+    <div class="area-row-content">
+        <div class="area-row-header">
+            <div>
+                <div class="area-row-name"><a href="/areas/{{.ID}}">{{.Name}}</a></div>
+                <div class="area-row-meta">Added {{.CreatedAt.Format "02 Jan 2006"}}</div>
+            </div>
+        </div>
+
+        <div class="area-row-items">
+            {{if .Items}}
+                <ul class="area-preview-list">
+                    {{range $i, $item := .Items}}
+                        {{if lt $i 5}}
+                        <li class="area-preview-item">
+                            <span class="idx">{{printf "%02d" (inc $i)}}</span>
+                            <span class="name">{{$item.Name}}</span>
+                            {{if $item.Quantity}}<span class="qty">{{$item.Quantity}}</span>{{end}}
+                        </li>
+                        {{end}}
+                    {{end}}
+                </ul>
+                {{if gt (len .Items) 5}}
+                <div class="area-preview-more">+{{sub (len .Items) 5}} more items</div>
+                {{end}}
+            {{else}}
+                <span class="area-row-no-items">No items — upload a photo to analyse</span>
+            {{end}}
+        </div>
+
+        <div class="area-row-actions">
+            <a href="/areas/{{.ID}}" class="btn btn-ghost btn-sm">Open</a>
+        </div>
+    </div>
+</div>
 {{end}}

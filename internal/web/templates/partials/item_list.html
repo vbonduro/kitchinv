@@ -1,15 +1,15 @@
 {{define "item_list"}}
 {{if .}}
     <ul class="item-list">
-        {{range .}}
+        {{range $i, $item := .}}
         <li class="item-row">
-            <span class="item-dot"></span>
+            <span class="item-index">{{printf "%02d" (inc $i)}}</span>
             <div class="item-body">
-                <div class="item-name">{{.Name}}</div>
-                {{if or .Quantity .Notes}}
+                <div class="item-name">{{$item.Name}}</div>
+                {{if or $item.Quantity $item.Notes}}
                 <div class="item-meta">
-                    {{if .Quantity}}<span class="item-qty">{{.Quantity}}</span>{{end}}
-                    {{if .Notes}}<span>{{.Notes}}</span>{{end}}
+                    {{if $item.Quantity}}<span class="item-qty">{{$item.Quantity}}</span>{{end}}
+                    {{if $item.Notes}}<span>{{$item.Notes}}</span>{{end}}
                 </div>
                 {{end}}
             </div>
@@ -19,7 +19,7 @@
 {{else}}
     <div class="empty-state">
         <div class="empty-state-icon">📋</div>
-        <div class="empty-state-text">Upload a photo to extract items automatically</div>
+        <div class="empty-state-text">Upload a photo to extract items</div>
     </div>
 {{end}}
 {{end}}

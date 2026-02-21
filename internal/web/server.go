@@ -27,6 +27,8 @@ func NewServer(svc *service.AreaService, tmpl embed.FS, ps photostore.PhotoStore
 		mux:        http.NewServeMux(),
 		tmplFuncs: template.FuncMap{
 			"areaIcon": areaIcon,
+			"inc":      func(i int) int { return i + 1 },
+			"sub":      func(a, b int) int { return a - b },
 		},
 	}
 	s.registerRoutes()
@@ -63,7 +65,7 @@ func (s *Server) renderPage(w http.ResponseWriter, data any, files ...string) er
 		return err
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	return tmpl.ExecuteTemplate(w, "content", data)
+	return tmpl.ExecuteTemplate(w, "base", data)
 }
 
 // renderPartial parses and executes a single named partial template.

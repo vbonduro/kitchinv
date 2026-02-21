@@ -1,28 +1,17 @@
 {{define "content"}}
-<header class="topbar">
-    <span class="topbar-wordmark">kit<em>ch</em>inv</span>
-</header>
-
 <main class="page">
-    <p class="section-label">Add area</p>
-    <form class="add-area-form" hx-post="/areas" hx-swap="beforeend" hx-target=".area-grid">
-        <input type="text" name="name" placeholder="e.g. Upstairs Fridge" required autocomplete="off" autocorrect="off">
-        <button type="submit" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Add
-        </button>
-    </form>
+    <div class="page-heading">
+        <h1>Storage Areas</h1>
+        {{if .Areas}}<span class="count">{{len .Areas}} locations</span>{{end}}
+    </div>
 
-    <p class="section-label">Storage areas</p>
-    <div class="area-grid" id="area-list">
+    <div class="area-list" id="area-list">
         {{range .Areas}}
             {{template "area_card" .}}
         {{else}}
-            <div style="grid-column:1/-1">
-                <div class="empty-state">
-                    <div class="empty-state-icon">🧊</div>
-                    <div class="empty-state-text">No areas yet — add your first storage location above</div>
-                </div>
+            <div class="empty-state">
+                <div class="empty-state-icon">🧊</div>
+                <div class="empty-state-text">No areas yet —<br>open the menu to add your first storage location</div>
             </div>
         {{end}}
     </div>
