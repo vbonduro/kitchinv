@@ -8,8 +8,13 @@ import (
 	"github.com/vbonduro/kitchinv/internal/domain"
 )
 
+const maxSearchQueryLen = 200
+
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if len(query) > maxSearchQueryLen {
+		query = query[:maxSearchQueryLen]
+	}
 
 	var items []*domain.Item
 	if query != "" {
