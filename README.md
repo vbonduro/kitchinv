@@ -130,6 +130,9 @@ direnv allow
 
 **3. Store secrets in the system keyring** (recommended over plaintext):
 ```bash
+# Install secret-tool (Linux):
+sudo apt-get install libsecret-tools
+
 # Store your Anthropic API key once:
 secret-tool store --label="kitchinv Claude API key" service kitchinv key CLAUDE_API_KEY
 ```
