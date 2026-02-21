@@ -47,12 +47,17 @@ bd close <id>
 make build       # compile binary
 make test        # run tests with race detector
 make all         # vet + lint + test + build
+make ci          # run all CI checks locally (lint, vet, staticcheck, govulncheck, test)
 ```
 
-Go is installed at `~/.local/bin/go/bin/go`. If `make` cannot find it, run commands directly:
-```bash
-~/.local/bin/go/bin/go test -race -count=1 ./...
-```
+Go is installed at `~/.local/bin/go/bin/go`. The Makefile auto-detects it, so
+`make test` / `make build` work without any PATH changes.
+
+## Running CI locally
+
+`make ci` runs all five checks that GitHub Actions runs, directly against your
+locally installed tools — no Docker required. See the README for tool
+installation instructions.
 
 ## Beads sync
 
