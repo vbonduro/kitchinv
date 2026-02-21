@@ -117,7 +117,7 @@ func TestAreaServiceDeleteArea(t *testing.T) {
 func TestAreaServiceUploadPhoto_StoresItemsFromVision(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	visionResult := &vision.AnalysisResult{
 		Items: []vision.DetectedItem{
@@ -149,7 +149,7 @@ func TestAreaServiceUploadPhoto_StoresItemsFromVision(t *testing.T) {
 func TestAreaServiceUploadPhoto_ReplacesExistingItems(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	photoStg := newStubPhotoStore()
 	areaStore := store.NewAreaStore(d)
@@ -190,7 +190,7 @@ func TestAreaServiceUploadPhoto_AreaNotFound(t *testing.T) {
 func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	svc := NewAreaService(
 		store.NewAreaStore(d),
@@ -211,7 +211,7 @@ func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	photoStg := &stubPhotoStore{
 		saved:   make(map[string][]byte),
@@ -236,7 +236,7 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 func TestAreaServiceSearchItems(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	visionResult := &vision.AnalysisResult{
 		Items: []vision.DetectedItem{
@@ -268,7 +268,7 @@ func TestAreaServiceSearchItems(t *testing.T) {
 func TestAreaServiceListAreasWithItems(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
-	defer d.Close()
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
 
 	visionResult := &vision.AnalysisResult{
 		Items: []vision.DetectedItem{
