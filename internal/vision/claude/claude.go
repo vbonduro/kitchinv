@@ -1,6 +1,7 @@
 package claude
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
@@ -134,6 +136,143 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		Items:       vision.ParseResponse(responseText),
 		RawResponse: responseText,
 	}, nil
+}
+
+// streamRequest extends request with stream:true for the streaming API.
+type streamRequest struct {
+	request
+	Stream bool `json:"stream"`
+}
+
+// AnalyzeStream implements vision.StreamAnalyzer using the Anthropic streaming
+// Messages API. It sends stream:true and parses SSE events, emitting a
+// DetectedItem on the channel each time a complete "name | qty | notes" line
+// is accumulated from text_delta events.
+func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeType string) (<-chan vision.StreamEvent, error) {
+	imageData, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image: %w", err)
+	}
+
+	body := streamRequest{
+		Stream: true,
+		request: request{
+			Model:     a.model,
+			MaxTokens: 1024,
+			Messages: []message{
+				{
+					Role: "user",
+					Content: []block{
+						{
+							Type: "image",
+							Source: &source{
+								Type:      "base64",
+								MediaType: normaliseMIME(mimeType),
+								Data:      base64.StdEncoding.EncodeToString(imageData),
+							},
+						},
+						{Type: "text", Text: vision.AnalysisPrompt},
+					},
+				},
+			},
+		},
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", a.apiKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call claude: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		errBody, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		return nil, fmt.Errorf("claude returned status %d: %s", resp.StatusCode, errBody)
+	}
+
+	ch := make(chan vision.StreamEvent, 16)
+
+	go func() {
+		defer close(ch)
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close claude stream body: %v", err)
+			}
+		}()
+
+		var lineBuf strings.Builder
+		scanner := bufio.NewScanner(resp.Body)
+
+		for scanner.Scan() {
+			if ctx.Err() != nil {
+				return
+			}
+
+			line := scanner.Text()
+
+			// SSE data lines start with "data: "
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+			data := line[6:]
+			if data == "[DONE]" {
+				break
+			}
+
+			var event struct {
+				Type  string `json:"type"`
+				Delta struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
+				} `json:"delta"`
+			}
+			if err := json.Unmarshal([]byte(data), &event); err != nil {
+				continue
+			}
+
+			if event.Type != "content_block_delta" || event.Delta.Type != "text_delta" {
+				continue
+			}
+
+			// Accumulate tokens, emit an item per complete line.
+			for _, c := range event.Delta.Text {
+				if c == '\n' {
+					line := strings.TrimSpace(lineBuf.String())
+					lineBuf.Reset()
+					if item := vision.ParseLine(line); item != nil {
+						ch <- vision.StreamEvent{Item: item}
+					}
+				} else {
+					lineBuf.WriteRune(c)
+				}
+			}
+		}
+
+		// Flush any trailing line.
+		if tail := strings.TrimSpace(lineBuf.String()); tail != "" {
+			if item := vision.ParseLine(tail); item != nil {
+				ch <- vision.StreamEvent{Item: item}
+			}
+		}
+
+		if err := scanner.Err(); err != nil && ctx.Err() == nil {
+			ch <- vision.StreamEvent{Err: fmt.Errorf("read claude stream: %w", err)}
+		}
+	}()
+
+	return ch, nil
 }
 
 // normaliseMIME maps browser MIME types to the values the Anthropic API accepts.
