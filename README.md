@@ -2,7 +2,7 @@
 
 > Never wonder what's in the freezer again.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/vbonduro/kitchinv)](https://goreportcard.com/report/github.com/vbonduro/kitchinv)
+[![Go Report Card](https://img.shields.io/badge/go%20report-A+-brightgreen.svg?style=flat)](https://goreportcard.com/report/github.com/vbonduro/kitchinv)
 [![codecov](https://codecov.io/gh/vbonduro/kitchinv/branch/main/graph/badge.svg)](https://codecov.io/gh/vbonduro/kitchinv)
 
 kitchinv lets you photograph every storage area in your home (fridge, freezer, pantry, …), automatically extracts a food-item inventory from each photo using a vision model, and gives you a searchable list across all areas — all from your phone browser.
