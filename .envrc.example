@@ -1,0 +1,21 @@
+# Copy this to .envrc and fill in your values.
+# .envrc is gitignored and loaded automatically by direnv.
+#
+# To use the system keyring for secrets (recommended):
+#   secret-tool store --label="kitchinv Claude API key" service kitchinv key CLAUDE_API_KEY
+#
+# Then reference it here as shown below.
+
+export LISTEN_ADDR=:8080
+export DB_PATH=dev.db
+export PHOTO_LOCAL_PATH=dev-photos
+
+# --- Ollama (default) ---
+export VISION_BACKEND=ollama
+export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_MODEL=moondream
+
+# --- Claude (uncomment to switch) ---
+# export VISION_BACKEND=claude
+# export CLAUDE_MODEL=claude-haiku-4-5-20251001
+# export CLAUDE_API_KEY=$(secret-tool lookup service kitchinv key CLAUDE_API_KEY)

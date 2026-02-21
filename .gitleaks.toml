@@ -1,0 +1,8 @@
+# gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "kitchinv gitleaks config"
+
+[extend]
+# Use the default gitleaks ruleset as a base
+useDefault = true

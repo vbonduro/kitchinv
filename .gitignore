@@ -37,6 +37,7 @@ Thumbs.db
 # Local dev artifacts
 good_inventory.txt
 .env
+.envrc
 
 # Downloaded files
 go1.*.linux-amd64.tar.gz
