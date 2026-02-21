@@ -100,6 +100,8 @@ The Claude model defaults to `claude-opus-4-6`. Override with `CLAUDE_MODEL=clau
 | golangci-lint | v2.10.1 | See below |
 | staticcheck | latest | `go install honnef.co/go/tools/cmd/staticcheck@latest` |
 | govulncheck | latest | `go install golang.org/x/vuln/cmd/govulncheck@latest` |
+| direnv | latest | `curl -sfL https://direnv.net/install.sh \| bin_path=~/.local/bin bash` |
+| gitleaks | latest | `curl -sfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s \| tr '[:upper:]' '[:lower:]')_x64.tar.gz \| tar -xz -C ~/.local/bin gitleaks` |
 
 Install golangci-lint (the official way — do **not** `go install` it):
 ```bash
@@ -108,6 +110,41 @@ curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/insta
 ```
 
 If Go is not on your `$PATH`, the Makefile will fall back to `~/.local/bin/go/bin/go` automatically.
+
+### Environment setup
+
+The project uses **direnv** to manage environment variables automatically and **gitleaks** to prevent accidentally committing secrets.
+
+**1. Hook direnv into your shell** (once, in `~/.zshrc` or `~/.bashrc`):
+```bash
+eval "$(~/.local/bin/direnv hook zsh)"   # or: hook bash
+```
+Then restart your shell or `source ~/.zshrc`.
+
+**2. Create your `.envrc`** from the provided example:
+```bash
+cp .envrc.example .envrc
+direnv allow
+```
+`.envrc` is gitignored — edit it with your local values. It is loaded automatically whenever you `cd` into the repo or any worktree.
+
+**3. Store secrets with `pass`** (recommended — GPG-encrypted, works in any terminal):
+```bash
+# Install pass and create a GPG key (one-time):
+sudo apt-get install pass
+gpg --gen-key
+pass init <your-gpg-email>
+
+# Store your Anthropic API key:
+pass insert kitchinv/claude-api-key
+```
+The `.envrc.example` shows how to reference it via `$(pass kitchinv/claude-api-key)`.
+
+**4. Secret scanning pre-commit hook** is installed at `.git/hooks/pre-commit` and runs gitleaks on every `git commit`. If a secret is detected the commit is blocked. To install it in a fresh clone:
+```bash
+cp .git/hooks/pre-commit .git/hooks/pre-commit   # already present after clone
+chmod +x .git/hooks/pre-commit
+```
 
 ### Common commands
 
@@ -152,10 +189,10 @@ docker exec <container-id> ollama pull moondream
 OLLAMA_HOST=http://localhost:11434 DB_PATH=./dev.db PHOTO_LOCAL_PATH=./dev-photos ./kitchinv
 ```
 
-The server defaults to `DB_PATH=/data/kitchinv.db` and `PHOTO_LOCAL_PATH=/data/photos`. Override for local runs:
+The server defaults to `DB_PATH=/data/kitchinv.db` and `PHOTO_LOCAL_PATH=/data/photos`. With direnv configured, your `.envrc` sets these automatically and you can just run:
 
 ```bash
-DB_PATH=./dev.db PHOTO_LOCAL_PATH=./dev-photos ./kitchinv
+go run ./cmd/kitchinv
 ```
 
 ---

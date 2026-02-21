@@ -80,3 +80,93 @@ func TestOllamaAnalyzeReadError(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestOllamaAnalyzeStream(t *testing.T) {
+	// Ollama streaming sends one JSON object per line with stream:true
+	chunks := []map[string]interface{}{
+		{"response": "Milk | 1 liter | opened", "done": false},
+		{"response": "\n", "done": false},
+		{"response": "Butter | 1 block |", "done": false},
+		{"response": "\n", "done": true},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify stream:true was sent
+		var req map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		assert.Equal(t, true, req["stream"])
+
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		enc := json.NewEncoder(w)
+		for _, chunk := range chunks {
+			_ = enc.Encode(chunk)
+		}
+	}))
+	defer server.Close()
+
+	analyzer := NewOllamaAnalyzer(server.URL, "moondream")
+	imageData := []byte{0xFF, 0xD8, 0xFF, 0xE0}
+
+	ch, err := analyzer.AnalyzeStream(context.Background(), bytes.NewReader(imageData), "image/jpeg")
+	require.NoError(t, err)
+
+	var items []string
+	for ev := range ch {
+		require.NoError(t, ev.Err)
+		items = append(items, ev.Item.Name)
+	}
+
+	assert.Equal(t, []string{"Milk", "Butter"}, items)
+}
+
+func TestOllamaAnalyzeStreamContextCancel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Slow server — never completes
+		enc := json.NewEncoder(w)
+		for i := 0; i < 100; i++ {
+			_ = enc.Encode(map[string]interface{}{"response": "token", "done": false})
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		}
+	}))
+	defer server.Close()
+
+	analyzer := NewOllamaAnalyzer(server.URL, "moondream")
+	imageData := []byte{0xFF, 0xD8, 0xFF, 0xE0}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch, err := analyzer.AnalyzeStream(ctx, bytes.NewReader(imageData), "image/jpeg")
+	require.NoError(t, err)
+
+	// Cancel immediately; channel should close without hanging
+	cancel()
+
+	// Drain channel with timeout
+	done := make(chan struct{})
+	go func() {
+		for range ch {
+		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// ok
+	case <-context.Background().Done():
+		t.Fatal("channel did not close after context cancel")
+	}
+}
+
+func TestOllamaAnalyzeStreamHTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	analyzer := NewOllamaAnalyzer(server.URL, "moondream")
+	imageData := []byte{0xFF, 0xD8, 0xFF, 0xE0}
+
+	_, err := analyzer.AnalyzeStream(context.Background(), bytes.NewReader(imageData), "image/jpeg")
+	assert.Error(t, err)
+}

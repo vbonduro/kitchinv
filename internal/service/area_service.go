@@ -123,6 +123,67 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	return photo, items, nil
 }
 
+// UploadPhotoStream saves the photo, clears old items, then streams detected
+// items back via the returned channel as the vision model produces them.
+// The caller must drain and close the channel (it is closed by the goroutine).
+func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, <-chan vision.StreamEvent, error) {
+	area, err := s.areaStore.GetByID(ctx, areaID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get area: %w", err)
+	}
+	if area == nil {
+		return nil, nil, fmt.Errorf("area not found")
+	}
+
+	sa, ok := s.visionAPI.(vision.StreamAnalyzer)
+	if !ok {
+		return nil, nil, fmt.Errorf("vision adapter does not support streaming")
+	}
+
+	storageKey, err := s.photoStg.Save(ctx, fmt.Sprintf("area_%d", areaID), mimeType, bytes.NewReader(imageData))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to save photo: %w", err)
+	}
+
+	photo, err := s.photoStore.Create(ctx, areaID, storageKey, mimeType)
+	if err != nil {
+		_ = s.photoStg.Delete(ctx, storageKey)
+		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
+	}
+
+	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
+		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
+	}
+
+	rawCh, err := sa.AnalyzeStream(ctx, bytes.NewReader(imageData), mimeType)
+	if err != nil {
+		return photo, nil, fmt.Errorf("failed to start vision stream: %w", err)
+	}
+
+	out := make(chan vision.StreamEvent, 16)
+	go func() {
+		defer close(out)
+		for ev := range rawCh {
+			if ev.Err != nil {
+				out <- ev
+				return
+			}
+			item, err := s.itemStore.Create(ctx, areaID, &photo.ID, ev.Item.Name, ev.Item.Quantity, ev.Item.Notes)
+			if err != nil {
+				log.Printf("failed to create item %q: %v", ev.Item.Name, err)
+				continue
+			}
+			out <- vision.StreamEvent{Item: &vision.DetectedItem{
+				Name:     item.Name,
+				Quantity: item.Quantity,
+				Notes:    item.Notes,
+			}}
+		}
+	}()
+
+	return photo, out, nil
+}
+
 func (s *AreaService) GetAreaWithItems(ctx context.Context, areaID int64) (*domain.Area, []*domain.Item, *domain.Photo, error) {
 	area, err := s.areaStore.GetByID(ctx, areaID)
 	if err != nil {

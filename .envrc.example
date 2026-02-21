@@ -1,0 +1,23 @@
+# Copy this to .envrc and fill in your values.
+# .envrc is gitignored and loaded automatically by direnv.
+#
+# Secrets are stored using `pass` (GPG-backed secret manager).
+# One-time setup:
+#   sudo apt-get install pass
+#   gpg --gen-key
+#   pass init <your-gpg-email>
+#   pass insert kitchinv/claude-api-key
+
+export LISTEN_ADDR=:8080
+export DB_PATH=dev.db
+export PHOTO_LOCAL_PATH=dev-photos
+
+# --- Ollama (default) ---
+export VISION_BACKEND=ollama
+export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_MODEL=moondream
+
+# --- Claude (uncomment to switch) ---
+# export VISION_BACKEND=claude
+# export CLAUDE_MODEL=claude-haiku-4-5-20251001
+# export CLAUDE_API_KEY=$(pass kitchinv/claude-api-key)

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -80,6 +81,89 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.renderPartial(w, "partials/item_list.html", items); err != nil {
 		log.Printf("render partial error: %v", err)
+	}
+}
+
+// handleStreamPhoto handles the streaming upload flow. It accepts the same
+// multipart form as handleUploadPhoto but responds with an SSE stream. Each
+// SSE event carries a JSON object: {"name":"...","quantity":"...","notes":"..."}.
+// The stream ends with a "done" event.
+func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
+	areaID, err := parseID(r)
+	if err != nil {
+		http.Error(w, "invalid area id", http.StatusBadRequest)
+		return
+	}
+
+	if err := r.ParseMultipartForm(maxPhotoSize); err != nil {
+		http.Error(w, "failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, "image file required", http.StatusBadRequest)
+		return
+	}
+	defer closeWithLog(file, "upload file")
+
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "failed to read file", http.StatusInternalServerError)
+		log.Printf("read upload error: %v", err)
+		return
+	}
+
+	mimeType, ok := allowedImageMIME(imageData)
+	if !ok {
+		http.Error(w, "unsupported image format", http.StatusBadRequest)
+		return
+	}
+
+	_, itemCh, err := s.service.UploadPhotoStream(r.Context(), areaID, imageData, mimeType)
+	if err != nil {
+		http.Error(w, "failed to process photo", http.StatusInternalServerError)
+		log.Printf("upload photo stream error: %v", err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	flusher, canFlush := w.(http.Flusher)
+
+	enc := json.NewEncoder(w)
+	for ev := range itemCh {
+		if r.Context().Err() != nil {
+			return
+		}
+		if ev.Err != nil {
+			log.Printf("stream vision error: %v", ev.Err)
+			return
+		}
+		if _, err := w.Write([]byte("data: ")); err != nil {
+			return
+		}
+		if err := enc.Encode(map[string]string{
+			"name":     ev.Item.Name,
+			"quantity": ev.Item.Quantity,
+			"notes":    ev.Item.Notes,
+		}); err != nil {
+			return
+		}
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return
+		}
+		if canFlush {
+			flusher.Flush()
+		}
+	}
+
+	if _, err := w.Write([]byte("event: done\ndata: {}\n\n")); err != nil {
+		log.Printf("write done event error: %v", err)
+	}
+	if canFlush {
+		flusher.Flush()
 	}
 }
 
