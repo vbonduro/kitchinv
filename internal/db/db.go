@@ -15,6 +15,20 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
+// OpenForTesting opens an in-memory SQLite database with all migrations applied.
+// Use this in tests that need a real database.
+func OpenForTesting() (*sql.DB, error) {
+	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open in-memory database: %w", err)
+	}
+	if err := runMigrations(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+	return db, nil
+}
+
 func Open(dbPath string) (*sql.DB, error) {
 	dsn := fmt.Sprintf("file:%s?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on", dbPath)
 	db, err := sql.Open("sqlite", dsn)
