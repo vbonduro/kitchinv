@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"log"
 	"sort"
 	"strings"
 
@@ -77,6 +78,7 @@ func runMigrations(db *sql.DB) error {
 
 		version := 0
 		if _, err := fmt.Sscanf(parts[0], "%d", &version); err != nil {
+			log.Printf("skipping migration file %q: cannot parse version: %v", name, err)
 			continue
 		}
 
