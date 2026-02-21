@@ -1,7 +1,6 @@
 package web
 
 import (
-	"bytes"
 	"io"
 	"log"
 	"net/http"
@@ -9,31 +8,33 @@ import (
 
 const maxPhotoSize = 50 * 1024 * 1024 // 50 MB
 
-// allowedMagicBytes maps the first bytes of each supported image format to its
-// canonical MIME type. We detect type from content, not from the client header.
-var allowedMagicBytes = []struct {
-	magic    []byte
-	mimeType string
-}{
-	{[]byte{0xFF, 0xD8, 0xFF}, "image/jpeg"},
-	{[]byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, "image/png"},
-	{[]byte{0x47, 0x49, 0x46, 0x38}, "image/gif"},
-	{[]byte("RIFF"), "image/webp"}, // full check also validates "WEBP" at offset 8
+// allowedImageTypes is the set of MIME types accepted for uploaded photos.
+// net/http.DetectContentType handles JPEG, PNG, and GIF via magic-byte
+// sniffing. WebP is detected separately because the WHATWG sniff spec (and
+// therefore the stdlib) does not include a WebP signature.
+var allowedImageTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/gif":  true,
 }
 
-// detectImageMIME returns the canonical MIME type by inspecting magic bytes.
-// It returns ("", false) if the data does not match a supported image format.
-func detectImageMIME(data []byte) (string, bool) {
-	for _, entry := range allowedMagicBytes {
-		if bytes.HasPrefix(data, entry.magic) {
-			// Extra check for WebP: bytes 8-11 must be "WEBP"
-			if entry.mimeType == "image/webp" {
-				if len(data) < 12 || string(data[8:12]) != "WEBP" {
-					continue
-				}
-			}
-			return entry.mimeType, true
-		}
+// isWebP reports whether data is a WebP image (RIFF container with "WEBP" at
+// offset 8).
+func isWebP(data []byte) bool {
+	return len(data) >= 12 &&
+		string(data[0:4]) == "RIFF" &&
+		string(data[8:12]) == "WEBP"
+}
+
+// allowedImageMIME returns the detected MIME type and true if the data is an
+// accepted image format, or ("", false) otherwise.
+func allowedImageMIME(data []byte) (string, bool) {
+	if isWebP(data) {
+		return "image/webp", true
+	}
+	mime := http.DetectContentType(data)
+	if allowedImageTypes[mime] {
+		return mime, true
 	}
 	return "", false
 }
@@ -64,7 +65,7 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mimeType, ok := detectImageMIME(imageData)
+	mimeType, ok := allowedImageMIME(imageData)
 	if !ok {
 		http.Error(w, "unsupported image format", http.StatusBadRequest)
 		return

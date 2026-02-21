@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDetectImageMIME(t *testing.T) {
+func TestAllowedImageMIME(t *testing.T) {
 	tests := []struct {
 		name         string
 		data         []byte
@@ -63,12 +63,12 @@ func TestDetectImageMIME(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMIME, gotDetected := detectImageMIME(tt.data)
+			gotMIME, gotDetected := allowedImageMIME(tt.data)
 			if gotDetected != tt.wantDetected {
-				t.Errorf("detectImageMIME() detected = %v, want %v", gotDetected, tt.wantDetected)
+				t.Errorf("allowedImageMIME() detected = %v, want %v", gotDetected, tt.wantDetected)
 			}
 			if gotMIME != tt.wantMIME {
-				t.Errorf("detectImageMIME() mimeType = %q, want %q", gotMIME, tt.wantMIME)
+				t.Errorf("allowedImageMIME() mimeType = %q, want %q", gotMIME, tt.wantMIME)
 			}
 		})
 	}
