@@ -47,12 +47,29 @@ bd close <id>
 make build       # compile binary
 make test        # run tests with race detector
 make all         # vet + lint + test + build
+make ci          # run full CI workflow locally via act (see below)
 ```
 
-Go is installed at `~/.local/bin/go/bin/go`. If `make` cannot find it, run commands directly:
+Go is installed at `~/.local/bin/go/bin/go`. The Makefile auto-detects it, so
+`make test` / `make build` work without any PATH changes.
+
+## Running CI locally
+
+`make ci` uses [act](https://github.com/nektos/act) to replay
+`.github/workflows/ci.yml` inside Docker containers that mirror the
+`ubuntu-latest` GitHub Actions environment.
+
+**First run:** `make ci` installs `act` into `.tools/` automatically (no sudo
+needed). Docker must be running.
+
 ```bash
-~/.local/bin/go/bin/go test -race -count=1 ./...
+make ci          # runs all CI jobs: lint, vet, staticcheck, govulncheck, test
 ```
+
+On the very first invocation act will ask which Docker image to use for
+`ubuntu-latest`. Choose **Medium** (`catthehacker/ubuntu:act-latest`) for a
+good balance of size (~500 MB) and tool availability. This choice is saved to
+`~/.actrc` so you won't be asked again.
 
 ## Beads sync
 
