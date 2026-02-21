@@ -1,10 +1,12 @@
 # Copy this to .envrc and fill in your values.
 # .envrc is gitignored and loaded automatically by direnv.
 #
-# To use the system keyring for secrets (recommended):
-#   secret-tool store --label="kitchinv Claude API key" service kitchinv key CLAUDE_API_KEY
-#
-# Then reference it here as shown below.
+# Secrets are stored using `pass` (GPG-backed secret manager).
+# One-time setup:
+#   sudo apt-get install pass
+#   gpg --gen-key
+#   pass init <your-gpg-email>
+#   pass insert kitchinv/claude-api-key
 
 export LISTEN_ADDR=:8080
 export DB_PATH=dev.db
@@ -18,4 +20,4 @@ export OLLAMA_MODEL=moondream
 # --- Claude (uncomment to switch) ---
 # export VISION_BACKEND=claude
 # export CLAUDE_MODEL=claude-haiku-4-5-20251001
-# export CLAUDE_API_KEY=$(secret-tool lookup service kitchinv key CLAUDE_API_KEY)
+# export CLAUDE_API_KEY=$(pass kitchinv/claude-api-key)

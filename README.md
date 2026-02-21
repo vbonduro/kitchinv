@@ -128,15 +128,17 @@ direnv allow
 ```
 `.envrc` is gitignored — edit it with your local values. It is loaded automatically whenever you `cd` into the repo or any worktree.
 
-**3. Store secrets in the system keyring** (recommended over plaintext):
+**3. Store secrets with `pass`** (recommended — GPG-encrypted, works in any terminal):
 ```bash
-# Install secret-tool (Linux):
-sudo apt-get install libsecret-tools
+# Install pass and create a GPG key (one-time):
+sudo apt-get install pass
+gpg --gen-key
+pass init <your-gpg-email>
 
-# Store your Anthropic API key once:
-secret-tool store --label="kitchinv Claude API key" service kitchinv key CLAUDE_API_KEY
+# Store your Anthropic API key:
+pass insert kitchinv/claude-api-key
 ```
-The `.envrc.example` shows how to reference it via `$(secret-tool lookup ...)`.
+The `.envrc.example` shows how to reference it via `$(pass kitchinv/claude-api-key)`.
 
 **4. Secret scanning pre-commit hook** is installed at `.git/hooks/pre-commit` and runs gitleaks on every `git commit`. If a secret is detected the commit is blocked. To install it in a fresh clone:
 ```bash
