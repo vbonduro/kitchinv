@@ -8,6 +8,37 @@ import (
 
 const maxPhotoSize = 50 * 1024 * 1024 // 50 MB
 
+// allowedImageTypes is the set of MIME types accepted for uploaded photos.
+// net/http.DetectContentType handles JPEG, PNG, and GIF via magic-byte
+// sniffing. WebP is detected separately because the WHATWG sniff spec (and
+// therefore the stdlib) does not include a WebP signature.
+var allowedImageTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/gif":  true,
+}
+
+// isWebP reports whether data is a WebP image (RIFF container with "WEBP" at
+// offset 8).
+func isWebP(data []byte) bool {
+	return len(data) >= 12 &&
+		string(data[0:4]) == "RIFF" &&
+		string(data[8:12]) == "WEBP"
+}
+
+// allowedImageMIME returns the detected MIME type and true if the data is an
+// accepted image format, or ("", false) otherwise.
+func allowedImageMIME(data []byte) (string, bool) {
+	if isWebP(data) {
+		return "image/webp", true
+	}
+	mime := http.DetectContentType(data)
+	if allowedImageTypes[mime] {
+		return mime, true
+	}
+	return "", false
+}
+
 func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	areaID, err := parseID(r)
 	if err != nil {
@@ -20,7 +51,7 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("image")
+	file, _, err := r.FormFile("image")
 	if err != nil {
 		http.Error(w, "image file required", http.StatusBadRequest)
 		return
@@ -34,7 +65,13 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, items, err := s.service.UploadPhoto(r.Context(), areaID, imageData, header.Header.Get("Content-Type"))
+	mimeType, ok := allowedImageMIME(imageData)
+	if !ok {
+		http.Error(w, "unsupported image format", http.StatusBadRequest)
+		return
+	}
+
+	_, items, err := s.service.UploadPhoto(r.Context(), areaID, imageData, mimeType)
 	if err != nil {
 		http.Error(w, "failed to process photo", http.StatusInternalServerError)
 		log.Printf("upload photo error: %v", err)

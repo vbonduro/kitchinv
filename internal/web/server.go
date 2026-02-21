@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/service"
@@ -48,13 +49,38 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 }
 
+// securityHeaders adds defensive HTTP response headers to every response.
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Content-Security-Policy",
+			"default-src 'self'; "+
+				"script-src 'self' https://unpkg.com; "+
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
+				"font-src https://fonts.gstatic.com; "+
+				"img-src 'self' data:; "+
+				"connect-src 'self'")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	securityHeaders(s.mux).ServeHTTP(w, r)
 }
 
 func (s *Server) ListenAndServe(addr string) error {
 	log.Printf("starting server on %s", addr)
-	return http.ListenAndServe(addr, s)
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      s,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 120 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	return srv.ListenAndServe()
 }
 
 // renderPage parses and executes a full-page template set.

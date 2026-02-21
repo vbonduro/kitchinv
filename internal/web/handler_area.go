@@ -25,10 +25,16 @@ func (s *Server) handleListAreas(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+const maxAreaNameLen = 200
+
 func (s *Server) handleCreateArea(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	if name == "" {
 		http.Error(w, "area name required", http.StatusBadRequest)
+		return
+	}
+	if len(name) > maxAreaNameLen {
+		http.Error(w, "area name too long", http.StatusBadRequest)
 		return
 	}
 
