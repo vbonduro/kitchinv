@@ -16,12 +16,25 @@ import (
 
 // stubVision is a minimal VisionAnalyzer for tests.
 type stubVision struct {
-	result *vision.AnalysisResult
-	err    error
+	result    *vision.AnalysisResult
+	err       error
+	streamErr error // error returned from AnalyzeStream call itself
 }
 
 func (s *stubVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
 	return s.result, s.err
+}
+
+func (s *stubVision) AnalyzeStream(_ context.Context, _ io.Reader, _ string) (<-chan vision.StreamEvent, error) {
+	if s.streamErr != nil {
+		return nil, s.streamErr
+	}
+	ch := make(chan vision.StreamEvent, len(s.result.Items)+1)
+	for i := range s.result.Items {
+		ch <- vision.StreamEvent{Item: &s.result.Items[i]}
+	}
+	close(ch)
+	return ch, s.err
 }
 
 // stubPhotoStore is a minimal in-memory photostore.PhotoStore for tests.
@@ -230,6 +243,71 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	assert.Error(t, err)
+}
+
+func TestAreaServiceUploadPhotoStream_StreamsItems(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	visionResult := &vision.AnalysisResult{
+		Items: []vision.DetectedItem{
+			{Name: "Milk", Quantity: "1 liter", Notes: "opened"},
+			{Name: "Butter", Quantity: "250 g", Notes: ""},
+		},
+	}
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		&stubVision{result: visionResult},
+		newStubPhotoStore(),
+	)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	photo, ch, err := svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	assert.NotNil(t, photo)
+
+	var names []string
+	for ev := range ch {
+		require.NoError(t, ev.Err)
+		names = append(names, ev.Item.Name)
+	}
+	assert.Equal(t, []string{"Milk", "Butter"}, names)
+}
+
+func TestAreaServiceUploadPhotoStream_AreaNotFound(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+
+	_, _, err := svc.UploadPhotoStream(context.Background(), 99999, []byte{0xFF, 0xD8}, "image/jpeg")
+	assert.Error(t, err)
+}
+
+func TestAreaServiceUploadPhotoStream_VisionStreamError(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		&stubVision{result: &vision.AnalysisResult{}, streamErr: errors.New("stream unavailable")},
+		newStubPhotoStore(),
+	)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	_, _, err = svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
 	assert.Error(t, err)
 }
 
