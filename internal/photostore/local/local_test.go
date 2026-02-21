@@ -26,7 +26,7 @@ func TestLocalPhotoStoreSaveAndGet(t *testing.T) {
 	// Get
 	reader, mimeType, err := store.Get(ctx, key)
 	require.NoError(t, err)
-	defer reader.Close()
+	t.Cleanup(func() { _ = reader.Close() })
 
 	assert.Equal(t, "image/jpeg", mimeType)
 

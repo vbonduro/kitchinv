@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
 )
@@ -55,7 +56,11 @@ func (s *AreaStore) List(ctx context.Context) ([]*domain.Area, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list areas: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("failed to close rows: %v", err)
+		}
+	}()
 
 	var areas []*domain.Area
 	for rows.Next() {

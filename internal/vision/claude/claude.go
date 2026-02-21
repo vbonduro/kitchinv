@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/vbonduro/kitchinv/internal/vision"
@@ -103,7 +104,11 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to call claude: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close claude response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		errBody, _ := io.ReadAll(resp.Body)

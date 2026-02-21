@@ -25,7 +25,11 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "image file required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close upload file: %v", err)
+		}
+	}()
 
 	imageData, err := io.ReadAll(file)
 	if err != nil {
@@ -69,7 +73,11 @@ func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	defer reader.Close()
+	defer func() {
+		if err := reader.Close(); err != nil {
+			log.Printf("failed to close photo reader: %v", err)
+		}
+	}()
 
 	w.Header().Set("Content-Type", mimeType)
 	if _, err := io.Copy(w, reader); err != nil {

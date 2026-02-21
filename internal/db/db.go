@@ -28,7 +28,9 @@ func Open(dbPath string) (*sql.DB, error) {
 
 	// Run migrations
 	if err := runMigrations(db); err != nil {
-		db.Close()
+		if cerr := db.Close(); cerr != nil {
+			return nil, fmt.Errorf("failed to run migrations: %w (also failed to close db: %v)", err, cerr)
+		}
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
@@ -74,7 +76,9 @@ func runMigrations(db *sql.DB) error {
 		}
 
 		version := 0
-		fmt.Sscanf(parts[0], "%d", &version)
+		if _, err := fmt.Sscanf(parts[0], "%d", &version); err != nil {
+			continue
+		}
 
 		isUp := strings.HasSuffix(name, ".up.sql")
 		if !isUp && !strings.HasSuffix(name, ".down.sql") {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/vbonduro/kitchinv/internal/vision"
@@ -60,7 +61,11 @@ func (a *OllamaAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to call ollama: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close ollama response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ollama returned status %d", resp.StatusCode)
