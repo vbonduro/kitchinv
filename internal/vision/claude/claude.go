@@ -13,7 +13,7 @@ import (
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
 
-const apiURL = "https://api.anthropic.com/v1/messages"
+const defaultAPIURL = "https://api.anthropic.com/v1/messages"
 
 // request types mirror the Anthropic Messages API structure.
 type request struct {
@@ -47,16 +47,18 @@ type response struct {
 }
 
 type ClaudeAnalyzer struct {
-	apiKey string
-	model  string
-	client *http.Client
+	apiKey  string
+	model   string
+	client  *http.Client
+	baseURL string
 }
 
 func NewClaudeAnalyzer(apiKey, model string) *ClaudeAnalyzer {
 	return &ClaudeAnalyzer{
-		apiKey: apiKey,
-		model:  model,
-		client: &http.Client{},
+		apiKey:  apiKey,
+		model:   model,
+		client:  &http.Client{},
+		baseURL: defaultAPIURL,
 	}
 }
 
@@ -92,7 +94,7 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
