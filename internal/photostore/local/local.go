@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,16 +32,16 @@ func (s *LocalPhotoStore) Save(ctx context.Context, prefix, mimeType string, r i
 	}
 	if _, err := io.Copy(f, r); err != nil {
 		if cerr := f.Close(); cerr != nil {
-			log.Printf("failed to close file after write error: %v", cerr)
+			slog.Error("failed to close file after write error", "error", cerr)
 		}
 		if rerr := os.Remove(filePath); rerr != nil {
-			log.Printf("failed to remove file after write error: %v", rerr)
+			slog.Error("failed to remove file after write error", "error", rerr)
 		}
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 	if err := f.Close(); err != nil {
 		if rerr := os.Remove(filePath); rerr != nil {
-			log.Printf("failed to remove file after close error: %v", rerr)
+			slog.Error("failed to remove file after close error", "error", rerr)
 		}
 		return "", fmt.Errorf("failed to close file: %w", err)
 	}

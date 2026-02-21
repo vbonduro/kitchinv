@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -65,7 +65,7 @@ func (a *OllamaAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("failed to close ollama response body: %v", err)
+			slog.Error("failed to close ollama response body", "error", err)
 		}
 	}()
 
@@ -135,7 +135,7 @@ func (a *OllamaAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 		defer close(ch)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				log.Printf("failed to close ollama stream body: %v", err)
+				slog.Error("failed to close ollama stream body", "error", err)
 			}
 		}()
 

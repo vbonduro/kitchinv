@@ -12,6 +12,8 @@ type Config struct {
 	ClaudeModel   string
 	PhotoBackend  string
 	PhotoPath     string
+	LogLevel      string
+	LogFile       string
 }
 
 func Load() *Config {
@@ -25,6 +27,8 @@ func Load() *Config {
 		ClaudeModel:   getEnv("CLAUDE_MODEL", "claude-opus-4-6"),
 		PhotoBackend:  getEnv("PHOTO_BACKEND", "local"),
 		PhotoPath:     getEnv("PHOTO_LOCAL_PATH", "/data/photos"),
+		LogLevel:      getEnv("LOG_LEVEL", "info"),
+		LogFile:       getEnv("LOG_FILE", ""),
 	}
 }
 

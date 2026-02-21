@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,6 +82,7 @@ func newTestService(t *testing.T) (*AreaService, func()) {
 		store.NewItemStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 
 	return svc, func() { _ = d.Close() }
@@ -145,6 +147,7 @@ func TestAreaServiceUploadPhoto_StoresItemsFromVision(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -173,7 +176,7 @@ func TestAreaServiceUploadPhoto_ReplacesExistingItems(t *testing.T) {
 	firstVision := &stubVision{result: &vision.AnalysisResult{
 		Items: []vision.DetectedItem{{Name: "Old Item", Quantity: "1", Notes: ""}},
 	}}
-	svc := NewAreaService(areaStore, photoStore, itemStore, firstVision, photoStg)
+	svc := NewAreaService(areaStore, photoStore, itemStore, firstVision, photoStg, slog.Default())
 
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
@@ -211,6 +214,7 @@ func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{err: errors.New("vision unavailable")},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -236,6 +240,7 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		photoStg,
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -264,6 +269,7 @@ func TestAreaServiceUploadPhotoStream_StreamsItems(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -301,6 +307,7 @@ func TestAreaServiceUploadPhotoStream_VisionStreamError(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: &vision.AnalysisResult{}, streamErr: errors.New("stream unavailable")},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -330,6 +337,7 @@ func TestAreaServiceSearchItems(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 
@@ -359,6 +367,7 @@ func TestAreaServiceListAreasWithItems(t *testing.T) {
 		store.NewItemStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
+		slog.Default(),
 	)
 	ctx := context.Background()
 

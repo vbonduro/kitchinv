@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -110,7 +110,7 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("failed to close claude response body: %v", err)
+			slog.Error("failed to close claude response body", "error", err)
 		}
 	}()
 
@@ -207,7 +207,7 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 		defer close(ch)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				log.Printf("failed to close claude stream body: %v", err)
+				slog.Error("failed to close claude stream body", "error", err)
 			}
 		}()
 

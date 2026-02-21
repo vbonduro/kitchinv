@@ -19,6 +19,11 @@ services:
       - ollama
     networks:
       - kitchinv
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   ollama:
     image: ollama/ollama:latest

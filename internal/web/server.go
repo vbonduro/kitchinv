@@ -3,7 +3,7 @@ package web
 import (
 	"embed"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -18,14 +18,16 @@ type Server struct {
 	photoStore photostore.PhotoStore
 	mux        *http.ServeMux
 	tmplFuncs  template.FuncMap
+	logger     *slog.Logger
 }
 
-func NewServer(svc *service.AreaService, tmpl embed.FS, ps photostore.PhotoStore) *Server {
+func NewServer(svc *service.AreaService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger) *Server {
 	s := &Server{
 		service:    svc,
 		templates:  tmpl,
 		photoStore: ps,
 		mux:        http.NewServeMux(),
+		logger:     logger,
 		tmplFuncs: template.FuncMap{
 			"areaIcon": areaIcon,
 			"inc":      func(i int) int { return i + 1 },
@@ -68,12 +70,37 @@ func securityHeaders(next http.Handler) http.Handler {
 	})
 }
 
+// statusRecorder wraps http.ResponseWriter to capture the written status code.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func requestLogger(logger *slog.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		logger.Info("request",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", rec.status,
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
+	})
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	securityHeaders(s.mux).ServeHTTP(w, r)
+	requestLogger(s.logger, securityHeaders(s.mux)).ServeHTTP(w, r)
 }
 
 func (s *Server) ListenAndServe(addr string) error {
-	log.Printf("starting server on %s", addr)
+	s.logger.Info("starting server", "addr", addr)
 	srv := &http.Server{
 		Addr:         addr,
 		Handler:      s,

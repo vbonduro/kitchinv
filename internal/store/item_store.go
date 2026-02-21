@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
@@ -60,7 +60,7 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			log.Printf("failed to close rows: %v", err)
+			slog.Error("failed to close rows", "error", err)
 		}
 	}()
 
@@ -94,7 +94,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			log.Printf("failed to close rows: %v", err)
+			slog.Error("failed to close rows", "error", err)
 		}
 	}()
 

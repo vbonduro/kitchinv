@@ -1,7 +1,6 @@
 package web
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +12,7 @@ func (s *Server) handleListAreas(w http.ResponseWriter, r *http.Request) {
 	areas, err := s.service.ListAreasWithItems(r.Context())
 	if err != nil {
 		http.Error(w, "failed to list areas", http.StatusInternalServerError)
-		log.Printf("list areas error: %v", err)
+		s.logger.Error("list areas failed", "error", err)
 		return
 	}
 
@@ -21,7 +20,7 @@ func (s *Server) handleListAreas(w http.ResponseWriter, r *http.Request) {
 		map[string]any{"Areas": areas, "ActiveNav": "areas"},
 		"base.html", "pages/areas.html", "partials/area_card.html",
 	); err != nil {
-		log.Printf("render page error: %v", err)
+		s.logger.Error("render page failed", "error", err)
 	}
 }
 
@@ -41,13 +40,13 @@ func (s *Server) handleCreateArea(w http.ResponseWriter, r *http.Request) {
 	area, err := s.service.CreateArea(r.Context(), name)
 	if err != nil {
 		http.Error(w, "failed to create area", http.StatusInternalServerError)
-		log.Printf("create area error: %v", err)
+		s.logger.Error("create area failed", "error", err)
 		return
 	}
 
 	summary := &service.AreaSummary{Area: area}
 	if err := s.renderPartial(w, "partials/area_card.html", summary); err != nil {
-		log.Printf("render partial error: %v", err)
+		s.logger.Error("render partial failed", "error", err)
 	}
 }
 
@@ -61,7 +60,7 @@ func (s *Server) handleGetAreaDetail(w http.ResponseWriter, r *http.Request) {
 	area, items, photo, err := s.service.GetAreaWithItems(r.Context(), areaID)
 	if err != nil {
 		http.Error(w, "failed to get area", http.StatusInternalServerError)
-		log.Printf("get area error: %v", err)
+		s.logger.Error("get area failed", "area_id", areaID, "error", err)
 		return
 	}
 	if area == nil {
@@ -73,7 +72,7 @@ func (s *Server) handleGetAreaDetail(w http.ResponseWriter, r *http.Request) {
 		map[string]any{"Area": area, "Items": items, "Photo": photo, "ActiveNav": "areas"},
 		"base.html", "pages/area_detail.html", "partials/item_list.html",
 	); err != nil {
-		log.Printf("render page error: %v", err)
+		s.logger.Error("render page failed", "error", err)
 	}
 }
 
@@ -86,7 +85,7 @@ func (s *Server) handleDeleteArea(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.service.DeleteArea(r.Context(), areaID); err != nil {
 		http.Error(w, "failed to delete area", http.StatusInternalServerError)
-		log.Printf("delete area error: %v", err)
+		s.logger.Error("delete area failed", "area_id", areaID, "error", err)
 		return
 	}
 
