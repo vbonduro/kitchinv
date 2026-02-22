@@ -619,40 +619,52 @@
             margin-top: 0.15rem;
         }
 
-        /* ── Full item list in detail ──────────────────────── */
-        .item-list { list-style: none; }
-        .item-row {
-            display: grid;
-            grid-template-columns: 1.6rem 1fr;
-            align-items: baseline;
-            gap: 0.5rem;
-            padding: 0.65rem 0;
+        /* ── Item table in detail ──────────────────────────── */
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .item-table-th {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-align: left;
+            padding: 0 0.5rem 0.5rem;
             border-bottom: 1px solid var(--border);
         }
-        .item-row:last-child { border-bottom: none; }
-        .item-index {
+        .item-table-th.item-table-idx { text-align: right; padding-left: 0; width: 2rem; }
+        .item-table-td {
+            padding: 0.55rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .item-row:last-child .item-table-td { border-bottom: none; }
+        .item-table-idx {
             font-size: 0.58rem;
             color: var(--muted);
             text-align: right;
+            padding-left: 0;
+            white-space: nowrap;
         }
-        .item-body { min-width: 0; }
         .item-name {
             font-family: var(--font-display);
             font-size: 0.875rem;
             font-weight: 500;
             color: var(--ice);
         }
-        .item-meta {
-            font-size: 0.68rem;
-            color: var(--muted);
-            margin-top: 0.1rem;
-            display: flex;
-            gap: 0.6rem;
-            flex-wrap: wrap;
+        .item-qty {
+            color: var(--accent);
+            font-size: 0.75rem;
+            white-space: nowrap;
         }
-        .item-qty { color: var(--accent); }
-        .item-qty::after { content: ' /'; opacity: 0.4; margin-right: 0.1rem; }
-        .item-qty:last-child::after { content: ''; }
+        .item-notes {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
 
         /* ── Search ────────────────────────────────────────── */
         .search-input-wrap {

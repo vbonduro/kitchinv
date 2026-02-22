@@ -47,7 +47,8 @@ bd close <id>
 make build       # compile binary
 make test        # run tests with race detector
 make all         # vet + lint + test + build
-make ci          # run all CI checks locally (lint, vet, staticcheck, govulncheck, test)
+make ci          # run all CI checks locally (lint, vet, staticcheck, govulncheck, test, e2e)
+make e2e         # run E2E tests only
 ```
 
 Go is installed at `~/.local/bin/go/bin/go`. The Makefile auto-detects it, so
@@ -55,9 +56,14 @@ Go is installed at `~/.local/bin/go/bin/go`. The Makefile auto-detects it, so
 
 ## Running CI locally
 
-`make ci` runs all five checks that GitHub Actions runs, directly against your
-locally installed tools — no Docker required. See the README for tool
-installation instructions.
+`make ci` runs all checks that GitHub Actions runs, directly against your
+locally installed tools — no Docker required. This includes E2E tests via
+`make e2e`. See the README for tool installation instructions.
+
+Run E2E tests directly (faster, no npm install):
+```bash
+cd e2e && APP_PORT=9090 OLLAMA_PORT=19434 npx playwright test
+```
 
 ## Beads sync
 
