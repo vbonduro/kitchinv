@@ -97,6 +97,7 @@ The Claude model defaults to `claude-opus-4-6`. Override with `CLAUDE_MODEL=clau
 | Tool | Version | Install |
 |------|---------|---------|
 | Go | 1.26+ | [go.dev/dl](https://go.dev/dl/) — extract to `~/.local/bin/go` or anywhere on `$PATH` |
+| Node.js | 22+ | [nodejs.org](https://nodejs.org/) — required for E2E tests only |
 | golangci-lint | v2.10.1 | See below |
 | staticcheck | latest | `go install honnef.co/go/tools/cmd/staticcheck@latest` |
 | govulncheck | latest | `go install golang.org/x/vuln/cmd/govulncheck@latest` |
@@ -163,6 +164,12 @@ make ci
 
 # Vet + lint + test + build
 make all
+
+# Run E2E browser tests (headless, requires Node 22+)
+make e2e
+
+# Run E2E tests with a visible browser (useful for debugging)
+make e2e-headed
 ```
 
 For a live Ollama during development, you have two options:
