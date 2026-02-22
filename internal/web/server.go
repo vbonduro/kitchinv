@@ -49,6 +49,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("POST /areas/{id}/photos", s.handleUploadPhoto)
 	s.mux.HandleFunc("POST /areas/{id}/photos/stream", s.handleStreamPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/photo", s.handleGetPhoto)
+	s.mux.HandleFunc("GET /areas/{id}/items", s.handleGetAreaItems)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 }
 

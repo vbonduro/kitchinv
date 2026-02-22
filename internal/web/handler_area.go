@@ -93,6 +93,25 @@ func (s *Server) handleDeleteArea(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleGetAreaItems(w http.ResponseWriter, r *http.Request) {
+	areaID, err := parseID(r)
+	if err != nil {
+		http.Error(w, "invalid area id", http.StatusBadRequest)
+		return
+	}
+
+	_, items, _, err := s.service.GetAreaWithItems(r.Context(), areaID)
+	if err != nil {
+		http.Error(w, "failed to get items", http.StatusInternalServerError)
+		s.logger.Error("get area items failed", "area_id", areaID, "error", err)
+		return
+	}
+
+	if err := s.renderPartial(w, "partials/item_list.html", items); err != nil {
+		s.logger.Error("render partial failed", "error", err)
+	}
+}
+
 // parseID extracts the {id} path variable and returns it as int64.
 func parseID(r *http.Request) (int64, error) {
 	return strconv.ParseInt(r.PathValue("id"), 10, 64)

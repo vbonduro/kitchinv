@@ -524,6 +524,60 @@ func TestIntegration_AreaDetail_MidStreamNavigation(t *testing.T) {
 	}
 }
 
+// TestIntegration_GetAreaItems verifies that GET /areas/{id}/items returns the
+// item_list partial. This endpoint is used by the page-load polling fallback
+// when a user navigates back to an area mid-stream (kitchinv-5mw).
+func TestIntegration_GetAreaItems(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	vis := &recordingVision{
+		result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{
+				{Name: "Butter", Quantity: "1 pack", Notes: ""},
+			},
+		},
+	}
+	srv, cleanup := newTestServer(t, vis)
+	defer cleanup()
+
+	createArea(t, srv, "Fridge")
+
+	// No items yet — endpoint should return empty state.
+	resp, err := http.Get(srv.URL + "/areas/1/items")
+	if err != nil {
+		t.Fatalf("GET /areas/1/items: %v", err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, b)
+	}
+	if strings.Contains(string(b), "item-row") {
+		t.Errorf("expected no items before upload, got: %s", b)
+	}
+
+	// Upload so items are stored.
+	body, contentType := buildMultipartBody(t, minimalJPEG)
+	uploadResp, err := http.Post(srv.URL+"/areas/1/photos", contentType, body)
+	if err != nil {
+		t.Fatalf("POST /areas/1/photos: %v", err)
+	}
+	_ = uploadResp.Body.Close()
+
+	// Now the items endpoint should include the detected item.
+	resp, err = http.Get(srv.URL + "/areas/1/items")
+	if err != nil {
+		t.Fatalf("GET /areas/1/items: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	b, _ = io.ReadAll(resp.Body)
+	if !strings.Contains(string(b), "Butter") {
+		t.Errorf("regression(kitchinv-5mw): items endpoint did not return stored items:\n%s", b)
+	}
+}
+
 // TestIntegration_Search verifies that items stored after an upload are
 // findable via GET /search?q=<term>.
 func TestIntegration_Search(t *testing.T) {
