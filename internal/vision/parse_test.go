@@ -23,9 +23,11 @@ func TestParseLine(t *testing.T) {
 			expected: &DetectedItem{Name: "Eggs", Quantity: "12 count", Notes: ""},
 		},
 		{
-			name:     "name only",
+			// Lines without a pipe separator are indistinguishable from preamble;
+			// require at least one | for a line to be treated as an item.
+			name:     "name only without pipe",
 			line:     "Butter",
-			expected: &DetectedItem{Name: "Butter", Quantity: "", Notes: ""},
+			expected: nil,
 		},
 		{
 			name:     "empty line",

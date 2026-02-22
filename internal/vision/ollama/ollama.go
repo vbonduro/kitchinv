@@ -129,6 +129,8 @@ func (a *OllamaAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 		return nil, fmt.Errorf("ollama returned status %d", resp.StatusCode)
 	}
 
+	// Buffer of 16 prevents the goroutine from blocking between item emissions
+	// while the caller is processing; sized for a typical pantry photo (≈30 items).
 	ch := make(chan vision.StreamEvent, 16)
 
 	go func() {

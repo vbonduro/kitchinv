@@ -19,10 +19,10 @@ type VisionAnalyzer interface {
 // detected items incrementally as the model produces output.
 type StreamAnalyzer interface {
 	VisionAnalyzer
-	// AnalyzeStream sends DetectedItems on the returned channel as they are
-	// parsed from the model stream. The channel is closed when the stream ends
-	// or ctx is cancelled. A non-nil error is sent as a StreamError if the
-	// stream fails mid-way; callers should type-assert items to *StreamError.
+	// AnalyzeStream sends StreamEvents on the returned channel as the model
+	// produces output. The channel is closed when the stream ends or ctx is
+	// cancelled. If the stream fails mid-way, a StreamEvent with a non-nil Err
+	// field is sent before the channel is closed.
 	AnalyzeStream(ctx context.Context, r io.Reader, mimeType string) (<-chan StreamEvent, error)
 }
 

@@ -17,6 +17,9 @@ import (
 
 const defaultAPIURL = "https://api.anthropic.com/v1/messages"
 
+// anthropicVersion is the Anthropic Messages API version header value.
+const anthropicVersion = "2023-06-01"
+
 // request types mirror the Anthropic Messages API structure.
 type request struct {
 	Model     string    `json:"model"`
@@ -48,6 +51,12 @@ type response struct {
 	} `json:"content"`
 }
 
+// streamRequest extends request with stream:true for the streaming API.
+type streamRequest struct {
+	request
+	Stream bool `json:"stream"`
+}
+
 type ClaudeAnalyzer struct {
 	apiKey  string
 	model   string
@@ -64,6 +73,36 @@ func NewClaudeAnalyzer(apiKey, model string) *ClaudeAnalyzer {
 	}
 }
 
+// buildMessages constructs the Anthropic API message payload for a vision request.
+func buildMessages(imageData []byte, mimeType string) []message {
+	return []message{{
+		Role: "user",
+		Content: []block{
+			{
+				Type: "image",
+				Source: &source{
+					Type:      "base64",
+					MediaType: normaliseMIME(mimeType),
+					Data:      base64.StdEncoding.EncodeToString(imageData),
+				},
+			},
+			{Type: "text", Text: vision.AnalysisPrompt},
+		},
+	}}
+}
+
+// newHTTPRequest creates an authenticated POST request to the Claude API.
+func (a *ClaudeAnalyzer) newHTTPRequest(ctx context.Context, payload []byte) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", a.apiKey)
+	req.Header.Set("anthropic-version", anthropicVersion)
+	return req, nil
+}
+
 func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType string) (*vision.AnalysisResult, error) {
 	imageData, err := io.ReadAll(r)
 	if err != nil {
@@ -71,24 +110,11 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	}
 
 	body := request{
-		Model:     a.model,
+		Model: a.model,
+		// 1024 tokens is well above the expected response for a typical pantry photo
+		// (≈30 items × ~15 tokens each = ~450 tokens), with headroom for verbose models.
 		MaxTokens: 1024,
-		Messages: []message{
-			{
-				Role: "user",
-				Content: []block{
-					{
-						Type: "image",
-						Source: &source{
-							Type:      "base64",
-							MediaType: normaliseMIME(mimeType),
-							Data:      base64.StdEncoding.EncodeToString(imageData),
-						},
-					},
-					{Type: "text", Text: vision.AnalysisPrompt},
-				},
-			},
-		},
+		Messages:  buildMessages(imageData, mimeType),
 	}
 
 	payload, err := json.Marshal(body)
@@ -96,13 +122,10 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL, bytes.NewReader(payload))
+	req, err := a.newHTTPRequest(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", a.apiKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
 
 	resp, err := a.client.Do(req)
 	if err != nil {
@@ -138,12 +161,6 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 	}, nil
 }
 
-// streamRequest extends request with stream:true for the streaming API.
-type streamRequest struct {
-	request
-	Stream bool `json:"stream"`
-}
-
 // AnalyzeStream implements vision.StreamAnalyzer using the Anthropic streaming
 // Messages API. It sends stream:true and parses SSE events, emitting a
 // DetectedItem on the channel each time a complete "name | qty | notes" line
@@ -153,27 +170,13 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image: %w", err)
 	}
+
 	body := streamRequest{
 		Stream: true,
 		request: request{
 			Model:     a.model,
 			MaxTokens: 1024,
-			Messages: []message{
-				{
-					Role: "user",
-					Content: []block{
-						{
-							Type: "image",
-							Source: &source{
-								Type:      "base64",
-								MediaType: normaliseMIME(mimeType),
-								Data:      base64.StdEncoding.EncodeToString(imageData),
-							},
-						},
-						{Type: "text", Text: vision.AnalysisPrompt},
-					},
-				},
-			},
+			Messages:  buildMessages(imageData, mimeType),
 		},
 	}
 
@@ -182,13 +185,10 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL, bytes.NewReader(payload))
+	req, err := a.newHTTPRequest(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", a.apiKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
 
 	resp, err := a.client.Do(req)
 	if err != nil {
@@ -201,6 +201,8 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 		return nil, fmt.Errorf("claude returned status %d: %s", resp.StatusCode, errBody)
 	}
 
+	// Buffer of 16 prevents the goroutine from blocking between item emissions
+	// while the caller is processing; sized for a typical pantry photo (≈30 items).
 	ch := make(chan vision.StreamEvent, 16)
 
 	go func() {
@@ -275,7 +277,9 @@ func (a *ClaudeAnalyzer) AnalyzeStream(ctx context.Context, r io.Reader, mimeTyp
 }
 
 // normaliseMIME maps browser MIME types to the values the Anthropic API accepts.
-// Unknown types fall back to image/jpeg.
+// The Anthropic API accepts only jpeg, png, gif, and webp. Unknown types are
+// coerced to jpeg as the most universally supported lossy fallback. Callers
+// should validate MIME types before reaching this layer.
 func normaliseMIME(mimeType string) string {
 	switch mimeType {
 	case "image/png", "image/gif", "image/webp":

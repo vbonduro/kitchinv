@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
+	"os"
 
 	"github.com/vbonduro/kitchinv/internal/config"
 	"github.com/vbonduro/kitchinv/internal/db"
@@ -25,6 +27,7 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 	defer cleanup()
+	slog.SetDefault(logger)
 
 	database, err := db.Open(cfg.DBPath)
 	if err != nil {
@@ -41,7 +44,11 @@ func main() {
 	photoStore := store.NewPhotoStore(database)
 	itemStore := store.NewItemStore(database)
 
-	visionAnalyzer := newVisionAnalyzer(cfg, logger)
+	visionAnalyzer, err := newVisionAnalyzer(cfg, logger)
+	if err != nil {
+		logger.Error("vision backend misconfigured", "error", err)
+		os.Exit(1)
+	}
 
 	photoStg, err := local.NewLocalPhotoStore(cfg.PhotoPath)
 	if err != nil {
@@ -57,17 +64,16 @@ func main() {
 	}
 }
 
-func newVisionAnalyzer(cfg *config.Config, logger *slog.Logger) vision.VisionAnalyzer {
+func newVisionAnalyzer(cfg *config.Config, logger *slog.Logger) (vision.VisionAnalyzer, error) {
 	switch cfg.VisionBackend {
 	case "claude":
 		if cfg.ClaudeAPIKey == "" {
-			logger.Error("CLAUDE_API_KEY is required when VISION_BACKEND=claude")
-			return nil
+			return nil, fmt.Errorf("CLAUDE_API_KEY must be set when VISION_BACKEND=claude")
 		}
 		logger.Info("using Claude vision backend")
-		return claudevision.NewClaudeAnalyzer(cfg.ClaudeAPIKey, cfg.ClaudeModel)
+		return claudevision.NewClaudeAnalyzer(cfg.ClaudeAPIKey, cfg.ClaudeModel), nil
 	default:
 		logger.Info("using Ollama vision backend", "model", cfg.OllamaModel)
-		return ollamavision.NewOllamaAnalyzer(cfg.OllamaHost, cfg.OllamaModel)
+		return ollamavision.NewOllamaAnalyzer(cfg.OllamaHost, cfg.OllamaModel), nil
 	}
 }

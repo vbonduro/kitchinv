@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"embed"
 	"html/template"
 	"log/slog"
@@ -8,12 +9,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/service"
+	"github.com/vbonduro/kitchinv/internal/vision"
 )
 
+// kitchenService is the subset of service.AreaService that the web layer uses.
+// Depending on this interface rather than the concrete type decouples the web
+// layer from service implementation details and enables testing with fakes.
+type kitchenService interface {
+	CreateArea(ctx context.Context, name string) (*domain.Area, error)
+	ListAreas(ctx context.Context) ([]*domain.Area, error)
+	ListAreasWithItems(ctx context.Context) ([]*service.AreaSummary, error)
+	GetArea(ctx context.Context, areaID int64) (*domain.Area, error)
+	GetAreaWithItems(ctx context.Context, areaID int64) (*domain.Area, []*domain.Item, *domain.Photo, error)
+	DeleteArea(ctx context.Context, areaID int64) error
+	UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error)
+	UploadPhotoStream(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, <-chan vision.StreamEvent, error)
+	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
+}
+
 type Server struct {
-	service    *service.AreaService
+	service    kitchenService
 	templates  embed.FS
 	photoStore photostore.PhotoStore
 	mux        *http.ServeMux
@@ -21,7 +39,7 @@ type Server struct {
 	logger     *slog.Logger
 }
 
-func NewServer(svc *service.AreaService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger) *Server {
+func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger) *Server {
 	s := &Server{
 		service:    svc,
 		templates:  tmpl,

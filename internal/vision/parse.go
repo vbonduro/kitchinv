@@ -20,15 +20,17 @@ func ParseResponse(raw string) []DetectedItem {
 }
 
 // ParseLine parses a single "name | quantity | notes" line. Returns nil for
-// blank lines, header lines, and lines with no name.
+// blank lines and lines without a pipe separator (which are not item lines).
 func ParseLine(line string) *DetectedItem {
 	line = strings.TrimSpace(line)
 	if line == "" {
 		return nil
 	}
 
-	// Skip common headers or non-item lines
-	if strings.HasPrefix(line, "Here") || strings.HasPrefix(line, "I see") || strings.HasPrefix(line, "Based on") {
+	// Lines without a pipe separator are not item lines (e.g. model preamble).
+	// This structural check handles all such cases without needing an explicit
+	// list of prefix phrases to skip.
+	if !strings.Contains(line, "|") {
 		return nil
 	}
 

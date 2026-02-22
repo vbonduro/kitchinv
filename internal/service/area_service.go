@@ -8,23 +8,44 @@ import (
 
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
-	"github.com/vbonduro/kitchinv/internal/store"
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
 
+// areaRepository is the subset of store.AreaStore that AreaService requires.
+type areaRepository interface {
+	Create(ctx context.Context, name string) (*domain.Area, error)
+	GetByID(ctx context.Context, id int64) (*domain.Area, error)
+	List(ctx context.Context) ([]*domain.Area, error)
+	Delete(ctx context.Context, id int64) error
+}
+
+// photoRepository is the subset of store.PhotoStore that AreaService requires.
+type photoRepository interface {
+	Create(ctx context.Context, areaID int64, storageKey, mimeType string) (*domain.Photo, error)
+	GetLatestByAreaID(ctx context.Context, areaID int64) (*domain.Photo, error)
+}
+
+// itemRepository is the subset of store.ItemStore that AreaService requires.
+type itemRepository interface {
+	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes string) (*domain.Item, error)
+	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error)
+	DeleteByAreaID(ctx context.Context, areaID int64) error
+	Search(ctx context.Context, query string) ([]*domain.Item, error)
+}
+
 type AreaService struct {
-	areaStore  *store.AreaStore
-	photoStore *store.PhotoStore
-	itemStore  *store.ItemStore
+	areaStore  areaRepository
+	photoStore photoRepository
+	itemStore  itemRepository
 	visionAPI  vision.VisionAnalyzer
 	photoStg   photostore.PhotoStore
 	logger     *slog.Logger
 }
 
 func NewAreaService(
-	areaStore *store.AreaStore,
-	photoStore *store.PhotoStore,
-	itemStore *store.ItemStore,
+	areaStore areaRepository,
+	photoStore photoRepository,
+	itemStore itemRepository,
 	visionAPI vision.VisionAnalyzer,
 	photoStg photostore.PhotoStore,
 	logger *slog.Logger,

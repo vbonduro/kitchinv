@@ -30,6 +30,10 @@ func OpenForTesting() (*sql.DB, error) {
 }
 
 func Open(dbPath string) (*sql.DB, error) {
+	// cache=shared enables multiple connections to share the same in-memory page
+	// cache. mode=rwc creates the file if it does not exist. WAL mode allows
+	// concurrent reads alongside a single writer, which matters for a web server.
+	// foreign_keys=on enforces referential integrity, which SQLite disables by default.
 	dsn := fmt.Sprintf("file:%s?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on", dbPath)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -96,6 +100,8 @@ func runMigrations(db *sql.DB) error {
 			continue
 		}
 
+		// Only up migrations are applied; down migrations are embedded but not
+		// executed. Rollback is not currently supported.
 		isUp := strings.HasSuffix(name, ".up.sql")
 		if !isUp && !strings.HasSuffix(name, ".down.sql") {
 			continue
