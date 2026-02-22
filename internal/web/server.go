@@ -123,6 +123,7 @@ func (s *Server) renderPage(w http.ResponseWriter, data any, files ...string) er
 }
 
 // renderPartial parses and executes a single named partial template.
+// The file must contain exactly one {{define "name"}}...{{end}} block.
 func (s *Server) renderPartial(w http.ResponseWriter, file string, data any) error {
 	tmpl, err := template.New("").Funcs(s.tmplFuncs).ParseFS(s.templates, file)
 	if err != nil {
@@ -130,8 +131,20 @@ func (s *Server) renderPartial(w http.ResponseWriter, file string, data any) err
 		return err
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Execute the first (and only) named template in the file.
-	return tmpl.Templates()[0].Execute(w, data)
+	// ParseFS registers both the file-basename template and any {{define}} blocks.
+	// Find the {{define}} template: it is the one whose name is neither "" nor
+	// the file basename.
+	basename := file
+	if idx := strings.LastIndexByte(file, '/'); idx >= 0 {
+		basename = file[idx+1:]
+	}
+	for _, t := range tmpl.Templates() {
+		if n := t.Name(); n != "" && n != basename {
+			return t.Execute(w, data)
+		}
+	}
+	// Fallback: execute the file-basename template (no {{define}} blocks found).
+	return tmpl.ExecuteTemplate(w, basename, data)
 }
 
 // areaIcon returns an emoji based on keywords in the area name.
