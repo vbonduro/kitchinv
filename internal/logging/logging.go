@@ -7,9 +7,9 @@ import (
 )
 
 // New creates a *slog.Logger writing JSON to stderr and optionally to logFile.
-// It also sets the logger as the slog default so package-level slog calls work.
 // The returned cleanup func closes the log file if one was opened; callers must
-// defer it.
+// defer it. Callers that want package-level slog calls to use this logger should
+// call slog.SetDefault(logger) after construction.
 func New(level, logFile string) (*slog.Logger, func(), error) {
 	lvl := parseLevel(level)
 
@@ -28,7 +28,6 @@ func New(level, logFile string) (*slog.Logger, func(), error) {
 	w := io.MultiWriter(writers...)
 	handler := slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lvl})
 	logger := slog.New(handler)
-	slog.SetDefault(logger)
 	return logger, cleanup, nil
 }
 
