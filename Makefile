@@ -49,8 +49,8 @@ govulncheck:
 ## all: lint + vet + test + build
 all: lint vet test build
 
-## ci: run every check that GitHub Actions runs (lint, vet, staticcheck, govulncheck, test)
-ci: lint vet staticcheck govulncheck test
+## ci: run every check that GitHub Actions runs (lint, vet, staticcheck, govulncheck, test, e2e)
+ci: lint vet staticcheck govulncheck test e2e
 
 # ---------------------------------------------------------------------------
 # Docker helpers
