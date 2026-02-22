@@ -2,6 +2,7 @@
 
 > Never wonder what's in the freezer again.
 
+[![CI](https://github.com/vbonduro/kitchinv/actions/workflows/ci.yml/badge.svg)](https://github.com/vbonduro/kitchinv/actions/workflows/ci.yml)
 [![Go Report Card](https://img.shields.io/badge/go%20report-A+-brightgreen.svg?style=flat)](https://goreportcard.com/report/github.com/vbonduro/kitchinv)
 [![codecov](https://codecov.io/gh/vbonduro/kitchinv/branch/main/graph/badge.svg)](https://codecov.io/gh/vbonduro/kitchinv)
 
