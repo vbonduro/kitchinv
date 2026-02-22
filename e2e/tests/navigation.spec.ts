@@ -69,10 +69,13 @@ test.describe('Navigation', () => {
       page.click('#photo-input'),
     ]);
     await fc.setFiles(jpegFixture);
-    await page.click('#upload-btn');
 
-    // Wait for scanning indicator to confirm stream started.
-    await expect(page.locator('.analyse-scanning')).toBeVisible({ timeout: 5_000 });
+    // Wait for the stream response to begin before navigating. The server only
+    // sends a response after the photo is committed to the DB, so this guarantees
+    // the photo record exists when we arrive at /areas.
+    const streamResponsePromise = page.waitForResponse(/photos\/stream/, { timeout: 10_000 });
+    await page.click('#upload-btn');
+    await streamResponsePromise;
 
     // Navigate away — disconnects browser from SSE stream.
     await page.goto('/areas');
@@ -99,9 +102,13 @@ test.describe('Navigation', () => {
       page.click('#photo-input'),
     ]);
     await fc.setFiles(jpegFixture);
-    await page.click('#upload-btn');
 
-    await expect(page.locator('.analyse-scanning')).toBeVisible({ timeout: 5_000 });
+    // Wait for the stream response to begin before navigating. The server only
+    // sends a response after the photo is committed to the DB, so this guarantees
+    // the photo record exists when we arrive at /areas.
+    const streamResponsePromise = page.waitForResponse(/photos\/stream/, { timeout: 10_000 });
+    await page.click('#upload-btn');
+    await streamResponsePromise;
 
     // Navigate to /areas list while analysis is in progress.
     await page.goto('/areas');
