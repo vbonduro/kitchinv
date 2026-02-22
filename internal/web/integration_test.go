@@ -43,7 +43,10 @@ type recordingVision struct {
 }
 
 func (r *recordingVision) Analyze(_ context.Context, rd io.Reader, _ string) (*vision.AnalysisResult, error) {
-	data, _ := io.ReadAll(rd)
+	data, err := io.ReadAll(rd)
+	if err != nil {
+		return nil, fmt.Errorf("recordingVision: read image: %w", err)
+	}
 	r.mu.Lock()
 	r.lastBytes = data
 	r.mu.Unlock()
@@ -51,7 +54,10 @@ func (r *recordingVision) Analyze(_ context.Context, rd io.Reader, _ string) (*v
 }
 
 func (r *recordingVision) AnalyzeStream(_ context.Context, rd io.Reader, _ string) (<-chan vision.StreamEvent, error) {
-	data, _ := io.ReadAll(rd)
+	data, err := io.ReadAll(rd)
+	if err != nil {
+		return nil, fmt.Errorf("recordingVision: read image: %w", err)
+	}
 	r.mu.Lock()
 	r.lastBytes = data
 	r.mu.Unlock()
