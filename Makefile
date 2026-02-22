@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model
+.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed
 
 # ---------------------------------------------------------------------------
 # Tool discovery
@@ -63,3 +63,12 @@ docker-up:
 
 docker-pull-model:
 	docker compose exec ollama ollama pull moondream
+
+# ---------------------------------------------------------------------------
+# E2E tests
+# ---------------------------------------------------------------------------
+e2e:
+	cd e2e && npm install --prefer-offline && npx playwright install --with-deps chromium && npx playwright test
+
+e2e-headed:
+	cd e2e && npm install --prefer-offline && npx playwright test --headed
