@@ -140,7 +140,7 @@ function startStream(evt, areaID) {
     fileInput.disabled = true;
 
     // Clear items and show scanning indicator
-    itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div><ul class="item-list" id="stream-list"></ul>';
+    itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div><table class="item-table"><thead><tr><th class="item-table-th item-table-idx">#</th><th class="item-table-th">Name</th><th class="item-table-th">Qty</th><th class="item-table-th">Notes</th></tr></thead><tbody id="stream-list"></tbody></table>';
     const list = document.getElementById('stream-list');
     let itemIndex = 0;
 
@@ -193,20 +193,15 @@ function startStream(evt, areaID) {
     });
 
     function appendItem(item, idx) {
-        const li = document.createElement('li');
-        li.className = 'item-row item-row-entering';
+        const tr = document.createElement('tr');
+        tr.className = 'item-row item-row-entering';
         const idxStr = String(idx).padStart(2, '0');
-        let meta = '';
-        if (item.quantity || item.notes) {
-            meta = '<div class="item-meta">';
-            if (item.quantity) meta += '<span class="item-qty">' + esc(item.quantity) + '</span>';
-            if (item.notes)    meta += '<span>' + esc(item.notes) + '</span>';
-            meta += '</div>';
-        }
-        li.innerHTML =
-            '<span class="item-index">' + idxStr + '</span>' +
-            '<div class="item-body"><div class="item-name">' + esc(item.name) + '</div>' + meta + '</div>';
-        list.appendChild(li);
+        tr.innerHTML =
+            '<td class="item-table-td item-table-idx">' + idxStr + '</td>' +
+            '<td class="item-table-td item-name">' + esc(item.name) + '</td>' +
+            '<td class="item-table-td item-qty">' + esc(item.quantity || '') + '</td>' +
+            '<td class="item-table-td item-notes">' + esc(item.notes || '') + '</td>';
+        list.appendChild(tr);
     }
 
     function finishStream(error) {

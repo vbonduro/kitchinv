@@ -1,21 +1,25 @@
 {{define "item_list"}}
 {{if .}}
-    <ul class="item-list">
+    <table class="item-table">
+        <thead>
+            <tr>
+                <th class="item-table-th item-table-idx">#</th>
+                <th class="item-table-th">Name</th>
+                <th class="item-table-th">Qty</th>
+                <th class="item-table-th">Notes</th>
+            </tr>
+        </thead>
+        <tbody id="stream-list">
         {{range $i, $item := .}}
-        <li class="item-row">
-            <span class="item-index">{{printf "%02d" (inc $i)}}</span>
-            <div class="item-body">
-                <div class="item-name">{{$item.Name}}</div>
-                {{if or $item.Quantity $item.Notes}}
-                <div class="item-meta">
-                    {{if $item.Quantity}}<span class="item-qty">{{$item.Quantity}}</span>{{end}}
-                    {{if $item.Notes}}<span>{{$item.Notes}}</span>{{end}}
-                </div>
-                {{end}}
-            </div>
-        </li>
+        <tr class="item-row">
+            <td class="item-table-td item-table-idx">{{printf "%02d" (inc $i)}}</td>
+            <td class="item-table-td item-name">{{$item.Name}}</td>
+            <td class="item-table-td item-qty">{{$item.Quantity}}</td>
+            <td class="item-table-td item-notes">{{$item.Notes}}</td>
+        </tr>
         {{end}}
-    </ul>
+        </tbody>
+    </table>
 {{else}}
     <div class="empty-state">
         <div class="empty-state-icon">📋</div>
