@@ -25,11 +25,6 @@
         animation: spin 0.7s linear infinite;
         flex-shrink: 0;
     }
-    .file-label.disabled {
-        opacity: 0.4;
-        pointer-events: none;
-        cursor: default;
-    }
 </style>
 <main class="page">
     <a href="/areas" class="detail-back">
@@ -52,12 +47,8 @@
             </div>
             <form id="upload-form" enctype="multipart/form-data" class="detail-upload"
                   onsubmit="startStream(event, {{.Area.ID}})">
-                <label class="file-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-                    <span class="file-label-text" id="file-name-display">Choose photo</span>
-                    <input type="file" name="image" accept="image/*" capture="environment" required
-                           onchange="document.getElementById('file-name-display').textContent = this.files[0]?.name || 'Choose photo'">
-                </label>
+                <input type="file" id="photo-input" name="image" accept="image/*" required
+                       onchange="previewPhoto(this)">
                 <button type="submit" class="btn btn-primary btn-sm" id="upload-btn">
                     <span id="upload-btn-label">Analyse</span>
                     <span id="upload-btn-spinner" style="display:none;width:11px;height:11px;border:1.5px solid rgba(9,12,16,0.3);border-top-color:var(--void);border-radius:50%;animation:spin 0.7s linear infinite"></span>
@@ -89,6 +80,46 @@
 </main>
 
 <script>
+function previewPhoto(input) {
+    if (input.files[0]) {
+        const url = URL.createObjectURL(input.files[0]);
+        document.getElementById('photo-block').innerHTML =
+            '<img src="' + url + '" alt="Selected photo" style="width:100%;height:100%;object-fit:cover;display:block;">';
+    }
+}
+
+// On page load: if a photo exists but no items are shown, analysis may be
+// in progress. Poll /areas/{id}/items until items appear.
+(function() {
+    const hasPhoto = {{if .Photo}}true{{else}}false{{end}};
+    const hasItems = {{if .Items}}true{{else}}false{{end}};
+    if (!hasPhoto || hasItems) return;
+
+    const areaID = {{.Area.ID}};
+    const itemsEl = document.getElementById('items');
+    itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div>';
+
+    let attempts = 0;
+    const maxAttempts = 60; // ~2 min at 2 s intervals
+    function poll() {
+        if (attempts++ >= maxAttempts) {
+            itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No items detected</div></div>';
+            return;
+        }
+        fetch('/areas/' + areaID + '/items')
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                if (html.includes('item-row')) {
+                    itemsEl.innerHTML = html;
+                } else {
+                    setTimeout(poll, 2000);
+                }
+            })
+            .catch(function() { setTimeout(poll, 2000); });
+    }
+    setTimeout(poll, 2000);
+})();
+
 function startStream(evt, areaID) {
     evt.preventDefault();
 
@@ -97,24 +128,15 @@ function startStream(evt, areaID) {
     const btnLabel = document.getElementById('upload-btn-label');
     const btnSpinner = document.getElementById('upload-btn-spinner');
     const uploadBtn = document.getElementById('upload-btn');
-    const photoBlock = document.getElementById('photo-block');
-    const fileLabel = form.querySelector('.file-label');
-    const fileInput = form.querySelector('input[type="file"]');
+    const fileInput = document.getElementById('photo-input');
 
-    // Capture form data and preview BEFORE disabling inputs
+    // Capture form data BEFORE disabling inputs
     const formData = new FormData(form);
-
-    // Preview selected photo immediately
-    if (fileInput.files[0]) {
-        const url = URL.createObjectURL(fileInput.files[0]);
-        photoBlock.innerHTML = '<img src="' + url + '" alt="Uploaded photo" style="width:100%;height:100%;object-fit:cover;display:block;">';
-    }
 
     // Show uploading state — replace button label with spinner, disable file picker
     btnLabel.style.display = 'none';
     btnSpinner.style.display = 'inline-block';
     uploadBtn.disabled = true;
-    fileLabel.classList.add('disabled');
     fileInput.disabled = true;
 
     // Clear items and show scanning indicator
@@ -208,7 +230,6 @@ function startStream(evt, areaID) {
         btnLabel.style.display = '';
         btnSpinner.style.display = 'none';
         uploadBtn.disabled = false;
-        fileLabel.classList.remove('disabled');
         fileInput.disabled = false;
     }
 
