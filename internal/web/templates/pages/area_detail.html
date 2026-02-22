@@ -25,11 +25,6 @@
         animation: spin 0.7s linear infinite;
         flex-shrink: 0;
     }
-    .file-label.disabled {
-        opacity: 0.4;
-        pointer-events: none;
-        cursor: default;
-    }
 </style>
 <main class="page">
     <a href="/areas" class="detail-back">
@@ -52,12 +47,8 @@
             </div>
             <form id="upload-form" enctype="multipart/form-data" class="detail-upload"
                   onsubmit="startStream(event, {{.Area.ID}})">
-                <label class="file-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-                    <span class="file-label-text" id="file-name-display">Choose photo</span>
-                    <input type="file" name="image" accept="image/*" capture="environment" required
-                           onchange="previewPhoto(this)">
-                </label>
+                <input type="file" id="photo-input" name="image" accept="image/*" required
+                       onchange="previewPhoto(this)">
                 <button type="submit" class="btn btn-primary btn-sm" id="upload-btn">
                     <span id="upload-btn-label">Analyse</span>
                     <span id="upload-btn-spinner" style="display:none;width:11px;height:11px;border:1.5px solid rgba(9,12,16,0.3);border-top-color:var(--void);border-radius:50%;animation:spin 0.7s linear infinite"></span>
@@ -90,7 +81,6 @@
 
 <script>
 function previewPhoto(input) {
-    document.getElementById('file-name-display').textContent = input.files[0]?.name || 'Choose photo';
     if (input.files[0]) {
         const url = URL.createObjectURL(input.files[0]);
         document.getElementById('photo-block').innerHTML =
@@ -98,35 +88,28 @@ function previewPhoto(input) {
     }
 }
 
-// On page load: if sessionStorage says analysis was in-progress for this area,
-// show a scanning spinner and poll /areas/{id}/items until items appear.
+// On page load: if a photo exists but no items are shown, analysis may be
+// in progress. Poll /areas/{id}/items until items appear.
 (function() {
+    const hasPhoto = {{if .Photo}}true{{else}}false{{end}};
+    const hasItems = {{if .Items}}true{{else}}false{{end}};
+    if (!hasPhoto || hasItems) return;
+
     const areaID = {{.Area.ID}};
-    const key = 'analysing:' + areaID;
-    if (!sessionStorage.getItem(key)) return;
-
     const itemsEl = document.getElementById('items');
-    if (itemsEl.querySelector('.item-row')) {
-        // Items already present (analysis finished before we navigated back).
-        sessionStorage.removeItem(key);
-        return;
-    }
-
     itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div>';
 
     let attempts = 0;
-    const maxAttempts = 30; // ~60 s at 2 s intervals
+    const maxAttempts = 60; // ~2 min at 2 s intervals
     function poll() {
         if (attempts++ >= maxAttempts) {
-            sessionStorage.removeItem(key);
-            itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Upload a photo to extract items</div></div>';
+            itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No items detected</div></div>';
             return;
         }
         fetch('/areas/' + areaID + '/items')
             .then(function(r) { return r.text(); })
             .then(function(html) {
                 if (html.includes('item-row')) {
-                    sessionStorage.removeItem(key);
                     itemsEl.innerHTML = html;
                 } else {
                     setTimeout(poll, 2000);
@@ -145,8 +128,7 @@ function startStream(evt, areaID) {
     const btnLabel = document.getElementById('upload-btn-label');
     const btnSpinner = document.getElementById('upload-btn-spinner');
     const uploadBtn = document.getElementById('upload-btn');
-    const fileLabel = form.querySelector('.file-label');
-    const fileInput = form.querySelector('input[type="file"]');
+    const fileInput = document.getElementById('photo-input');
 
     // Capture form data BEFORE disabling inputs
     const formData = new FormData(form);
@@ -155,17 +137,12 @@ function startStream(evt, areaID) {
     btnLabel.style.display = 'none';
     btnSpinner.style.display = 'inline-block';
     uploadBtn.disabled = true;
-    fileLabel.classList.add('disabled');
     fileInput.disabled = true;
 
     // Clear items and show scanning indicator
     itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div><ul class="item-list" id="stream-list"></ul>';
     const list = document.getElementById('stream-list');
     let itemIndex = 0;
-
-    // Persist in-progress state so a mid-stream navigation can resume
-    const stateKey = 'analysing:' + areaID;
-    sessionStorage.setItem(stateKey, '1');
 
     let streamFinished = false;
 
@@ -236,8 +213,6 @@ function startStream(evt, areaID) {
         if (streamFinished) return;
         streamFinished = true;
 
-        sessionStorage.removeItem(stateKey);
-
         // Remove scanning indicator
         const scanning = itemsEl.querySelector('.analyse-scanning');
         if (scanning) scanning.remove();
@@ -255,7 +230,6 @@ function startStream(evt, areaID) {
         btnLabel.style.display = '';
         btnSpinner.style.display = 'none';
         uploadBtn.disabled = false;
-        fileLabel.classList.remove('disabled');
         fileInput.disabled = false;
     }
 

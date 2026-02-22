@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -120,7 +121,9 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, itemCh, err := s.service.UploadPhotoStream(r.Context(), areaID, imageData, mimeType)
+	// Use a detached context so that the analysis runs to completion even if
+	// the client navigates away and the request context is cancelled.
+	_, itemCh, err := s.service.UploadPhotoStream(context.WithoutCancel(r.Context()), areaID, imageData, mimeType)
 	if err != nil {
 		http.Error(w, "failed to process photo", http.StatusInternalServerError)
 		s.logger.Error("upload photo stream failed", "area_id", areaID, "error", err)

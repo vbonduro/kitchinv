@@ -37,6 +37,8 @@
                 {{if gt (len .Items) 5}}
                 <div class="area-preview-more">+{{sub (len .Items) 5}} more items</div>
                 {{end}}
+            {{else if .Photo}}
+                <span class="area-row-analysing">Analysing&hellip;</span>
             {{else}}
                 <span class="area-row-no-items">No items — upload a photo to analyse</span>
             {{end}}
