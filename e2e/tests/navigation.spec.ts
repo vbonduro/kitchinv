@@ -29,10 +29,20 @@ async function openArea(page: Page, name: string): Promise<string> {
   return page.url();
 }
 
-/** Enable slow mode on the mock Ollama server. */
-async function setSlowMode(apiContext: ReturnType<typeof request.newContext> extends Promise<infer T> ? T : never, slow: boolean) {
-  await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/${slow ? 'slow' : 'fast'}`);
+/** Poll until at least one stream is blocked at the gate (photo committed, no items yet). */
+async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const resp = await apiContext.get(`http://localhost:${OLLAMA_PORT}/control/gate/waiting`);
+    const { waiting } = await resp.json();
+    if (waiting >= 1) return;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  throw new Error('Timed out waiting for stream to reach gate');
 }
+
+// Gate-based tests mutate shared mock state — run this suite serially.
+test.describe.configure({ mode: 'serial' });
 
 test.describe('Navigation', () => {
   let jpegFixture: string;
@@ -51,8 +61,9 @@ test.describe('Navigation', () => {
   });
 
   test.afterEach(async () => {
-    // Reset slow mode after each test.
+    // Reset slow mode and open the gate in case a test left it closed.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
   });
 
   test('navigate away mid-stream then back: spinner shows, then items appear via polling', async ({ page }) => {
@@ -60,8 +71,8 @@ test.describe('Navigation', () => {
     await createArea(page, name);
     const areaUrl = await openArea(page, name);
 
-    // Enable slow mode before uploading.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/slow`);
+    // Close the gate so the stream blocks after the photo is committed to DB.
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
 
     // Start upload.
     const [fc] = await Promise.all([
@@ -69,23 +80,21 @@ test.describe('Navigation', () => {
       page.click('#photo-input'),
     ]);
     await fc.setFiles(jpegFixture);
-
-    // Wait for the stream response to begin before navigating. The server only
-    // sends a response after the photo is committed to the DB, so this guarantees
-    // the photo record exists when we arrive at /areas.
-    const streamResponsePromise = page.waitForResponse(/photos\/stream/, { timeout: 10_000 });
     await page.click('#upload-btn');
-    await streamResponsePromise;
 
-    // Navigate away — disconnects browser from SSE stream.
+    // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
+    await waitForGate(apiContext);
+
+    // Navigate away while the gate is still closed (stream mid-flight).
     await page.goto('/areas');
 
-    // Navigate back.
+    // Navigate back — gate still closed, so server renders spinner (hasPhoto && !hasItems).
     await page.goto(areaUrl);
 
-    // Server-rendered page: photo exists, no items yet → JS sets spinner and polls.
-    // The polling picks up items after server-side analysis completes.
-    // Slow mock: 3 items × 500ms = 1.5s + 2s initial poll delay = ~3.5s minimum.
+    // Open the gate — server-side goroutine resumes writing items to DB.
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
+
+    // JS polls /items every 2s and replaces the list when items arrive.
     await expect(page.locator('.item-row')).toHaveCount(3, { timeout: 20_000 });
   });
 
@@ -94,7 +103,8 @@ test.describe('Navigation', () => {
     await createArea(page, name);
     await openArea(page, name);
 
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/slow`);
+    // Close the gate so the stream blocks after the photo is committed to DB.
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
 
     // Start upload.
     const [fc] = await Promise.all([
@@ -103,14 +113,12 @@ test.describe('Navigation', () => {
     ]);
     await fc.setFiles(jpegFixture);
 
-    // Wait for the stream response to begin before navigating. The server only
-    // sends a response after the photo is committed to the DB, so this guarantees
-    // the photo record exists when we arrive at /areas.
-    const streamResponsePromise = page.waitForResponse(/photos\/stream/, { timeout: 10_000 });
     await page.click('#upload-btn');
-    await streamResponsePromise;
 
-    // Navigate to /areas list while analysis is in progress.
+    // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
+    await waitForGate(apiContext);
+
+    // Gate is still closed: photo exists in DB, no items yet. Navigate to list.
     await page.goto('/areas');
 
     // Find the card for our area.
