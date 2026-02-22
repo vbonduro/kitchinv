@@ -3,7 +3,7 @@ package web
 import (
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -57,12 +57,12 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "image file required", http.StatusBadRequest)
 		return
 	}
-	defer closeWithLog(file, "upload file")
+	defer closeWithLog(file, "upload file", s.logger)
 
 	imageData, err := io.ReadAll(file)
 	if err != nil {
 		http.Error(w, "failed to read file", http.StatusInternalServerError)
-		log.Printf("read upload error: %v", err)
+		s.logger.Error("read upload failed", "area_id", areaID, "error", err)
 		return
 	}
 
@@ -75,12 +75,12 @@ func (s *Server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	_, items, err := s.service.UploadPhoto(r.Context(), areaID, imageData, mimeType)
 	if err != nil {
 		http.Error(w, "failed to process photo", http.StatusInternalServerError)
-		log.Printf("upload photo error: %v", err)
+		s.logger.Error("upload photo failed", "area_id", areaID, "error", err)
 		return
 	}
 
 	if err := s.renderPartial(w, "partials/item_list.html", items); err != nil {
-		log.Printf("render partial error: %v", err)
+		s.logger.Error("render partial failed", "error", err)
 	}
 }
 
@@ -105,12 +105,12 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "image file required", http.StatusBadRequest)
 		return
 	}
-	defer closeWithLog(file, "upload file")
+	defer closeWithLog(file, "upload file", s.logger)
 
 	imageData, err := io.ReadAll(file)
 	if err != nil {
 		http.Error(w, "failed to read file", http.StatusInternalServerError)
-		log.Printf("read upload error: %v", err)
+		s.logger.Error("read upload failed", "area_id", areaID, "error", err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 	_, itemCh, err := s.service.UploadPhotoStream(r.Context(), areaID, imageData, mimeType)
 	if err != nil {
 		http.Error(w, "failed to process photo", http.StatusInternalServerError)
-		log.Printf("upload photo stream error: %v", err)
+		s.logger.Error("upload photo stream failed", "area_id", areaID, "error", err)
 		return
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -138,7 +138,7 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if ev.Err != nil {
-			log.Printf("stream vision error: %v", ev.Err)
+			s.logger.Error("stream vision error", "area_id", areaID, "error", ev.Err)
 			return
 		}
 		if _, err := w.Write([]byte("data: ")); err != nil {
@@ -160,7 +160,7 @@ func (s *Server) handleStreamPhoto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := w.Write([]byte("event: done\ndata: {}\n\n")); err != nil {
-		log.Printf("write done event error: %v", err)
+		s.logger.Error("write done event failed", "area_id", areaID, "error", err)
 	}
 	if canFlush {
 		flusher.Flush()
@@ -177,7 +177,7 @@ func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request) {
 	_, _, photo, err := s.service.GetAreaWithItems(r.Context(), areaID)
 	if err != nil {
 		http.Error(w, "failed to get area", http.StatusInternalServerError)
-		log.Printf("get area for photo error: %v", err)
+		s.logger.Error("get area for photo failed", "area_id", areaID, "error", err)
 		return
 	}
 	if photo == nil {
@@ -190,17 +190,17 @@ func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	defer closeWithLog(reader, "photo reader")
+	defer closeWithLog(reader, "photo reader", s.logger)
 
 	w.Header().Set("Content-Type", mimeType)
 	if _, err := io.Copy(w, reader); err != nil {
-		log.Printf("write photo error: %v", err)
+		s.logger.Error("write photo failed", "area_id", areaID, "error", err)
 	}
 }
 
 // closeWithLog closes c and logs any error, using label to identify the resource.
-func closeWithLog(c io.Closer, label string) {
+func closeWithLog(c io.Closer, label string, logger *slog.Logger) {
 	if err := c.Close(); err != nil {
-		log.Printf("failed to close %s: %v", label, err)
+		logger.Error("failed to close resource", "label", label, "error", err)
 	}
 }

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -22,7 +21,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		items, err = s.service.SearchItems(r.Context(), query)
 		if err != nil {
 			http.Error(w, "search failed", http.StatusInternalServerError)
-			log.Printf("search error: %v", err)
+			s.logger.Error("search failed", "query", query, "error", err)
 			return
 		}
 	}
@@ -30,7 +29,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// HTMX partial update: return only results fragment.
 	if r.Header.Get("HX-Request") == "true" {
 		if err := s.renderPartial(w, "partials/search_results.html", items); err != nil {
-			log.Printf("render partial error: %v", err)
+			s.logger.Error("render partial failed", "error", err)
 		}
 		return
 	}
@@ -39,6 +38,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		map[string]any{"Results": items, "Query": query, "ActiveNav": "search"},
 		"base.html", "pages/search.html", "partials/search_results.html",
 	); err != nil {
-		log.Printf("render page error: %v", err)
+		s.logger.Error("render page failed", "error", err)
 	}
 }

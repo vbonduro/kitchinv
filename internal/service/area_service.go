@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
@@ -18,6 +18,7 @@ type AreaService struct {
 	itemStore  *store.ItemStore
 	visionAPI  vision.VisionAnalyzer
 	photoStg   photostore.PhotoStore
+	logger     *slog.Logger
 }
 
 func NewAreaService(
@@ -26,6 +27,7 @@ func NewAreaService(
 	itemStore *store.ItemStore,
 	visionAPI vision.VisionAnalyzer,
 	photoStg photostore.PhotoStore,
+	logger *slog.Logger,
 ) *AreaService {
 	return &AreaService{
 		areaStore:  areaStore,
@@ -33,6 +35,7 @@ func NewAreaService(
 		itemStore:  itemStore,
 		visionAPI:  visionAPI,
 		photoStg:   photoStg,
+		logger:     logger,
 	}
 }
 
@@ -82,6 +85,8 @@ func (s *AreaService) DeleteArea(ctx context.Context, areaID int64) error {
 // UploadPhoto analyzes the image, saves it to storage, replaces the area's items, and
 // returns the newly created photo record and detected items.
 func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error) {
+	s.logger.Info("upload photo started", "area_id", areaID, "mime_type", mimeType, "bytes", len(imageData))
+
 	area, err := s.areaStore.GetByID(ctx, areaID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get area: %w", err)
@@ -90,15 +95,18 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 		return nil, nil, fmt.Errorf("area not found")
 	}
 
+	s.logger.Info("vision analysis started", "area_id", areaID)
 	result, err := s.visionAPI.Analyze(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to analyze image: %w", err)
 	}
+	s.logger.Info("vision analysis complete", "area_id", areaID, "items_detected", len(result.Items))
 
 	storageKey, err := s.photoStg.Save(ctx, fmt.Sprintf("area_%d", areaID), mimeType, bytes.NewReader(imageData))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to save photo: %w", err)
 	}
+	s.logger.Debug("photo saved", "area_id", areaID, "storage_key", storageKey)
 
 	photo, err := s.photoStore.Create(ctx, areaID, storageKey, mimeType)
 	if err != nil {
@@ -114,12 +122,13 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	for _, detected := range result.Items {
 		item, err := s.itemStore.Create(ctx, areaID, &photo.ID, detected.Name, detected.Quantity, detected.Notes)
 		if err != nil {
-			log.Printf("failed to create item %q: %v", detected.Name, err)
+			s.logger.Error("failed to create item", "name", detected.Name, "error", err)
 			continue
 		}
 		items = append(items, item)
 	}
 
+	s.logger.Info("upload photo complete", "area_id", areaID, "items_stored", len(items))
 	return photo, items, nil
 }
 
@@ -127,6 +136,8 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 // items back via the returned channel as the vision model produces them.
 // The caller must drain and close the channel (it is closed by the goroutine).
 func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, <-chan vision.StreamEvent, error) {
+	s.logger.Info("upload photo stream started", "area_id", areaID, "mime_type", mimeType, "bytes", len(imageData))
+
 	area, err := s.areaStore.GetByID(ctx, areaID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get area: %w", err)
@@ -144,6 +155,7 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to save photo: %w", err)
 	}
+	s.logger.Debug("photo saved", "area_id", areaID, "storage_key", storageKey)
 
 	photo, err := s.photoStore.Create(ctx, areaID, storageKey, mimeType)
 	if err != nil {
@@ -155,6 +167,7 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 
+	s.logger.Info("vision stream analysis started", "area_id", areaID)
 	rawCh, err := sa.AnalyzeStream(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
 		return photo, nil, fmt.Errorf("failed to start vision stream: %w", err)
@@ -162,15 +175,19 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 
 	out := make(chan vision.StreamEvent, 16)
 	go func() {
-		defer close(out)
+		defer func() {
+			s.logger.Info("vision stream analysis complete", "area_id", areaID)
+			close(out)
+		}()
 		for ev := range rawCh {
 			if ev.Err != nil {
 				out <- ev
 				return
 			}
+			s.logger.Debug("stream item detected", "area_id", areaID, "name", ev.Item.Name)
 			item, err := s.itemStore.Create(ctx, areaID, &photo.ID, ev.Item.Name, ev.Item.Quantity, ev.Item.Notes)
 			if err != nil {
-				log.Printf("failed to create item %q: %v", ev.Item.Name, err)
+				s.logger.Error("failed to create item", "name", ev.Item.Name, "error", err)
 				continue
 			}
 			out <- vision.StreamEvent{Item: &vision.DetectedItem{
