@@ -62,3 +62,9 @@ installation instructions.
 ## Beads sync
 
 Run `bd sync` before every `git push` — the pre-push hook requires it.
+
+## Environment & secrets
+
+- Environment variables are managed via **direnv** + `.envrc` (gitignored). The `.envrc` is in the repo root and is visible from all worktrees.
+- Secrets (e.g. `CLAUDE_API_KEY`) are stored in **`pass`** (GPG-encrypted). The `.envrc` calls `$(pass kitchinv/claude-api-key)` to inject the key at shell load time.
+- **`pass` requires the GPG agent to be unlocked.** In a non-interactive shell the GPG agent may not be running and `pass` will return empty, causing the server to fail with `CLAUDE_API_KEY is required`. Fix: run `pass kitchinv/claude-api-key` in your own terminal first to unlock the GPG agent, then commands in that session will work.
