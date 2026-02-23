@@ -29,6 +29,17 @@ func OpenForTesting() (*sql.DB, error) {
 	return db, nil
 }
 
+// Reset deletes all application data from the database and resets autoincrement
+// counters. Intended for use in E2E test mode only; never call this in production.
+func Reset(database *sql.DB) error {
+	_, err := database.Exec(`DELETE FROM areas`)
+	if err != nil {
+		return err
+	}
+	_, err = database.Exec(`DELETE FROM sqlite_sequence WHERE name IN ('areas', 'photos', 'items')`)
+	return err
+}
+
 func Open(dbPath string) (*sql.DB, error) {
 	// cache=shared enables multiple connections to share the same in-memory page
 	// cache. mode=rwc creates the file if it does not exist. WAL mode allows

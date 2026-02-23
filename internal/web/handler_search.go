@@ -28,6 +28,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	// HTMX partial update: return only results fragment.
 	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("Cache-Control", "no-store")
 		if err := s.renderPartial(w, "partials/search_results.html", items); err != nil {
 			s.logger.Error("render partial failed", "error", err)
 		}

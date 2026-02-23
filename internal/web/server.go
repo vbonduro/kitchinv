@@ -2,13 +2,16 @@ package web
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/vbonduro/kitchinv/internal/db"
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/service"
@@ -37,6 +40,8 @@ type Server struct {
 	mux        *http.ServeMux
 	tmplFuncs  template.FuncMap
 	logger     *slog.Logger
+	testDB     *sql.DB // non-nil only in test mode
+	photoPath  string  // non-empty only in test mode
 }
 
 func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger) *Server {
@@ -69,6 +74,30 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /areas/{id}/photo", s.handleGetPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/items", s.handleGetAreaItems)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
+}
+
+// EnableTestMode registers the /control/reset endpoint backed by database and
+// the local photo directory. Must be called before the server starts listening.
+func (s *Server) EnableTestMode(database *sql.DB, photoPath string) {
+	s.testDB = database
+	s.photoPath = photoPath
+	s.mux.HandleFunc("POST /control/reset", s.handleTestReset)
+}
+
+// handleTestReset truncates all application data and clears photo files.
+// Only reachable when test mode is enabled.
+func (s *Server) handleTestReset(w http.ResponseWriter, r *http.Request) {
+	if err := db.Reset(s.testDB); err != nil {
+		http.Error(w, "reset failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if s.photoPath != "" {
+		entries, _ := os.ReadDir(s.photoPath)
+		for _, e := range entries {
+			_ = os.Remove(s.photoPath + "/" + e.Name())
+		}
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // securityHeaders adds defensive HTTP response headers to every response.

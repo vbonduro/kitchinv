@@ -1,4 +1,5 @@
-import { test, expect, Page, request } from '@playwright/test';
+import { test, expect } from '../fixtures';
+import { Page, request } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -52,6 +53,8 @@ test.describe('Navigation', () => {
     jpegFixture = createJpegFixture();
     apiContext = await playwright.request.newContext();
   });
+
+  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(async () => {
     // Ensure slow mode is reset.

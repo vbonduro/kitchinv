@@ -17,7 +17,7 @@
         </div>
     </form>
 
-    <div id="search-results">
+    <div id="search-results" hx-history="false">
         {{if .Results}}
             {{template "search_results" .Results}}
         {{else}}
