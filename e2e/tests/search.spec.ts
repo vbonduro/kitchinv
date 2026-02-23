@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '../fixtures';
+import { Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -19,8 +20,9 @@ async function createArea(page: Page, name: string) {
   await page.locator('.area-row-name a', { hasText: name }).waitFor({ timeout: 10_000 });
 }
 
-/** Create an area, upload a photo, and wait for all 3 items to appear. */
-async function createAreaWithItems(page: Page, name: string, jpegFixture: string) {
+/** Create an area, upload a photo, wait for items, then return the area path. */
+async function setupAreaWithItems(page: Page, jpegFixture: string): Promise<string> {
+  const name = `E2E SearchArea ${Date.now()}`;
   await createArea(page, name);
 
   // Navigate to area detail.
@@ -39,42 +41,39 @@ async function createAreaWithItems(page: Page, name: string, jpegFixture: string
   // Wait for items to stream in.
   await expect(page.locator('.item-row')).toHaveCount(3, { timeout: 15_000 });
 
-  // Return the current URL (area detail URL) for reference.
-  return page.url();
+  // Return the area path (e.g. /areas/1) for use in assertions.
+  return new URL(page.url()).pathname;
 }
 
 test.describe('Search', () => {
   let jpegFixture: string;
-  let areaName: string;
-  let areaUrl: string;
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(() => {
     jpegFixture = createJpegFixture();
-    // Create one area with items shared across all search tests.
-    areaName = `E2E SearchArea ${Date.now()}`;
-    const page = await browser.newPage();
-    areaUrl = await createAreaWithItems(page, areaName, jpegFixture);
-    await page.close();
   });
+
+  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(() => {
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
   test('search "Milk" → result card with Milk visible', async ({ page }) => {
+    await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'Milk');
-    // HTMX triggers on input; wait for results.
     await expect(page.locator('.result-card', { hasText: 'Milk' }).first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('search result has "View area" link', async ({ page }) => {
+    await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'Milk');
     await expect(page.locator('.result-card .result-area-link').first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('click "View area" → navigates to area detail page', async ({ page }) => {
+    await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'Milk');
 
@@ -90,32 +89,32 @@ test.describe('Search', () => {
   });
 
   test('search unknown term → empty state visible', async ({ page }) => {
+    await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'ZZZThisItemDoesNotExist999');
     await expect(page.locator('.empty-state')).toBeVisible({ timeout: 5_000 });
   });
 
   test('search lowercase "milk" finds "Milk" (case-insensitive)', async ({ page }) => {
+    await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'milk');
     await expect(page.locator('.result-card', { hasText: 'Milk' }).first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('search by area name finds items from that area', async ({ page }) => {
-    // Navigate directly to the search page and search for our unique area's items.
+    const areaPath = await setupAreaWithItems(page, jpegFixture);
     await page.goto('/search');
     await page.fill('input[type="search"]', 'Orange Juice');
     await expect(page.locator('.result-card', { hasText: 'Orange Juice' }).first()).toBeVisible({ timeout: 5_000 });
 
-    // Click "View area" and verify we land on an area that has the area name.
-    // Find the card that links to our specific area.
+    // Find the card whose "View area" link points to our specific area.
     const cards = page.locator('.result-card', { hasText: 'Orange Juice' });
     const count = await cards.count();
     let found = false;
     for (let i = 0; i < count; i++) {
-      const link = cards.nth(i).locator('.result-area-link');
-      const href = await link.getAttribute('href');
-      if (href && href === areaUrl.replace(/^https?:\/\/[^/]+/, '')) {
+      const href = await cards.nth(i).locator('.result-area-link').getAttribute('href');
+      if (href === areaPath) {
         found = true;
         break;
       }

@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '../fixtures';
+import { Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -35,6 +36,8 @@ test.describe('Upload & Analysis', () => {
   test.beforeAll(() => {
     jpegFixture = createJpegFixture();
   });
+
+  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(() => {
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }

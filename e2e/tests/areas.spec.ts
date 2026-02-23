@@ -1,4 +1,11 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '../fixtures';
+import { Page } from '@playwright/test';
+
+async function addAreaViaMenu(page: Page, name: string) {
+  await page.click('#menu-btn');
+  await page.fill('input[name="name"]', name);
+  await page.click('button[type="submit"]');
+}
 
 /**
  * Create an area with a unique name and return to the areas list.
@@ -7,19 +14,17 @@ import { test, expect, Page } from '@playwright/test';
  */
 async function createArea(page: Page, name: string) {
   await page.goto('/areas');
-  await page.click('#menu-btn');
-  await page.fill('input[name="name"]', name);
-  await page.click('button[type="submit"]');
+  await addAreaViaMenu(page, name);
   // Wait for the new card to appear.
   await page.locator('.area-row-name a', { hasText: name }).waitFor({ timeout: 10_000 });
 }
 
 test.describe('Areas', () => {
+  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
+
   test('empty state is visible on a fresh load', async ({ page }) => {
     await page.goto('/areas');
-    // The page may or may not have areas depending on test order.
-    // This just verifies the page loads without error and the list element exists.
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('#area-list .empty-state')).toBeVisible();
   });
 
   test('add area → appears in the list', async ({ page }) => {
@@ -62,5 +67,41 @@ test.describe('Areas', () => {
     // Both areas exist somewhere in the list.
     await expect(page.locator('.area-row-name a', { hasText: name1 })).toBeVisible();
     await expect(page.locator('.area-row-name a', { hasText: name2 })).toBeVisible();
+  });
+
+  test('Bug kitchinv-49a: empty state removed when first area added', async ({ page }) => {
+    await page.goto('/areas');
+
+    // Clean DB — empty state must be visible.
+    const emptyState = page.locator('#area-list .empty-state');
+    await expect(emptyState).toBeVisible();
+
+    // Add the first area without navigating away.
+    const name = `E2E FirstArea ${Date.now()}`;
+    await addAreaViaMenu(page, name);
+
+    // New card should appear dynamically.
+    await expect(page.locator('.area-row-name a', { hasText: name })).toBeVisible({ timeout: 5_000 });
+
+    // Empty state must be gone.
+    await expect(emptyState).toHaveCount(0);
+  });
+
+  test('Bug kitchinv-49a: add area from detail page navigates to /areas with new card', async ({ page }) => {
+    // Create an initial area so we can navigate to its detail page.
+    const initial = `E2E InitialArea ${Date.now()}`;
+    await createArea(page, initial);
+
+    // Navigate to the detail page (no #area-list exists here).
+    await page.locator('.area-row-name a', { hasText: initial }).click();
+    await page.waitForURL(/\/areas\/\d+/);
+
+    // Add a new area from the detail page via the banner menu.
+    const name = `E2E FromDetail ${Date.now()}`;
+    await addAreaViaMenu(page, name);
+
+    // Should end up on /areas with the new card visible.
+    await page.waitForURL(/\/areas$/, { timeout: 5_000 });
+    await expect(page.locator('.area-row-name a', { hasText: name })).toBeVisible({ timeout: 5_000 });
   });
 });

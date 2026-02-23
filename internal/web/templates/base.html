@@ -761,10 +761,7 @@
                     <div class="dropdown-section">
                         <div class="dropdown-label">Add area</div>
                         <div class="dropdown-add-form">
-                            <form hx-post="/areas"
-                                  hx-swap="beforeend"
-                                  hx-target=".area-list"
-                                  hx-on::after-request="this.reset(); closeMenu()">
+                            <form onsubmit="addArea(event)">
                                 <input type="text" name="name" placeholder="e.g. Upstairs Fridge" required autocomplete="off" autocorrect="off" style="margin-bottom:0.4rem">
                                 <button type="submit" class="btn btn-primary" style="width:100%">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -808,6 +805,34 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeMenu();
         });
+
+        function addArea(evt) {
+            evt.preventDefault();
+            var form = evt.target;
+            var name = form.querySelector('input[name="name"]').value.trim();
+            if (!name) return;
+            fetch('/areas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'name=' + encodeURIComponent(name),
+            }).then(function(resp) {
+                if (!resp.ok) return;
+                var list = document.getElementById('area-list');
+                if (!list) {
+                    // Not on the areas page — navigate there.
+                    window.location.href = '/areas';
+                    return;
+                }
+                resp.text().then(function(html) {
+                    // Remove empty state if present.
+                    var es = list.querySelector('.empty-state');
+                    if (es) es.remove();
+                    list.insertAdjacentHTML('beforeend', html);
+                    form.reset();
+                    closeMenu();
+                });
+            });
+        }
     </script>
 </body>
 </html>

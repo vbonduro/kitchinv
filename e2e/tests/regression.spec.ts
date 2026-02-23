@@ -1,4 +1,5 @@
-import { test, expect, devices, Page, request } from '@playwright/test';
+import { test, expect } from '../fixtures';
+import { devices, Page, request } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -52,6 +53,8 @@ test.describe('Regression', () => {
     apiContext = await playwright.request.newContext();
   });
 
+  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
+
   test.afterAll(async () => {
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
     await apiContext.dispose();
@@ -73,9 +76,9 @@ test.describe('Regression', () => {
     expect(attr).toBeNull();
   });
 
-  test('Bug 2: mobile file picker opens on tap (iPhone 14)', async ({ browser }) => {
+  test('Bug 2: mobile file picker opens on tap (iPhone 14)', async ({ browser, baseURL }) => {
     // Use iPhone 14 device for this specific test.
-    const context = await browser.newContext({ ...devices['iPhone 14'] });
+    const context = await browser.newContext({ ...devices['iPhone 14'], baseURL: baseURL! });
     const page = await context.newPage();
 
     try {

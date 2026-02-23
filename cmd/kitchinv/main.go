@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"log/slog"
@@ -29,7 +30,12 @@ func main() {
 	defer cleanup()
 	slog.SetDefault(logger)
 
-	database, err := db.Open(cfg.DBPath)
+	var database *sql.DB
+	if cfg.TestMode {
+		database, err = db.OpenForTesting()
+	} else {
+		database, err = db.Open(cfg.DBPath)
+	}
 	if err != nil {
 		logger.Error("failed to open database", "error", err)
 		return
@@ -58,6 +64,9 @@ func main() {
 
 	areaService := service.NewAreaService(areaStore, photoStore, itemStore, visionAnalyzer, photoStg, logger)
 	server := web.NewServer(areaService, templates.FS, photoStg, logger)
+	if cfg.TestMode {
+		server.EnableTestMode(database, cfg.PhotoPath)
+	}
 
 	if err := server.ListenAndServe(cfg.ListenAddr); err != nil {
 		logger.Error("server error", "error", err)

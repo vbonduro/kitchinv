@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const APP_PORT = process.env.APP_PORT || '9090';
 const CI = !!process.env.CI;
 
 export default defineConfig({
@@ -11,12 +10,12 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 10_000 },
   retries: 0,
-  workers: CI ? 2 : undefined,
+  workers: CI ? 2 : 2,
 
   reporter: CI ? 'github' : 'list',
 
   use: {
-    baseURL: `http://localhost:${APP_PORT}`,
+    // baseURL is provided per-worker by the appPort fixture in fixtures.ts.
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
@@ -31,6 +30,7 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
       testMatch: '**/regression.spec.ts',
+      dependencies: ['chromium'],
     },
   ],
 });
