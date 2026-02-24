@@ -14,20 +14,16 @@ function createJpegFixture(): string {
   return tmpFile;
 }
 
-async function createArea(page: Page, name: string) {
+async function createArea(page: Page, name: string): Promise<string> {
   await page.goto('/areas');
-  await page.click('#menu-btn');
-  await page.fill('input[name="name"]', name);
-  await page.click('button[type="submit"]');
-  await page.locator('.area-row-name a', { hasText: name }).waitFor({ timeout: 10_000 });
-}
-
-/** Navigate to an area's detail page and return its URL. */
-async function openArea(page: Page, name: string): Promise<string> {
-  await page.goto('/areas');
-  await page.locator('.area-row-name a', { hasText: name }).click();
-  await page.waitForURL(/\/areas\/\d+/);
-  return page.url();
+  await page.click('[data-testid="new-area-btn"]');
+  await page.locator('#new-area-dialog').waitFor({ state: 'visible' });
+  await page.fill('#new-area-dialog input[name="name"]', name);
+  await page.click('#new-area-dialog button[type="submit"]');
+  const card = page.locator('.area-card', { hasText: name });
+  await card.waitFor({ timeout: 10_000 });
+  const testid = await card.getAttribute('data-testid');
+  return testid!.replace('area-card-', '');
 }
 
 /** Poll until at least one stream is blocked at the gate (photo committed, no items yet). */
@@ -57,108 +53,96 @@ test.describe('Navigation', () => {
   test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(async () => {
-    // Ensure slow mode is reset.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
     await apiContext.dispose();
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
   test.afterEach(async () => {
-    // Reset slow mode and open the gate in case a test left it closed.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
   });
 
-  test('navigate away mid-stream then back: spinner shows, then items appear via polling', async ({ page }) => {
+  test('navigate away mid-stream then back: analyzing overlay shows, then items appear', async ({ page }) => {
     const name = `E2E NavMidStream ${Date.now()}`;
-    await createArea(page, name);
-    const areaUrl = await openArea(page, name);
+    const areaID = await createArea(page, name);
 
     // Close the gate so the stream blocks after the photo is committed to DB.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
 
-    // Start upload.
-    const [fc] = await Promise.all([
-      page.waitForEvent('filechooser'),
-      page.click('#photo-input'),
-    ]);
-    await fc.setFiles(jpegFixture);
-    await page.click('#upload-btn');
+    // Start upload via file input.
+    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+    await fileInput.setInputFiles(jpegFixture);
 
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
     await waitForGate(apiContext);
 
     // Navigate away while the gate is still closed (stream mid-flight).
+    await page.goto('about:blank');
+
+    // Navigate back — server renders card with photo but no items (analyzing state).
     await page.goto('/areas');
 
-    // Navigate back — gate still closed, so server renders spinner (hasPhoto && !hasItems).
-    await page.goto(areaUrl);
+    // The card should show the analyzing overlay.
+    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
 
     // Open the gate — server-side goroutine resumes writing items to DB.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
 
-    // JS polls /items every 2s and replaces the list when items arrive.
-    await expect(page.locator('.item-row')).toHaveCount(3, { timeout: 20_000 });
+    // Reload the page to see items.
+    // The analyzing overlay goes away and items render server-side.
+    await page.waitForTimeout(2_000);
+    await page.goto('/areas');
+
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 20_000 });
   });
 
-  test('areas list shows "Analysing…" card during analysis, not "No items"', async ({ page }) => {
-    const name = `E2E NavAnalysingCard ${Date.now()}`;
-    await createArea(page, name);
-    await openArea(page, name);
+  test('areas list shows analyzing overlay during analysis, not empty items text', async ({ page }) => {
+    const name = `E2E NavAnalysing ${Date.now()}`;
+    const areaID = await createArea(page, name);
 
     // Close the gate so the stream blocks after the photo is committed to DB.
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
 
     // Start upload.
-    const [fc] = await Promise.all([
-      page.waitForEvent('filechooser'),
-      page.click('#photo-input'),
-    ]);
-    await fc.setFiles(jpegFixture);
-
-    await page.click('#upload-btn');
+    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+    await fileInput.setInputFiles(jpegFixture);
 
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
     await waitForGate(apiContext);
 
-    // Gate is still closed: photo exists in DB, no items yet. Navigate to list.
+    // Reload the areas list — server should render the analyzing state.
     await page.goto('/areas');
 
-    // Find the card for our area.
-    const card = page.locator('.area-row', {
-      has: page.locator('.area-row-name a', { hasText: name }),
-    });
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Should show "Analysing…" text.
-    await expect(card.locator('.area-row-analysing')).toBeVisible({ timeout: 5_000 });
+    // Should show the analyzing indicator.
+    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
 
-    // Should NOT show "No items" text.
-    await expect(card.locator('.area-row-no-items')).not.toBeVisible();
+    // Should NOT show "no items" text.
+    await expect(card.locator('.no-items-text')).not.toBeVisible();
   });
 
   test('items persist after navigation (context.WithoutCancel)', async ({ page }) => {
     const name = `E2E NavPersist ${Date.now()}`;
-    await createArea(page, name);
-    const areaUrl = await openArea(page, name);
+    const areaID = await createArea(page, name);
 
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/slow`);
 
     // Start upload and immediately navigate away.
-    const [fc] = await Promise.all([
-      page.waitForEvent('filechooser'),
-      page.click('#photo-input'),
-    ]);
-    await fc.setFiles(jpegFixture);
-    await page.click('#upload-btn');
+    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+    await fileInput.setInputFiles(jpegFixture);
 
     // Navigate away right after submitting.
-    await page.goto('/areas');
+    await page.goto('about:blank');
 
-    // Wait long enough for slow mock to finish: 3 × 500ms = 1.5s → give 3s margin.
+    // Wait long enough for slow mock to finish: 3 x 500ms = 1.5s → give 3s margin.
     await page.waitForTimeout(3_000);
 
     // Navigate back — items should be in DB now.
-    await page.goto(areaUrl);
-    await expect(page.locator('.item-row')).toHaveCount(3, { timeout: 10_000 });
+    await page.goto('/areas');
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 10_000 });
   });
 });

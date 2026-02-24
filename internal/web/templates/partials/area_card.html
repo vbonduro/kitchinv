@@ -1,52 +1,119 @@
 {{define "area_card"}}
-<div class="area-row">
-    <!-- Photo side -->
-    <div class="area-row-photo">
-        {{if .Photo}}
-            <img src="/areas/{{.ID}}/photo" alt="Photo of {{.Name}}">
-        {{else}}
-            <div class="area-row-photo-empty">
-                <div class="icon">{{areaIcon .Name}}</div>
-                <div class="label">No photo</div>
-            </div>
-        {{end}}
+<div class="area-card" data-testid="area-card-{{.ID}}">
+    <!-- Card header -->
+    <div class="area-card-header">
+        <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="startRenameArea({{.ID}})">{{.Name}}</span>
+        <div class="area-card-actions">
+            <button class="btn btn-icon" onclick="startRenameArea({{.ID}})" aria-label="Rename area" title="Rename">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                </svg>
+            </button>
+            <button class="btn btn-icon btn-icon-danger" data-testid="delete-area-btn" onclick="deleteArea({{.ID}})" aria-label="Delete area" title="Delete">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
-    <!-- Content side -->
-    <div class="area-row-content">
-        <div class="area-row-header">
-            <div>
-                <div class="area-row-name"><a href="/areas/{{.ID}}">{{.Name}}</a></div>
-                <div class="area-row-meta">Added {{.CreatedAt.Format "02 Jan 2006"}}</div>
+    <!-- Photo section -->
+    {{if .Items}}
+        {{if .Photo}}
+        <div class="area-photo-section">
+            <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}">
+            <div class="area-photo-overlay" onclick="triggerUpload({{.ID}})">
+                <span class="area-photo-overlay-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    Replace photo
+                </span>
+            </div>
+            <button class="area-photo-remove" onclick="event.stopPropagation();removePhoto({{.ID}})" aria-label="Remove photo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+        {{end}}
+    {{else if .Photo}}
+        <!-- Photo exists but no items yet — analyzing -->
+        <div class="area-photo-section">
+            <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}">
+            <div class="area-analysing-overlay" data-testid="analyzing-indicator-{{.ID}}">
+                <div class="spinner"></div>
+                <span class="area-analysing-text">Analyzing your space...</span>
             </div>
         </div>
-
-        <div class="area-row-items">
-            {{if .Items}}
-                <ul class="area-preview-list">
-                    {{range $i, $item := .Items}}
-                        {{if lt $i 5}}
-                        <li class="area-preview-item">
-                            <span class="idx">{{printf "%02d" (inc $i)}}</span>
-                            <span class="name">{{$item.Name}}</span>
-                            {{if $item.Quantity}}<span class="qty">{{$item.Quantity}}</span>{{end}}
-                        </li>
-                        {{end}}
-                    {{end}}
-                </ul>
-                {{if gt (len .Items) 5}}
-                <div class="area-preview-more">+{{sub (len .Items) 5}} more items</div>
-                {{end}}
-            {{else if .Photo}}
-                <span class="area-row-analysing">Analysing&hellip;</span>
-            {{else}}
-                <span class="area-row-no-items">No items — upload a photo to analyse</span>
-            {{end}}
+    {{else}}
+        <!-- No photo — upload zone -->
+        <div class="upload-zone" data-testid="upload-zone-{{.ID}}" onclick="triggerUpload({{.ID}})">
+            <div class="upload-zone-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+            </div>
+            <div class="upload-zone-text">
+                <strong>Upload a photo</strong> or drag and drop
+            </div>
         </div>
+    {{end}}
 
-        <div class="area-row-actions">
-            <a href="/areas/{{.ID}}" class="btn btn-ghost btn-sm">Open</a>
+    <!-- Hidden file input (always present) -->
+    <input type="file" data-testid="photo-input-{{.ID}}" accept="image/*" style="display:none"
+           onchange="handleFileSelect({{.ID}}, this)">
+
+    <!-- Items section -->
+    <div class="items-section">
+        {{if .Items}}
+        <table class="item-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Qty</th>
+                    <th>Notes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody class="items-tbody">
+            {{range $i, $item := .Items}}
+                <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}}>
+                    <td class="item-name-cell" onclick="startEditItem({{$item.AreaID}}, {{$item.ID}})">{{$item.Name}}</td>
+                    <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
+                    <td class="item-notes-cell">{{$item.Notes}}</td>
+                    <td class="item-actions">
+                        <button class="btn btn-icon btn-icon-danger" onclick="deleteItem({{$item.AreaID}}, {{$item.ID}})" aria-label="Delete item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            {{end}}
+            </tbody>
+        </table>
+        {{if gt (len .Items) 10}}
+        <button class="items-toggle" onclick="toggleItems({{.ID}})">Show {{sub (len .Items) 10}} more</button>
+        {{end}}
+        {{else if not .Photo}}
+        <div class="no-items-text">Upload a photo to scan items, or add them manually</div>
+        {{end}}
+
+        <!-- Add item row -->
+        <div class="add-item-row">
+            <input type="text" class="add-item-name" placeholder="Add item..." onkeydown="addItem(event, {{.ID}})">
+            <input type="text" class="add-item-qty" placeholder="Qty" style="max-width:80px" onkeydown="addItem(event, {{.ID}})">
+            <button class="btn btn-ghost btn-sm" onclick="addItem({key:'Enter',preventDefault:function(){}}, {{.ID}})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"/><path d="M5 12h14"/>
+                </svg>
+            </button>
         </div>
     </div>
 </div>
+<script>setupDragDrop({{.ID}});</script>
 {{end}}

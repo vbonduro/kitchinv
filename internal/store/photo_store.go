@@ -65,6 +65,26 @@ func (s *PhotoStore) GetLatestByAreaID(ctx context.Context, areaID int64) (*doma
 	return photo, nil
 }
 
+func (s *PhotoStore) DeleteByArea(ctx context.Context, areaID int64) (*domain.Photo, error) {
+	// Get the latest photo first so we can return it for file cleanup.
+	photo, err := s.GetLatestByAreaID(ctx, areaID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get photo for area: %w", err)
+	}
+	if photo == nil {
+		return nil, nil
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		DELETE FROM photos WHERE area_id = ?
+	`, areaID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete photos for area: %w", err)
+	}
+
+	return photo, nil
+}
+
 func (s *PhotoStore) Delete(ctx context.Context, id int64) error {
 	result, err := s.db.ExecContext(ctx, `
 		DELETE FROM photos WHERE id = ?

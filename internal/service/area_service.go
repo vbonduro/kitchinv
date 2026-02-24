@@ -16,6 +16,7 @@ type areaRepository interface {
 	Create(ctx context.Context, name string) (*domain.Area, error)
 	GetByID(ctx context.Context, id int64) (*domain.Area, error)
 	List(ctx context.Context) ([]*domain.Area, error)
+	Update(ctx context.Context, id int64, name string) error
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -23,12 +24,16 @@ type areaRepository interface {
 type photoRepository interface {
 	Create(ctx context.Context, areaID int64, storageKey, mimeType string) (*domain.Photo, error)
 	GetLatestByAreaID(ctx context.Context, areaID int64) (*domain.Photo, error)
+	DeleteByArea(ctx context.Context, areaID int64) (*domain.Photo, error)
 }
 
 // itemRepository is the subset of store.ItemStore that AreaService requires.
 type itemRepository interface {
 	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes string) (*domain.Item, error)
+	GetByID(ctx context.Context, id int64) (*domain.Item, error)
 	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error)
+	Update(ctx context.Context, id int64, name, quantity, notes string) error
+	Delete(ctx context.Context, id int64) error
 	DeleteByAreaID(ctx context.Context, areaID int64) error
 	Search(ctx context.Context, query string) ([]*domain.Item, error)
 }
@@ -242,6 +247,48 @@ func (s *AreaService) GetAreaWithItems(ctx context.Context, areaID int64) (*doma
 	}
 
 	return area, items, photo, nil
+}
+
+func (s *AreaService) UpdateArea(ctx context.Context, areaID int64, name string) (*domain.Area, error) {
+	if err := s.areaStore.Update(ctx, areaID, name); err != nil {
+		return nil, fmt.Errorf("failed to update area: %w", err)
+	}
+	return s.areaStore.GetByID(ctx, areaID)
+}
+
+func (s *AreaService) DeletePhoto(ctx context.Context, areaID int64) error {
+	photo, err := s.photoStore.DeleteByArea(ctx, areaID)
+	if err != nil {
+		return fmt.Errorf("failed to delete photo record: %w", err)
+	}
+	if photo == nil {
+		return nil
+	}
+
+	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
+		return fmt.Errorf("failed to delete items: %w", err)
+	}
+
+	if err := s.photoStg.Delete(ctx, photo.StorageKey); err != nil {
+		s.logger.Error("failed to delete photo file", "storage_key", photo.StorageKey, "error", err)
+	}
+
+	return nil
+}
+
+func (s *AreaService) CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error) {
+	return s.itemStore.Create(ctx, areaID, nil, name, quantity, notes)
+}
+
+func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error) {
+	if err := s.itemStore.Update(ctx, itemID, name, quantity, notes); err != nil {
+		return nil, fmt.Errorf("failed to update item: %w", err)
+	}
+	return s.itemStore.GetByID(ctx, itemID)
+}
+
+func (s *AreaService) DeleteItem(ctx context.Context, itemID int64) error {
+	return s.itemStore.Delete(ctx, itemID)
 }
 
 func (s *AreaService) SearchItems(ctx context.Context, query string) ([]*domain.Item, error) {

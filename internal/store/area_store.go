@@ -78,6 +78,26 @@ func (s *AreaStore) List(ctx context.Context) ([]*domain.Area, error) {
 	return areas, nil
 }
 
+func (s *AreaStore) Update(ctx context.Context, id int64, name string) error {
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE areas SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, name, id)
+	if err != nil {
+		return fmt.Errorf("failed to update area: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("area not found")
+	}
+
+	return nil
+}
+
 func (s *AreaStore) Delete(ctx context.Context, id int64) error {
 	result, err := s.db.ExecContext(ctx, `
 		DELETE FROM areas WHERE id = ?

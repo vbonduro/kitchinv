@@ -114,6 +114,46 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	return items, nil
 }
 
+func (s *ItemStore) Update(ctx context.Context, id int64, name, quantity, notes string) error {
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE items SET name = ?, quantity = ?, notes = ? WHERE id = ?
+	`, name, quantity, notes, id)
+	if err != nil {
+		return fmt.Errorf("failed to update item: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("item not found")
+	}
+
+	return nil
+}
+
+func (s *ItemStore) Delete(ctx context.Context, id int64) error {
+	result, err := s.db.ExecContext(ctx, `
+		DELETE FROM items WHERE id = ?
+	`, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete item: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("item not found")
+	}
+
+	return nil
+}
+
 func (s *ItemStore) DeleteByAreaID(ctx context.Context, areaID int64) error {
 	_, err := s.db.ExecContext(ctx, `
 		DELETE FROM items WHERE area_id = ?

@@ -4,34 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>kitchinv</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
             integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
             crossorigin="anonymous"></script>
     <style>
         /* ── Design tokens ─────────────────────────────────── */
         :root {
-            --void:       #090c10;
-            --deep:       #0d1117;
-            --panel:      #131920;
-            --surface:    #1a2230;
-            --border:     rgba(99,179,237,0.12);
-            --border-hi:  rgba(99,179,237,0.28);
-            --ice:        #e8f4fd;
-            --ice-dim:    #a8c8e8;
-            --ice-ghost:  rgba(232,244,253,0.45);
-            --accent:     #4fc3f7;
-            --accent-dim: #0288d1;
-            --danger:     #ef5350;
-            --danger-dim: rgba(239,83,80,0.15);
-            --muted:      rgba(232,244,253,0.28);
-            --banner-h:   56px;
-            --r:          4px;
-            --font-display: 'Syne', system-ui, sans-serif;
-            --font-mono:    'Space Mono', 'Courier New', monospace;
-            --content-w:  860px;
+            --bg: #f8fafc;
+            --bg-gradient-from: #eff6ff;
+            --bg-gradient-to: #eef2ff;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --text-faint: #94a3b8;
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-bg: #eff6ff;
+            --primary-gradient-from: #2563eb;
+            --primary-gradient-to: #4f46e5;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --success: #16a34a;
+            --highlight-bg: #fef08a;
+            --header-gradient-from: #dbeafe;
+            --header-gradient-to: #e0e7ff;
+            --radius: 0.75rem;
+            --radius-sm: 0.5rem;
+            --content-w: 720px;
+            --header-h: 64px;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
         /* ── Reset ─────────────────────────────────────────── */
@@ -39,38 +43,32 @@
         html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 
         body {
-            font-family: var(--font-mono);
-            background-color: var(--void);
-            color: var(--ice);
+            font-family: var(--font);
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-gradient-from) 50%, var(--bg-gradient-to) 100%);
+            color: var(--text);
             min-height: 100dvh;
-            background-image:
-                linear-gradient(rgba(99,179,237,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99,179,237,0.025) 1px, transparent 1px);
-            background-size: 32px 32px;
         }
 
-        /* ── Typography ────────────────────────────────────── */
         a { color: inherit; text-decoration: none; }
 
-        /* ── Banner ────────────────────────────────────────── */
-        .banner {
+        /* ── Header ────────────────────────────────────────── */
+        .header {
             position: sticky;
             top: 0;
             z-index: 200;
-            height: var(--banner-h);
-            background: rgba(9,12,16,0.9);
-            backdrop-filter: blur(16px) saturate(1.3);
-            -webkit-backdrop-filter: blur(16px) saturate(1.3);
-            border-bottom: 1px solid var(--border);
+            height: var(--header-h);
+            background: rgba(255,255,255,0.82);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            border-bottom: 1px solid var(--card-border);
         }
-        .banner-inner {
+        .header-inner {
             max-width: var(--content-w);
             margin: 0 auto;
             height: 100%;
             padding: 0 1.25rem;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 1rem;
         }
 
@@ -78,346 +76,371 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
             text-decoration: none;
+            flex-shrink: 0;
         }
-        .logo-mark {
-            width: 30px;
-            height: 30px;
-            background: var(--accent);
-            border-radius: 3px;
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--primary-gradient-from), var(--primary-gradient-to));
+            border-radius: 0.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
-        .logo-mark svg { display: block; }
-        .logo-wordmark {
-            font-family: var(--font-display);
-            font-size: 1.05rem;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--ice);
-            line-height: 1;
-        }
-        .logo-wordmark em {
-            font-style: normal;
-            color: var(--accent);
-        }
-
-        /* ── Menu button ───────────────────────────────────── */
-        .menu-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: transparent;
-            border: 1px solid var(--border-hi);
-            border-radius: var(--r);
-            padding: 0.45rem 0.75rem;
-            color: var(--ice-dim);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: border-color 0.15s, color 0.15s, background 0.15s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .menu-btn:hover,
-        .menu-btn[aria-expanded="true"] {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(79,195,247,0.06);
-        }
-        .menu-btn svg { transition: transform 0.2s; }
-        .menu-btn[aria-expanded="true"] svg { transform: rotate(90deg); }
-
-        /* ── Dropdown ──────────────────────────────────────── */
-        .menu-wrapper {
-            position: relative;
-        }
-        .dropdown {
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            min-width: 200px;
-            background: var(--panel);
-            border: 1px solid var(--border-hi);
-            border-radius: var(--r);
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            display: none;
-            z-index: 300;
-        }
-        .dropdown.open { display: block; }
-
-        .dropdown-section {
-            padding: 0.4rem 0;
-        }
-        .dropdown-label {
-            padding: 0.35rem 1rem;
-            font-size: 0.58rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--muted);
-            font-weight: 700;
-        }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.6rem 1rem;
-            font-size: 0.8rem;
-            color: var(--ice-dim);
-            cursor: pointer;
-            transition: background 0.1s, color 0.1s;
-            letter-spacing: 0.02em;
-            border: none;
-            background: transparent;
-            width: 100%;
-            text-align: left;
-            font-family: var(--font-mono);
-        }
-        .dropdown-item:hover { background: var(--surface); color: var(--ice); }
-        .dropdown-item svg { flex-shrink: 0; color: var(--muted); }
-        .dropdown-item:hover svg { color: var(--accent); }
-
-        .dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0.25rem 0;
-        }
-
-        /* Add-area inline form inside dropdown */
-        .dropdown-add-form {
-            padding: 0.5rem 0.75rem 0.75rem;
+        .logo-icon svg { display: block; }
+        .logo-text {
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            line-height: 1;
         }
-        .dropdown-add-form input[type="text"] {
-            font-size: 0.8rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--r);
+        .logo-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.01em;
         }
-        .dropdown-add-form .btn {
+        .logo-subtitle {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        /* ── Search bar in header ─────────────────────────── */
+        .header-search {
+            flex: 1;
+            max-width: 320px;
+            margin-left: auto;
+            position: relative;
+        }
+        .header-search svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-faint);
+            pointer-events: none;
+        }
+        .header-search input {
             width: 100%;
-            justify-content: center;
+            font-family: var(--font);
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
+        .header-search input:focus {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .header-search input::placeholder { color: var(--text-faint); }
+        .search-clear {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 0.25rem;
+            cursor: pointer;
+            color: var(--text-faint);
+            display: none;
+            line-height: 0;
+        }
+        .search-clear:hover { color: var(--text-muted); }
 
         /* ── Page body ─────────────────────────────────────── */
         .page {
             max-width: var(--content-w);
             margin: 0 auto;
-            padding: 2rem 1.25rem 3rem;
-            animation: fadeUp 0.25s ease both;
+            padding: 1.5rem 1.25rem 3rem;
         }
 
-        /* ── Page title row ────────────────────────────────── */
-        .page-heading {
-            display: flex;
-            align-items: baseline;
-            gap: 0.75rem;
-            margin-bottom: 1.75rem;
-        }
-        .page-heading h1 {
-            font-family: var(--font-display);
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.01em;
-            color: var(--ice);
-        }
-        .page-heading .count {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--muted);
-            letter-spacing: 0.06em;
-        }
-
-        /* ── Section label ─────────────────────────────────── */
-        .section-label {
-            font-family: var(--font-mono);
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .section-label::before {
-            content: '';
-            display: inline-block;
-            width: 12px;
-            height: 1px;
-            background: var(--accent);
-            flex-shrink: 0;
-        }
-
-        /* ── Area list (vertical stack) ────────────────────── */
+        /* ── Area list ─────────────────────────────────────── */
         .area-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.25rem;
         }
 
-        /* ── Area row card ─────────────────────────────────── */
-        .area-row {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
+        /* ── Area card ─────────────────────────────────────── */
+        .area-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
             overflow: hidden;
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            min-height: 160px;
-            transition: border-color 0.18s;
-            position: relative;
+            box-shadow: var(--card-shadow);
+            transition: box-shadow 0.2s, border-color 0.2s;
         }
-        .area-row::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; bottom: 0;
-            width: 2px;
-            background: var(--accent);
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .area-row:hover { border-color: var(--border-hi); }
-        .area-row:hover::before { opacity: 1; }
-
-        @media (max-width: 540px) {
-            .area-row { grid-template-columns: 1fr; }
-            .area-row-photo { aspect-ratio: 16/9; height: auto; }
+        .area-card:hover {
+            box-shadow: var(--card-shadow-hover);
+            border-color: #cbd5e1;
         }
 
-        /* ── Area row: photo side ──────────────────────────── */
-        .area-row-photo {
-            background: var(--deep);
-            border-right: 1px solid var(--border);
-            overflow: hidden;
-            position: relative;
+        .area-card-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-        }
-        .area-row-photo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .area-row-photo-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-            color: var(--muted);
-            padding: 1rem;
-        }
-        .area-row-photo-empty .icon { font-size: 1.75rem; opacity: 0.4; }
-        .area-row-photo-empty .label {
-            font-size: 0.6rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        /* ── Area row: content side ────────────────────────── */
-        .area-row-content {
-            display: flex;
-            flex-direction: column;
-            padding: 1rem 1.25rem;
-            gap: 0.5rem;
-            min-width: 0;
-        }
-        .area-row-header {
-            display: flex;
-            align-items: flex-start;
             justify-content: space-between;
+            padding: 0.875rem 1rem;
+            background: linear-gradient(135deg, var(--header-gradient-from), var(--header-gradient-to));
+            border-bottom: 1px solid var(--card-border);
             gap: 0.5rem;
         }
-        .area-row-name {
-            font-family: var(--font-display);
+        .area-card-name {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--ice);
-            line-height: 1.2;
+            background: linear-gradient(135deg, var(--primary-gradient-from), var(--primary-gradient-to));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            min-width: 0;
+            outline: none;
         }
-        .area-row-name a {
-            color: inherit;
-            text-decoration: none;
-            transition: color 0.15s;
+        .area-card-name-input {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            background: white;
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.5rem;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            width: 100%;
+            max-width: 300px;
         }
-        .area-row-name a:hover { color: var(--accent); }
-        .area-row-meta {
-            font-size: 0.62rem;
-            color: var(--muted);
-            letter-spacing: 0.06em;
-            margin-top: 0.1rem;
-        }
-
-        /* ── Inline item preview ───────────────────────────── */
-        .area-row-items {
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-        .area-preview-list {
-            list-style: none;
+        .area-card-actions {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 0.25rem;
-        }
-        .area-preview-item {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-            font-size: 0.78rem;
-            line-height: 1.4;
-        }
-        .area-preview-item .idx {
-            font-size: 0.58rem;
-            color: var(--muted);
-            min-width: 1.4rem;
-            text-align: right;
             flex-shrink: 0;
         }
-        .area-preview-item .name { color: var(--ice-dim); }
-        .area-preview-item .qty {
-            color: var(--accent);
-            font-size: 0.68rem;
+
+        /* ── Photo section ─────────────────────────────────── */
+        .area-photo-section {
+            position: relative;
         }
-        .area-preview-more {
-            font-size: 0.65rem;
-            color: var(--muted);
-            letter-spacing: 0.04em;
-            padding-left: 1.9rem;
-            margin-top: 0.15rem;
+        .area-photo-img {
+            display: block;
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
         }
-        .area-row-no-items {
-            font-size: 0.7rem;
-            color: var(--muted);
-            letter-spacing: 0.04em;
-            font-style: italic;
+        .area-photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
         }
-        .area-row-analysing {
-            font-size: 0.65rem;
-            color: var(--accent);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+        .area-photo-section:hover .area-photo-overlay { opacity: 1; }
+        .area-photo-overlay-text {
+            color: white;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        .area-photo-remove {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .area-photo-section:hover .area-photo-remove { opacity: 1; }
+        .area-photo-remove:hover { background: var(--danger); }
+
+        /* Analyzing state */
+        .area-analysing-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(37,99,235,0.85), rgba(79,70,229,0.85));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        .area-analysing-text {
+            color: white;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* ── Area row actions ──────────────────────────────── */
-        .area-row-actions {
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-sm);
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            margin: 0.75rem 1rem;
+        }
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+        }
+        .upload-zone-icon {
+            color: var(--text-faint);
+            margin-bottom: 0.5rem;
+        }
+        .upload-zone-text {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+        .upload-zone-text strong {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        /* ── Items table ───────────────────────────────────── */
+        .items-section {
+            padding: 0 1rem 0.75rem;
+        }
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8125rem;
+        }
+        .item-table thead th {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 0.5rem 0.5rem 0.375rem;
+            background: linear-gradient(135deg, var(--header-gradient-from), var(--header-gradient-to));
+            border-bottom: 1px solid var(--card-border);
+        }
+        .item-table thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+        .item-table thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+        .item-row td {
+            padding: 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .item-row:last-child td { border-bottom: none; }
+        .item-row:hover {
+            background: #f8fafc;
+        }
+        .item-name-cell {
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .item-name-cell:hover {
+            color: var(--primary);
+        }
+        .item-qty-badge {
+            display: inline-block;
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+        }
+        .item-notes-cell {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        .item-actions {
+            opacity: 0;
+            transition: opacity 0.15s;
             display: flex;
-            gap: 0.4rem;
-            margin-top: auto;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border);
+            gap: 0.125rem;
+        }
+        .item-row:hover .item-actions { opacity: 1; }
+
+        /* Items show/hide */
+        .items-toggle {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: none;
+            border: none;
+            border-top: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .items-toggle:hover { background: var(--primary-bg); }
+
+        /* Add item row */
+        .add-item-row {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem 0.5rem;
+            align-items: center;
+        }
+        .add-item-row input {
+            flex: 1;
+            font-family: var(--font);
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: #f8fafc;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 0.375rem 0.5rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .add-item-row input:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+        .add-item-row input::placeholder { color: var(--text-faint); }
+
+        /* Inline edit */
+        .inline-edit-input {
+            font-family: var(--font);
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: white;
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.375rem;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+            width: 100%;
         }
 
         /* ── Buttons ───────────────────────────────────────── */
@@ -425,414 +448,810 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.35rem;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
+            gap: 0.375rem;
+            font-family: var(--font);
+            font-size: 0.8125rem;
+            font-weight: 600;
             border: none;
-            border-radius: var(--r);
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: background 0.15s, transform 0.1s, opacity 0.15s, border-color 0.15s;
+            transition: all 0.15s;
             -webkit-tap-highlight-color: transparent;
             white-space: nowrap;
+            line-height: 1;
         }
         .btn:active { transform: scale(0.97); }
         .btn-primary {
-            background: var(--accent);
-            color: var(--void);
-            padding: 0.55rem 1rem;
+            background: linear-gradient(135deg, var(--primary-gradient-from), var(--primary-gradient-to));
+            color: white;
+            padding: 0.625rem 1.125rem;
+            box-shadow: 0 1px 3px rgba(37,99,235,0.25);
         }
-        .btn-primary:hover { opacity: 0.85; }
+        .btn-primary:hover { opacity: 0.9; box-shadow: 0 2px 6px rgba(37,99,235,0.3); }
         .btn-ghost {
             background: transparent;
-            color: var(--ice-dim);
-            padding: 0.5rem 0.85rem;
-            border: 1px solid var(--border-hi);
+            color: var(--text-muted);
+            padding: 0.375rem;
+            border-radius: var(--radius-sm);
         }
-        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-        .btn-danger {
+        .btn-ghost:hover { background: #f1f5f9; color: var(--text); }
+        .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
             background: transparent;
-            color: var(--danger);
-            padding: 0.5rem 0.75rem;
-            border: 1px solid rgba(239,83,80,0.3);
+            color: var(--text-faint);
+            border-radius: var(--radius-sm);
         }
-        .btn-danger:hover { background: var(--danger-dim); }
-        .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.65rem; }
-
-        /* ── Inputs ────────────────────────────────────────── */
-        input[type="text"],
-        input[type="search"] {
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            color: var(--ice);
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            padding: 0.7rem 1rem;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.15s, box-shadow 0.15s;
-            -webkit-appearance: none;
-            letter-spacing: 0.02em;
-        }
-        input[type="text"]:focus,
-        input[type="search"]:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(79,195,247,0.1);
-        }
-        input::placeholder { color: var(--muted); }
+        .btn-icon:hover { background: #f1f5f9; color: var(--text-muted); }
+        .btn-icon-danger:hover { background: var(--danger-bg); color: var(--danger); }
 
         /* ── Empty state ───────────────────────────────────── */
         .empty-state {
             text-align: center;
             padding: 4rem 1rem;
-            color: var(--muted);
-            border: 1px dashed var(--border);
-            border-radius: var(--r);
+            color: var(--text-muted);
         }
-        .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+        .empty-state-icon {
+            margin-bottom: 1rem;
+            color: var(--text-faint);
+        }
+        .empty-state-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.375rem;
+        }
         .empty-state-text {
-            font-size: 0.75rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            line-height: 1.7;
-        }
-
-        /* ── Area detail page ──────────────────────────────── */
-        .detail-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.7rem;
-            color: var(--accent);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 1.25rem;
-            transition: opacity 0.15s;
-        }
-        .detail-back:hover { opacity: 0.7; }
-
-        .detail-layout {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 0;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            overflow: hidden;
-            align-items: start;
-        }
-        @media (max-width: 640px) {
-            .detail-layout { grid-template-columns: 1fr; }
-        }
-
-        .detail-photo-col {
-            background: var(--deep);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            /* Stick to top, don't stretch with content column */
-            position: sticky;
-            top: var(--banner-h);
-            max-height: calc(100vh - var(--banner-h));
-        }
-        @media (max-width: 640px) {
-            .detail-photo-col {
-                position: static;
-                max-height: none;
-            }
-        }
-        .detail-photo-block {
-            aspect-ratio: 4/3;
-            position: relative;
-            overflow: hidden;
-        }
-        .detail-photo-block img {
-            width: 100%; height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .photo-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            min-height: 220px;
-            gap: 0.5rem;
-            color: var(--muted);
-        }
-        .photo-empty-icon { font-size: 2rem; opacity: 0.4; }
-        .photo-empty-text {
-            font-size: 0.65rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-        .detail-upload {
-            padding: 0.75rem;
-            border-top: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 0.4rem;
-        }
-        .detail-upload input[type="file"] {
-            font-family: var(--font-mono);
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--ice-dim);
-            background: transparent;
-            border: 1px solid var(--border-hi);
-            border-radius: var(--r);
-            padding: 0.4rem 0.7rem;
-            cursor: pointer;
-            width: 100%;
-            transition: border-color 0.15s;
-        }
-        .detail-upload input[type="file"]:focus { outline: none; border-color: var(--accent); }
-
-        .detail-content-col {
-            display: flex;
-            flex-direction: column;
-            padding: 1.25rem 1.5rem;
-            gap: 0.75rem;
-        }
-        .detail-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.5rem;
-        }
-        .detail-title {
-            font-family: var(--font-display);
-            font-size: 1.35rem;
-            font-weight: 800;
-            color: var(--ice);
-        }
-        .detail-date {
-            font-size: 0.65rem;
-            color: var(--muted);
-            letter-spacing: 0.06em;
-            margin-top: 0.15rem;
-        }
-
-        /* ── Item table in detail ──────────────────────────── */
-        .item-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        .item-table-th {
-            font-family: var(--font-mono);
-            font-size: 0.58rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-            text-align: left;
-            padding: 0 0.5rem 0.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .item-table-th.item-table-idx { text-align: right; padding-left: 0; width: 2rem; }
-        .item-table-td {
-            padding: 0.55rem 0.5rem;
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-        }
-        .item-row:last-child .item-table-td { border-bottom: none; }
-        .item-table-idx {
-            font-size: 0.58rem;
-            color: var(--muted);
-            text-align: right;
-            padding-left: 0;
-            white-space: nowrap;
-        }
-        .item-name {
-            font-family: var(--font-display);
             font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--ice);
+            line-height: 1.5;
+            max-width: 300px;
+            margin: 0 auto;
         }
-        .item-qty {
-            color: var(--accent);
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-        .item-notes {
-            font-size: 0.72rem;
-            color: var(--muted);
-        }
+        .empty-state .btn { margin-top: 1.25rem; }
 
-        /* ── Search ────────────────────────────────────────── */
-        .search-input-wrap {
-            position: relative;
-            margin-bottom: 1.25rem;
+        /* ── New area dialog ───────────────────────────────── */
+        dialog {
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 1.5rem;
+            max-width: 380px;
+            width: calc(100% - 2rem);
         }
-        .search-input-wrap svg {
-            position: absolute;
-            left: 0.85rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted);
-            pointer-events: none;
+        dialog::backdrop {
+            background: rgba(15,23,42,0.4);
+            backdrop-filter: blur(4px);
         }
-        .search-input-wrap input { padding-left: 2.5rem; }
-
-        .result-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            padding: 0.875rem 1rem;
-            margin-bottom: 0.5rem;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            grid-template-rows: auto auto;
-            gap: 0.15rem 0.75rem;
+        .dialog-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .dialog-input {
+            width: 100%;
+            font-family: var(--font);
+            font-size: 0.875rem;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 0.625rem 0.75rem;
+            outline: none;
+            margin-bottom: 1rem;
             transition: border-color 0.15s;
         }
-        .result-card:hover { border-color: var(--border-hi); }
-        .result-card .item-name { grid-column: 1; }
-        .result-card .item-meta { grid-column: 1; }
-        .result-area-link {
-            grid-column: 2;
-            grid-row: 1 / 3;
-            align-self: center;
-            font-size: 0.62rem;
-            color: var(--accent);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            white-space: nowrap;
-            opacity: 0.8;
-            transition: opacity 0.15s;
+        .dialog-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
-        .result-area-link:hover { opacity: 1; }
-        .result-area-link::before { content: '↗ '; }
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .dialog-cancel {
+            font-family: var(--font);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            padding: 0.625rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+        }
+        .dialog-cancel:hover { background: #f1f5f9; }
 
-        /* ── HTMX loading state ────────────────────────────── */
-        .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-flex; align-items: center; gap: 0.4rem; }
-        .htmx-request .htmx-hide { display: none; }
+        /* ── Animations ────────────────────────────────────── */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes itemSlideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .area-card { animation: fadeIn 0.25s ease both; }
+        .item-row-entering { animation: itemSlideIn 0.2s ease both; }
         .spinner {
-            width: 11px; height: 11px;
-            border: 1.5px solid rgba(9,12,16,0.4);
-            border-top-color: var(--void);
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
+        .spinner-dark {
+            border-color: rgba(37,99,235,0.2);
+            border-top-color: var(--primary);
+        }
 
-        /* ── Page-enter animation ──────────────────────────── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
+        /* ── No items state ────────────────────────────────── */
+        .no-items-text {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-faint);
+            font-size: 0.8125rem;
+        }
+
+        /* ── Search highlights ─────────────────────────────── */
+        mark {
+            background: var(--highlight-bg);
+            color: inherit;
+            padding: 0.05em 0.15em;
+            border-radius: 2px;
+        }
+
+        /* ── Toast notifications ──────────────────────────── */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: var(--text);
+            color: white;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            padding: 0.625rem 1rem;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* ── Mobile responsive ─────────────────────────────── */
+        @media (max-width: 640px) {
+            .header-search { max-width: none; }
+            .logo-text { display: none; }
+            .area-photo-overlay { opacity: 1; background: rgba(0,0,0,0.2); }
+            .area-photo-remove { opacity: 1; }
+            .item-actions { opacity: 1; }
         }
     </style>
 </head>
 <body>
-    <!-- ── Banner ─────────────────────────────────────────── -->
-    <header class="banner">
-        <div class="banner-inner">
+    <!-- ── Header ──────────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-inner">
             <a class="logo" href="/areas">
-                <div class="logo-mark">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#090c10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <div class="logo-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
                 </div>
-                <span class="logo-wordmark">KITCH<em>INV</em></span>
+                <div class="logo-text">
+                    <span class="logo-title">Household Inventory</span>
+                    <span class="logo-subtitle">Track what you have</span>
+                </div>
             </a>
 
-            <div class="menu-wrapper">
-                <button class="menu-btn" id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-dropdown" onclick="toggleMenu()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <line x1="3" y1="12" x2="21" y2="12"/>
-                        <line x1="3" y1="18" x2="21" y2="18"/>
+            <div class="header-search" data-testid="search-bar">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="search" data-testid="search-input" placeholder="Search items..." autocomplete="off" autocorrect="off" spellcheck="false">
+                <button class="search-clear" data-testid="search-clear" type="button" aria-label="Clear search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                     </svg>
-                    Menu
                 </button>
-
-                <div class="dropdown" id="menu-dropdown" role="menu">
-                    <div class="dropdown-section">
-                        <div class="dropdown-label">Add area</div>
-                        <div class="dropdown-add-form">
-                            <form onsubmit="addArea(event)">
-                                <input type="text" name="name" placeholder="e.g. Upstairs Fridge" required autocomplete="off" autocorrect="off" style="margin-bottom:0.4rem">
-                                <button type="submit" class="btn btn-primary" style="width:100%">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                                    Add
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-section">
-                        <a class="dropdown-item" href="/areas" role="menuitem">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                            Areas
-                        </a>
-                        <a class="dropdown-item" href="/search" role="menuitem">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-                            Search inventory
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
     </header>
 
     {{template "content" .}}
 
-    <script>
-        function toggleMenu() {
-            const btn = document.getElementById('menu-btn');
-            const dd  = document.getElementById('menu-dropdown');
-            const open = dd.classList.toggle('open');
-            btn.setAttribute('aria-expanded', open);
-        }
-        function closeMenu() {
-            document.getElementById('menu-dropdown').classList.remove('open');
-            document.getElementById('menu-btn').setAttribute('aria-expanded', 'false');
-        }
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.menu-wrapper')) closeMenu();
-        });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeMenu();
-        });
+    <!-- ── Toast container ─────────────────────────────────── -->
+    <div class="toast-container" id="toast-container"></div>
 
-        function addArea(evt) {
-            evt.preventDefault();
-            var form = evt.target;
-            var name = form.querySelector('input[name="name"]').value.trim();
-            if (!name) return;
-            fetch('/areas', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'name=' + encodeURIComponent(name),
+    <script>
+    /* ── Toast system ───────────────────────────────────── */
+    function showToast(msg) {
+        var c = document.getElementById('toast-container');
+        var el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = msg;
+        c.appendChild(el);
+        setTimeout(function() { el.remove(); }, 3000);
+    }
+
+    /* ── Escape HTML ────────────────────────────────────── */
+    function esc(str) {
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;');
+    }
+
+    /* ── New area dialog ────────────────────────────────── */
+    function openNewAreaDialog() {
+        var d = document.getElementById('new-area-dialog');
+        if (d) { d.showModal(); d.querySelector('input').focus(); }
+    }
+
+    function submitNewArea(evt) {
+        evt.preventDefault();
+        var form = evt.target;
+        var nameInput = form.querySelector('input[name="name"]');
+        var name = nameInput.value.trim();
+        if (!name) return;
+        fetch('/areas', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'name=' + encodeURIComponent(name),
+        }).then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            return resp.text();
+        }).then(function(html) {
+            var list = document.getElementById('area-list');
+            var es = document.querySelector('[data-testid="empty-state"]');
+            if (es) es.remove();
+            // Insert before the "new area" button.
+            var btn = document.getElementById('new-area-btn-wrap');
+            if (btn) btn.insertAdjacentHTML('beforebegin', html);
+            else list.insertAdjacentHTML('beforeend', html);
+            nameInput.value = '';
+            document.getElementById('new-area-dialog').close();
+            showToast('Area created');
+        }).catch(function() { showToast('Failed to create area'); });
+    }
+
+    /* ── Delete area ────────────────────────────────────── */
+    function deleteArea(areaID) {
+        if (!confirm('Delete this area and all its items?')) return;
+        fetch('/areas/' + areaID, { method: 'DELETE' })
+        .then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+            if (card) card.remove();
+            // Show empty state if no cards left.
+            var list = document.getElementById('area-list');
+            if (list && !list.querySelector('.area-card')) {
+                var btn = document.getElementById('new-area-btn-wrap');
+                var emptyHTML = '<div data-testid="empty-state" class="empty-state">' +
+                    '<div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></div>' +
+                    '<div class="empty-state-title">No areas yet</div>' +
+                    '<div class="empty-state-text">Add your first storage area to start tracking inventory.</div>' +
+                    '<button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Add Area</button></div>';
+                if (btn) btn.insertAdjacentHTML('beforebegin', emptyHTML);
+                else list.insertAdjacentHTML('afterbegin', emptyHTML);
+            }
+            showToast('Area deleted');
+        }).catch(function() { showToast('Failed to delete area'); });
+    }
+
+    /* ── Rename area ────────────────────────────────────── */
+    function startRenameArea(areaID) {
+        var nameEl = document.querySelector('[data-testid="area-name-' + areaID + '"]');
+        if (!nameEl) return;
+        var current = nameEl.textContent;
+        var input = document.createElement('input');
+        input.className = 'area-card-name-input';
+        input.value = current;
+        input.setAttribute('data-area-id', areaID);
+        nameEl.replaceWith(input);
+        input.focus();
+        input.select();
+
+        function save() {
+            var val = input.value.trim();
+            if (!val || val === current) {
+                // Revert.
+                var span = document.createElement('span');
+                span.className = 'area-card-name';
+                span.setAttribute('data-testid', 'area-name-' + areaID);
+                span.textContent = current;
+                span.onclick = function() { startRenameArea(areaID); };
+                input.replaceWith(span);
+                return;
+            }
+            fetch('/areas/' + areaID, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: val}),
             }).then(function(resp) {
-                if (!resp.ok) return;
-                var list = document.getElementById('area-list');
-                if (!list) {
-                    // Not on the areas page — navigate there.
-                    window.location.href = '/areas';
-                    return;
+                if (!resp.ok) throw new Error('Failed');
+                return resp.text();
+            }).then(function(html) {
+                // Replace the entire card.
+                var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+                if (card) {
+                    card.outerHTML = html;
                 }
-                resp.text().then(function(html) {
-                    // Remove empty state if present.
-                    var es = list.querySelector('.empty-state');
-                    if (es) es.remove();
-                    list.insertAdjacentHTML('beforeend', html);
-                    form.reset();
-                    closeMenu();
-                });
+                showToast('Area renamed');
+            }).catch(function() {
+                showToast('Failed to rename area');
+                var span = document.createElement('span');
+                span.className = 'area-card-name';
+                span.setAttribute('data-testid', 'area-name-' + areaID);
+                span.textContent = current;
+                span.onclick = function() { startRenameArea(areaID); };
+                input.replaceWith(span);
             });
         }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); save(); }
+            if (e.key === 'Escape') { input.value = current; save(); }
+        });
+        input.addEventListener('blur', save);
+    }
+
+    /* ── Photo upload + SSE streaming ──────────────────── */
+    function triggerUpload(areaID) {
+        var input = document.querySelector('[data-testid="photo-input-' + areaID + '"]');
+        if (input) input.click();
+    }
+
+    function handleFileSelect(areaID, input) {
+        if (!input.files || !input.files[0]) return;
+        startStream(areaID, input.files[0]);
+    }
+
+    function setupDragDrop(areaID) {
+        var zone = document.querySelector('[data-testid="upload-zone-' + areaID + '"]');
+        if (!zone) return;
+        zone.addEventListener('dragenter', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+        zone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) startStream(areaID, e.dataTransfer.files[0]);
+        });
+    }
+
+    function startStream(areaID, file) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+
+        var photoSection = card.querySelector('.area-photo-section') || card.querySelector('.upload-zone');
+        var itemsBody = card.querySelector('.items-tbody');
+        var itemsSection = card.querySelector('.items-section');
+        var noItemsText = card.querySelector('.no-items-text');
+        var uploadZone = card.querySelector('[data-testid="upload-zone-' + areaID + '"]');
+
+        // Show photo preview.
+        var previewUrl = URL.createObjectURL(file);
+        var photoHTML = '<div class="area-photo-section">' +
+            '<img src="' + previewUrl + '" class="area-photo-img" alt="Uploading...">' +
+            '<div class="area-analysing-overlay" data-testid="analyzing-indicator-' + areaID + '">' +
+            '<div class="spinner"></div>' +
+            '<span class="area-analysing-text">Analyzing your space...</span>' +
+            '</div></div>';
+
+        if (uploadZone) {
+            uploadZone.outerHTML = photoHTML;
+        } else if (photoSection) {
+            photoSection.outerHTML = photoHTML;
+        }
+
+        // Clear existing items and show table.
+        if (noItemsText) noItemsText.remove();
+        if (!itemsSection) {
+            // Create items section.
+            var photoEl = card.querySelector('.area-photo-section');
+            if (photoEl) {
+                photoEl.insertAdjacentHTML('afterend',
+                    '<div class="items-section"><table class="item-table"><thead><tr>' +
+                    '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
+                    '</tr></thead><tbody class="items-tbody"></tbody></table></div>');
+            }
+            itemsBody = card.querySelector('.items-tbody');
+        } else if (itemsBody) {
+            itemsBody.innerHTML = '';
+        } else {
+            // Items section exists (has add-item row) but no table yet.
+            var addRow = itemsSection.querySelector('.add-item-row');
+            var tableHTML = '<table class="item-table"><thead><tr>' +
+                '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
+                '</tr></thead><tbody class="items-tbody"></tbody></table>';
+            if (addRow) {
+                addRow.insertAdjacentHTML('beforebegin', tableHTML);
+            } else {
+                itemsSection.insertAdjacentHTML('afterbegin', tableHTML);
+            }
+            itemsBody = card.querySelector('.items-tbody');
+        }
+
+        // Disable file input.
+        var fileInput = card.querySelector('[data-testid="photo-input-' + areaID + '"]');
+        if (fileInput) fileInput.disabled = true;
+
+        var formData = new FormData();
+        formData.append('image', file);
+
+        var streamFinished = false;
+        fetch('/areas/' + areaID + '/photos/stream', {
+            method: 'POST',
+            body: formData,
+        }).then(function(resp) {
+            if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+            var reader = resp.body.getReader();
+            var decoder = new TextDecoder();
+            var buf = '';
+
+            function pump() {
+                return reader.read().then(function(result) {
+                    if (result.done) { finishStream(); return; }
+                    buf += decoder.decode(result.value, { stream: true });
+                    var lines = buf.split('\n');
+                    buf = lines.pop();
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        if (line.startsWith('data: ')) {
+                            try {
+                                var item = JSON.parse(line.slice(6).trim());
+                                appendStreamItem(areaID, item);
+                            } catch(e) { /* skip */ }
+                        } else if (line.startsWith('event: done')) {
+                            finishStream();
+                            return;
+                        }
+                    }
+                    return pump();
+                });
+            }
+            return pump();
+        }).catch(function(err) {
+            console.error('Stream error:', err);
+            finishStream(true);
+        });
+
+        function finishStream(error) {
+            if (streamFinished) return;
+            streamFinished = true;
+            // Remove analyzing overlay.
+            var overlay = card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]');
+            if (overlay) overlay.remove();
+            // Re-enable file input.
+            if (fileInput) fileInput.disabled = false;
+            // Add photo controls.
+            var photoSec = card.querySelector('.area-photo-section');
+            if (photoSec && !error) {
+                // Update image src to actual server URL and add overlay/remove button.
+                var img = photoSec.querySelector('img');
+                if (img) img.src = '/areas/' + areaID + '/photo?t=' + Date.now();
+                photoSec.innerHTML = '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
+                    '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
+                    '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+            }
+            if (error) showToast('Analysis failed');
+        }
+    }
+
+    function appendStreamItem(areaID, item) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var tbody = card.querySelector('.items-tbody');
+        if (!tbody) return;
+        var tr = document.createElement('tr');
+        tr.className = 'item-row item-row-entering';
+        tr.setAttribute('data-testid', 'item-row');
+        tr.innerHTML =
+            '<td class="item-name-cell">' + esc(item.name) + '</td>' +
+            '<td>' + (item.quantity ? '<span class="item-qty-badge">' + esc(item.quantity) + '</span>' : '') + '</td>' +
+            '<td class="item-notes-cell">' + esc(item.notes || '') + '</td>' +
+            '<td></td>';
+        tbody.appendChild(tr);
+    }
+
+    /* ── Remove photo ──────────────────────────────────── */
+    function removePhoto(areaID) {
+        fetch('/areas/' + areaID + '/photo', { method: 'DELETE' })
+        .then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            return resp.text();
+        }).then(function(html) {
+            var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+            if (card) card.outerHTML = html;
+            showToast('Photo removed');
+        }).catch(function() { showToast('Failed to remove photo'); });
+    }
+
+    /* ── Add item ──────────────────────────────────────── */
+    function addItem(evt, areaID) {
+        if (evt.key && evt.key !== 'Enter') return;
+        evt.preventDefault();
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var nameInput = card.querySelector('.add-item-name');
+        var qtyInput = card.querySelector('.add-item-qty');
+        var notesInput = card.querySelector('.add-item-notes');
+        var name = nameInput ? nameInput.value.trim() : '';
+        if (!name) return;
+
+        fetch('/areas/' + areaID + '/items', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: name,
+                quantity: qtyInput ? qtyInput.value.trim() : '',
+                notes: notesInput ? notesInput.value.trim() : '',
+            }),
+        }).then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            return resp.json();
+        }).then(function(item) {
+            var tbody = card.querySelector('.items-tbody');
+            if (!tbody) return;
+            var noItems = card.querySelector('.no-items-text');
+            if (noItems) noItems.remove();
+            var tr = document.createElement('tr');
+            tr.className = 'item-row item-row-entering';
+            tr.setAttribute('data-testid', 'item-row');
+            tr.setAttribute('data-item-id', item.ID);
+            tr.innerHTML =
+                '<td class="item-name-cell" onclick="startEditItem(' + areaID + ',' + item.ID + ')">' + esc(item.Name) + '</td>' +
+                '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
+                '<td class="item-notes-cell">' + esc(item.Notes || '') + '</td>' +
+                '<td class="item-actions"><button class="btn btn-icon btn-icon-danger" onclick="deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
+            tbody.appendChild(tr);
+            if (nameInput) nameInput.value = '';
+            if (qtyInput) qtyInput.value = '';
+            if (notesInput) notesInput.value = '';
+            if (nameInput) nameInput.focus();
+            showToast('Item added');
+        }).catch(function() { showToast('Failed to add item'); });
+    }
+
+    /* ── Delete item ───────────────────────────────────── */
+    function deleteItem(areaID, itemID) {
+        fetch('/areas/' + areaID + '/items/' + itemID, { method: 'DELETE' })
+        .then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            var row = document.querySelector('tr[data-item-id="' + itemID + '"]');
+            if (row) row.remove();
+            showToast('Item deleted');
+        }).catch(function() { showToast('Failed to delete item'); });
+    }
+
+    /* ── Edit item inline ──────────────────────────────── */
+    function startEditItem(areaID, itemID) {
+        var row = document.querySelector('tr[data-item-id="' + itemID + '"]');
+        if (!row || row.classList.contains('editing')) return;
+        row.classList.add('editing');
+
+        var nameCell = row.querySelector('.item-name-cell');
+        var qtyBadge = row.querySelector('.item-qty-badge');
+        var notesCell = row.querySelector('.item-notes-cell');
+
+        var origName = nameCell ? nameCell.textContent.trim() : '';
+        var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
+        var origNotes = notesCell ? notesCell.textContent.trim() : '';
+
+        if (nameCell) {
+            nameCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origName) + '" data-field="name">';
+        }
+        var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
+        if (qtyCell) {
+            qtyCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
+        }
+        if (notesCell) {
+            notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';
+        }
+
+        var nameInput = row.querySelector('[data-field="name"]');
+        if (nameInput) { nameInput.focus(); nameInput.select(); }
+
+        var inputs = row.querySelectorAll('.inline-edit-input');
+        inputs.forEach(function(inp) {
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+                if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+            });
+            inp.addEventListener('blur', function() {
+                // Delay to allow focus to move to another input in the same row.
+                setTimeout(function() {
+                    if (!row.contains(document.activeElement) || !document.activeElement.classList.contains('inline-edit-input')) {
+                        saveEdit();
+                    }
+                }, 100);
+            });
+        });
+
+        function saveEdit() {
+            if (!row.classList.contains('editing')) return;
+            row.classList.remove('editing');
+
+            var ni = row.querySelector('[data-field="name"]');
+            var qi = row.querySelector('[data-field="qty"]');
+            var noi = row.querySelector('[data-field="notes"]');
+            var newName = ni ? ni.value.trim() : origName;
+            var newQty = qi ? qi.value.trim() : origQty;
+            var newNotes = noi ? noi.value.trim() : origNotes;
+
+            if (!newName) newName = origName;
+
+            // Optimistically update UI.
+            revertCells(newName, newQty, newNotes);
+
+            if (newName === origName && newQty === origQty && newNotes === origNotes) return;
+
+            fetch('/areas/' + areaID + '/items/' + itemID, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: newName, quantity: newQty, notes: newNotes}),
+            }).then(function(resp) {
+                if (!resp.ok) throw new Error('Failed');
+                showToast('Item updated');
+            }).catch(function() {
+                revertCells(origName, origQty, origNotes);
+                showToast('Failed to update item');
+            });
+        }
+
+        function cancelEdit() {
+            row.classList.remove('editing');
+            revertCells(origName, origQty, origNotes);
+        }
+
+        function revertCells(name, qty, notes) {
+            if (nameCell || row.cells[0]) {
+                var nc = nameCell || row.cells[0];
+                nc.innerHTML = esc(name);
+                nc.className = 'item-name-cell';
+                nc.onclick = function() { startEditItem(areaID, itemID); };
+            }
+            var qc = qtyCell || row.cells[1];
+            if (qc) {
+                qc.innerHTML = qty ? '<span class="item-qty-badge">' + esc(qty) + '</span>' : '';
+            }
+            if (notesCell || row.cells[2]) {
+                var notc = notesCell || row.cells[2];
+                notc.innerHTML = esc(notes);
+                notc.className = 'item-notes-cell';
+            }
+        }
+    }
+
+    /* ── Search / filter ───────────────────────────────── */
+    (function() {
+        var searchInput = document.querySelector('[data-testid="search-input"]');
+        var clearBtn = document.querySelector('[data-testid="search-clear"]');
+        if (!searchInput) return;
+
+        var debounceTimer;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            var q = searchInput.value.trim().toLowerCase();
+            clearBtn.style.display = q ? 'block' : 'none';
+            debounceTimer = setTimeout(function() { filterCards(q); }, 100);
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                clearBtn.style.display = 'none';
+                filterCards('');
+                searchInput.focus();
+            });
+        }
+
+        function filterCards(q) {
+            var cards = document.querySelectorAll('.area-card');
+            var anyVisible = false;
+            cards.forEach(function(card) {
+                // Remove old highlights.
+                card.querySelectorAll('mark').forEach(function(m) {
+                    m.replaceWith(m.textContent);
+                });
+
+                if (!q) {
+                    card.style.display = '';
+                    anyVisible = true;
+                    return;
+                }
+
+                var text = card.textContent.toLowerCase();
+                if (text.indexOf(q) >= 0) {
+                    card.style.display = '';
+                    anyVisible = true;
+                    highlightText(card, q);
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show/hide "no matches" state.
+            var noMatch = document.getElementById('no-search-matches');
+            if (!q) {
+                if (noMatch) noMatch.remove();
+            } else if (!anyVisible) {
+                if (!noMatch) {
+                    var list = document.getElementById('area-list');
+                    if (list) {
+                        list.insertAdjacentHTML('beforeend',
+                            '<div id="no-search-matches" class="empty-state" style="padding:2rem">' +
+                            '<div class="empty-state-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>' +
+                            '<div class="empty-state-text">No matches found</div></div>');
+                    }
+                }
+            } else {
+                if (noMatch) noMatch.remove();
+            }
+        }
+
+        function highlightText(container, q) {
+            var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+            var nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            nodes.forEach(function(node) {
+                var text = node.textContent;
+                var lower = text.toLowerCase();
+                var idx = lower.indexOf(q);
+                if (idx < 0 || !node.parentNode || node.parentNode.tagName === 'SCRIPT' || node.parentNode.tagName === 'STYLE') return;
+                var before = text.slice(0, idx);
+                var match = text.slice(idx, idx + q.length);
+                var after = text.slice(idx + q.length);
+                var frag = document.createDocumentFragment();
+                if (before) frag.appendChild(document.createTextNode(before));
+                var mark = document.createElement('mark');
+                mark.textContent = match;
+                frag.appendChild(mark);
+                if (after) frag.appendChild(document.createTextNode(after));
+                node.parentNode.replaceChild(frag, node);
+            });
+        }
+    })();
+
+    /* ── Items expand/collapse ─────────────────────────── */
+    function toggleItems(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var hidden = card.querySelectorAll('.item-row-hidden');
+        var btn = card.querySelector('.items-toggle');
+        if (hidden.length > 0) {
+            hidden.forEach(function(r) { r.classList.remove('item-row-hidden'); r.style.display = ''; });
+            if (btn) btn.textContent = 'Show fewer';
+            if (btn) btn.setAttribute('data-expanded', 'true');
+        } else {
+            var rows = card.querySelectorAll('.item-row');
+            for (var i = 10; i < rows.length; i++) {
+                rows[i].classList.add('item-row-hidden');
+                rows[i].style.display = 'none';
+            }
+            if (btn) btn.textContent = 'Show ' + (rows.length - 10) + ' more';
+            if (btn) btn.removeAttribute('data-expanded');
+        }
+    }
+
+    /* ── Init drag-drop on page load ───────────────────── */
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.area-card').forEach(function(card) {
+            var testid = card.getAttribute('data-testid') || '';
+            var m = testid.match(/area-card-(\d+)/);
+            if (m) setupDragDrop(parseInt(m[1], 10));
+        });
+    });
     </script>
 </body>
 </html>
