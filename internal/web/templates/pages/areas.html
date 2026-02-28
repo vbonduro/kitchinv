@@ -1,19 +1,48 @@
 {{define "content"}}
 <main class="page">
-    <div class="page-heading">
-        <h1>Storage Areas</h1>
-        {{if .Areas}}<span class="count">{{len .Areas}} locations</span>{{end}}
-    </div>
-
-    <div class="area-list" id="area-list">
+    <div class="area-list" id="area-list" data-testid="area-list">
         {{range .Areas}}
             {{template "area_card" .}}
         {{else}}
-            <div class="empty-state">
-                <div class="empty-state-icon">🧊</div>
-                <div class="empty-state-text">No areas yet —<br>open the menu to add your first storage location</div>
+            <div data-testid="empty-state" class="empty-state">
+                <div class="empty-state-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                    </svg>
+                </div>
+                <div class="empty-state-title">No areas yet</div>
+                <div class="empty-state-text">Add your first storage area to start tracking inventory.</div>
+                <button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14"/><path d="M5 12h14"/>
+                    </svg>
+                    Add Area
+                </button>
             </div>
         {{end}}
+
+        <div id="new-area-btn-wrap" style="text-align:center; padding-top: 0.5rem;">
+            {{if .Areas}}
+            <button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"/><path d="M5 12h14"/>
+                </svg>
+                Add Area
+            </button>
+            {{end}}
+        </div>
     </div>
 </main>
+
+<!-- New area dialog -->
+<dialog id="new-area-dialog" data-testid="new-area-dialog">
+    <form onsubmit="submitNewArea(event)">
+        <div class="dialog-title">New Area</div>
+        <input class="dialog-input" type="text" name="name" placeholder="e.g. Upstairs Fridge" required autocomplete="off" autocorrect="off">
+        <div class="dialog-actions">
+            <button type="button" class="dialog-cancel" onclick="this.closest('dialog').close()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Create</button>
+        </div>
+    </form>
+</dialog>
 {{end}}

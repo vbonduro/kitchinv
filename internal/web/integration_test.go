@@ -275,7 +275,7 @@ func TestIntegration_ListAreas(t *testing.T) {
 }
 
 // TestIntegration_DeleteArea verifies that DELETE /areas/{id} returns 200 with
-// the HX-Redirect header pointing to /areas.
+// an empty body (HTMX removes the card from the DOM).
 func TestIntegration_DeleteArea(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -302,8 +302,9 @@ func TestIntegration_DeleteArea(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, body)
 	}
-	if got := resp.Header.Get("HX-Redirect"); got != "/areas" {
-		t.Errorf("HX-Redirect = %q, want %q", got, "/areas")
+	body, _ := io.ReadAll(resp.Body)
+	if len(body) != 0 {
+		t.Errorf("expected empty body, got %q", body)
 	}
 }
 

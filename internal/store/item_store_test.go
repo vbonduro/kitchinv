@@ -117,6 +117,66 @@ func TestItemStoreSearch_NoMatch(t *testing.T) {
 	assert.Empty(t, results)
 }
 
+func TestItemStoreUpdate(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened")
+	require.NoError(t, err)
+
+	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	require.NoError(t, err)
+
+	updated, err := items.GetByID(ctx, item.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Whole Milk", updated.Name)
+	assert.Equal(t, "2 liters", updated.Quantity)
+	assert.Equal(t, "fresh", updated.Notes)
+}
+
+func TestItemStoreUpdate_NotFound(t *testing.T) {
+	d := openTestDB(t)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	err := items.Update(ctx, 99999, "Name", "1", "")
+	assert.Error(t, err)
+}
+
+func TestItemStoreDelete(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "")
+	require.NoError(t, err)
+
+	err = items.Delete(ctx, item.ID)
+	require.NoError(t, err)
+
+	deleted, err := items.GetByID(ctx, item.ID)
+	require.NoError(t, err)
+	assert.Nil(t, deleted)
+}
+
+func TestItemStoreDelete_NotFound(t *testing.T) {
+	d := openTestDB(t)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	err := items.Delete(ctx, 99999)
+	assert.Error(t, err)
+}
+
 func TestItemStoreDeleteByAreaID(t *testing.T) {
 	d := openTestDB(t)
 	areas := NewAreaStore(d)

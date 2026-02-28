@@ -60,6 +60,43 @@ func TestPhotoStoreGetLatestByAreaID_NoPhotos(t *testing.T) {
 	assert.Nil(t, latest)
 }
 
+func TestPhotoStoreDeleteByArea(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	photos := NewPhotoStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	_, err = photos.Create(ctx, area.ID, "key1.jpg", "image/jpeg")
+	require.NoError(t, err)
+
+	deleted, err := photos.DeleteByArea(ctx, area.ID)
+	require.NoError(t, err)
+	require.NotNil(t, deleted)
+	assert.Equal(t, area.ID, deleted.AreaID)
+
+	// No photos should remain.
+	latest, err := photos.GetLatestByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	assert.Nil(t, latest)
+}
+
+func TestPhotoStoreDeleteByArea_NoPhotos(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	photos := NewPhotoStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Empty")
+	require.NoError(t, err)
+
+	deleted, err := photos.DeleteByArea(ctx, area.ID)
+	require.NoError(t, err)
+	assert.Nil(t, deleted)
+}
+
 func TestPhotoStoreDelete(t *testing.T) {
 	d := openTestDB(t)
 	areas := NewAreaStore(d)

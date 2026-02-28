@@ -12,37 +12,32 @@ function createJpegFixture(): string {
   return tmpFile;
 }
 
-async function createArea(page: Page, name: string) {
+async function createArea(page: Page, name: string): Promise<string> {
   await page.goto('/areas');
-  await page.click('#menu-btn');
-  await page.fill('input[name="name"]', name);
-  await page.click('button[type="submit"]');
-  await page.locator('.area-row-name a', { hasText: name }).waitFor({ timeout: 10_000 });
+  await page.click('[data-testid="new-area-btn"]');
+  await page.locator('#new-area-dialog').waitFor({ state: 'visible' });
+  await page.fill('#new-area-dialog input[name="name"]', name);
+  await page.click('#new-area-dialog button[type="submit"]');
+  const card = page.locator('.area-card', { hasText: name });
+  await card.waitFor({ timeout: 10_000 });
+  const testid = await card.getAttribute('data-testid');
+  return testid!.replace('area-card-', '');
 }
 
-/** Create an area, upload a photo, wait for items, then return the area path. */
+/** Create an area, upload a photo, wait for items. Returns area ID. */
 async function setupAreaWithItems(page: Page, jpegFixture: string): Promise<string> {
   const name = `E2E SearchArea ${Date.now()}`;
-  await createArea(page, name);
+  const areaID = await createArea(page, name);
 
-  // Navigate to area detail.
-  await page.goto('/areas');
-  await page.locator('.area-row-name a', { hasText: name }).click();
-  await page.waitForURL(/\/areas\/\d+/);
-
-  // Upload.
-  const [fc] = await Promise.all([
-    page.waitForEvent('filechooser'),
-    page.click('#photo-input'),
-  ]);
-  await fc.setFiles(jpegFixture);
-  await page.click('#upload-btn');
+  // Upload photo via file input.
+  const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+  await fileInput.setInputFiles(jpegFixture);
 
   // Wait for items to stream in.
-  await expect(page.locator('.item-row')).toHaveCount(3, { timeout: 15_000 });
+  const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+  await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
-  // Return the area path (e.g. /areas/1) for use in assertions.
-  return new URL(page.url()).pathname;
+  return areaID;
 }
 
 test.describe('Search', () => {
@@ -58,67 +53,57 @@ test.describe('Search', () => {
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
-  test('search "Milk" → result card with Milk visible', async ({ page }) => {
+  test('search filters cards by item name', async ({ page }) => {
     await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'Milk');
-    await expect(page.locator('.result-card', { hasText: 'Milk' }).first()).toBeVisible({ timeout: 5_000 });
+
+    // Use the header search bar to filter.
+    await page.fill('[data-testid="search-input"]', 'Milk');
+
+    // Card should still be visible (contains "Milk" item).
+    await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search result has "View area" link', async ({ page }) => {
+  test('search highlights matching text', async ({ page }) => {
     await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'Milk');
-    await expect(page.locator('.result-card .result-area-link').first()).toBeVisible({ timeout: 5_000 });
+
+    await page.fill('[data-testid="search-input"]', 'Milk');
+
+    // Highlighted text should appear in a <mark> element.
+    await expect(page.locator('.area-card mark')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('click "View area" → navigates to area detail page', async ({ page }) => {
+  test('search unknown term → no matches state', async ({ page }) => {
     await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'Milk');
 
-    // Wait for results.
-    await page.locator('.result-card').first().waitFor({ timeout: 5_000 });
+    await page.fill('[data-testid="search-input"]', 'ZZZThisDoesNotExist999');
 
-    // Click first "View area" link.
-    await page.locator('.result-area-link').first().click();
+    // Card should be hidden.
+    await expect(page.locator('.area-card')).toBeHidden({ timeout: 5_000 });
 
-    // Should land on an area detail page.
-    await page.waitForURL(/\/areas\/\d+/);
-    await expect(page.locator('.detail-title')).toBeVisible();
+    // "No matches" indicator should appear.
+    await expect(page.locator('#no-search-matches')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search unknown term → empty state visible', async ({ page }) => {
+  test('search is case-insensitive', async ({ page }) => {
     await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'ZZZThisItemDoesNotExist999');
-    await expect(page.locator('.empty-state')).toBeVisible({ timeout: 5_000 });
+
+    await page.fill('[data-testid="search-input"]', 'milk');
+
+    // Card should still be visible (case-insensitive match on "Milk").
+    await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search lowercase "milk" finds "Milk" (case-insensitive)', async ({ page }) => {
+  test('clear search restores all cards', async ({ page }) => {
     await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'milk');
-    await expect(page.locator('.result-card', { hasText: 'Milk' }).first()).toBeVisible({ timeout: 5_000 });
-  });
 
-  test('search by area name finds items from that area', async ({ page }) => {
-    const areaPath = await setupAreaWithItems(page, jpegFixture);
-    await page.goto('/search');
-    await page.fill('input[type="search"]', 'Orange Juice');
-    await expect(page.locator('.result-card', { hasText: 'Orange Juice' }).first()).toBeVisible({ timeout: 5_000 });
+    // Search for something that hides the card.
+    await page.fill('[data-testid="search-input"]', 'ZZZNotFound');
+    await expect(page.locator('.area-card')).toBeHidden({ timeout: 5_000 });
 
-    // Find the card whose "View area" link points to our specific area.
-    const cards = page.locator('.result-card', { hasText: 'Orange Juice' });
-    const count = await cards.count();
-    let found = false;
-    for (let i = 0; i < count; i++) {
-      const href = await cards.nth(i).locator('.result-area-link').getAttribute('href');
-      if (href === areaPath) {
-        found = true;
-        break;
-      }
-    }
-    expect(found).toBe(true);
+    // Click the clear button.
+    await page.click('[data-testid="search-clear"]');
+
+    // Card should reappear.
+    await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
 });

@@ -68,7 +68,7 @@ docker-pull-model:
 # E2E tests
 # ---------------------------------------------------------------------------
 e2e:
-	cd e2e && npm install --prefer-offline && npx playwright install --with-deps chromium && npx playwright test
+	cd e2e && npm install --prefer-offline && npx playwright install chromium && npx playwright test
 
 e2e-headed:
 	cd e2e && npm install --prefer-offline && npx playwright test --headed

@@ -3,27 +3,31 @@
     <table class="item-table">
         <thead>
             <tr>
-                <th class="item-table-th item-table-idx">#</th>
-                <th class="item-table-th">Name</th>
-                <th class="item-table-th">Qty</th>
-                <th class="item-table-th">Notes</th>
+                <th>Name</th>
+                <th>Qty</th>
+                <th>Notes</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody id="stream-list">
+        <tbody class="items-tbody">
         {{range $i, $item := .}}
-        <tr class="item-row">
-            <td class="item-table-td item-table-idx">{{printf "%02d" (inc $i)}}</td>
-            <td class="item-table-td item-name">{{$item.Name}}</td>
-            <td class="item-table-td item-qty">{{$item.Quantity}}</td>
-            <td class="item-table-td item-notes">{{$item.Notes}}</td>
+        <tr class="item-row" data-testid="item-row" data-item-id="{{$item.ID}}">
+            <td class="item-name-cell">{{$item.Name}}</td>
+            <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
+            <td class="item-notes-cell">{{$item.Notes}}</td>
+            <td class="item-actions">
+                <button class="btn btn-icon btn-icon-danger" onclick="deleteItem({{$item.AreaID}}, {{$item.ID}})" aria-label="Delete item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                    </svg>
+                </button>
+            </td>
         </tr>
         {{end}}
         </tbody>
     </table>
 {{else}}
-    <div class="empty-state">
-        <div class="empty-state-icon">📋</div>
-        <div class="empty-state-text">Upload a photo to extract items</div>
-    </div>
+    <div class="no-items-text">No items yet</div>
 {{end}}
 {{end}}

@@ -92,6 +92,31 @@ func TestAreaStoreList_Empty(t *testing.T) {
 	assert.Empty(t, areas)
 }
 
+func TestAreaStoreUpdate(t *testing.T) {
+	d := openTestDB(t)
+	store := NewAreaStore(d)
+	ctx := context.Background()
+
+	created, err := store.Create(ctx, "Old Name")
+	require.NoError(t, err)
+
+	err = store.Update(ctx, created.ID, "New Name")
+	require.NoError(t, err)
+
+	retrieved, err := store.GetByID(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", retrieved.Name)
+}
+
+func TestAreaStoreUpdate_NotFound(t *testing.T) {
+	d := openTestDB(t)
+	store := NewAreaStore(d)
+	ctx := context.Background()
+
+	err := store.Update(ctx, 99999, "New Name")
+	assert.Error(t, err)
+}
+
 func TestAreaStoreDelete(t *testing.T) {
 	d := openTestDB(t)
 	store := NewAreaStore(d)

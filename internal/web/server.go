@@ -27,9 +27,14 @@ type kitchenService interface {
 	ListAreasWithItems(ctx context.Context) ([]*service.AreaSummary, error)
 	GetArea(ctx context.Context, areaID int64) (*domain.Area, error)
 	GetAreaWithItems(ctx context.Context, areaID int64) (*domain.Area, []*domain.Item, *domain.Photo, error)
+	UpdateArea(ctx context.Context, areaID int64, name string) (*domain.Area, error)
 	DeleteArea(ctx context.Context, areaID int64) error
+	DeletePhoto(ctx context.Context, areaID int64) error
 	UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error)
 	UploadPhotoStream(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, <-chan vision.StreamEvent, error)
+	CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error)
+	UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error)
+	DeleteItem(ctx context.Context, itemID int64) error
 	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
 }
 
@@ -52,9 +57,8 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 		mux:        http.NewServeMux(),
 		logger:     logger,
 		tmplFuncs: template.FuncMap{
-			"areaIcon": areaIcon,
-			"inc":      func(i int) int { return i + 1 },
-			"sub":      func(a, b int) int { return a - b },
+			"inc": func(i int) int { return i + 1 },
+			"sub": func(a, b int) int { return a - b },
 		},
 	}
 	s.registerRoutes()
@@ -68,11 +72,16 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /areas", s.handleListAreas)
 	s.mux.HandleFunc("POST /areas", s.handleCreateArea)
 	s.mux.HandleFunc("GET /areas/{id}", s.handleGetAreaDetail)
+	s.mux.HandleFunc("PUT /areas/{id}", s.handleUpdateArea)
 	s.mux.HandleFunc("DELETE /areas/{id}", s.handleDeleteArea)
+	s.mux.HandleFunc("DELETE /areas/{id}/photo", s.handleDeletePhoto)
 	s.mux.HandleFunc("POST /areas/{id}/photos", s.handleUploadPhoto)
 	s.mux.HandleFunc("POST /areas/{id}/photos/stream", s.handleStreamPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/photo", s.handleGetPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/items", s.handleGetAreaItems)
+	s.mux.HandleFunc("POST /areas/{id}/items", s.handleCreateItem)
+	s.mux.HandleFunc("PUT /areas/{id}/items/{itemId}", s.handleUpdateItem)
+	s.mux.HandleFunc("DELETE /areas/{id}/items/{itemId}", s.handleDeleteItem)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 }
 
@@ -110,8 +119,7 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				"script-src 'self' 'unsafe-inline' https://unpkg.com; "+
-				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
-				"font-src https://fonts.gstatic.com; "+
+				"style-src 'self' 'unsafe-inline'; "+
 				"img-src 'self' data:; "+
 				"connect-src 'self'")
 		next.ServeHTTP(w, r)
@@ -195,34 +203,3 @@ func (s *Server) renderPartial(w http.ResponseWriter, file string, data any) err
 	return tmpl.ExecuteTemplate(w, basename, data)
 }
 
-// areaIcon returns an emoji based on keywords in the area name.
-func areaIcon(name string) string {
-	lower := strings.ToLower(name)
-	switch {
-	case contains(lower, "freezer"):
-		return "🧊"
-	case contains(lower, "fridge", "refrigerator"):
-		return "🥶"
-	case contains(lower, "pantry"):
-		return "🥫"
-	case contains(lower, "garage"):
-		return "🏠"
-	case contains(lower, "basement", "cellar"):
-		return "📦"
-	case contains(lower, "bar", "wine", "drink", "bever"):
-		return "🍷"
-	case contains(lower, "spice", "herb"):
-		return "🌿"
-	default:
-		return "🗄️"
-	}
-}
-
-func contains(s string, keywords ...string) bool {
-	for _, k := range keywords {
-		if strings.Contains(s, k) {
-			return true
-		}
-	}
-	return false
-}

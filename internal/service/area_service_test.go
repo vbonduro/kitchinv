@@ -351,6 +351,104 @@ func TestAreaServiceSearchItems(t *testing.T) {
 	assert.Len(t, results, 2)
 }
 
+func TestAreaServiceUpdateArea(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Old Name")
+	require.NoError(t, err)
+
+	updated, err := svc.UpdateArea(ctx, area.ID, "New Name")
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", updated.Name)
+}
+
+func TestAreaServiceDeletePhoto(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	visionResult := &vision.AnalysisResult{
+		Items: []vision.DetectedItem{
+			{Name: "Milk", Quantity: "1 liter", Notes: ""},
+		},
+	}
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		&stubVision{result: visionResult},
+		newStubPhotoStore(),
+		slog.Default(),
+	)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	_, _, err = svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+
+	err = svc.DeletePhoto(ctx, area.ID)
+	require.NoError(t, err)
+
+	// Area still exists but has no items or photo.
+	_, items, photo, err := svc.GetAreaWithItems(ctx, area.ID)
+	require.NoError(t, err)
+	assert.Nil(t, photo)
+	assert.Empty(t, items)
+}
+
+func TestAreaServiceCreateItem(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "opened")
+	require.NoError(t, err)
+	assert.Equal(t, "Milk", item.Name)
+	assert.Equal(t, "1 liter", item.Quantity)
+	assert.Equal(t, "opened", item.Notes)
+}
+
+func TestAreaServiceUpdateItem(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "opened")
+	require.NoError(t, err)
+
+	updated, err := svc.UpdateItem(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	require.NoError(t, err)
+	assert.Equal(t, "Whole Milk", updated.Name)
+	assert.Equal(t, "2 liters", updated.Quantity)
+	assert.Equal(t, "fresh", updated.Notes)
+}
+
+func TestAreaServiceDeleteItem(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "")
+	require.NoError(t, err)
+
+	err = svc.DeleteItem(ctx, item.ID)
+	require.NoError(t, err)
+}
+
 func TestAreaServiceListAreasWithItems(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
