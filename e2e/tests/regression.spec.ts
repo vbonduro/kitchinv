@@ -4,8 +4,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-const OLLAMA_PORT = process.env.OLLAMA_PORT || '19434';
-
 function createJpegFixture(): string {
   const buf = Buffer.alloc(512, 0);
   buf[0] = 0xff; buf[1] = 0xd8; buf[2] = 0xff; buf[3] = 0xe0;
@@ -27,10 +25,10 @@ async function createArea(page: Page, name: string): Promise<string> {
 }
 
 /** Poll until at least one stream is blocked at the gate (photo committed, no items yet). */
-async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, timeoutMs = 10_000) {
+async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, ollamaPort: number, timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const resp = await apiContext.get(`http://localhost:${OLLAMA_PORT}/control/gate/waiting`);
+    const resp = await apiContext.get(`http://localhost:${ollamaPort}/control/gate/waiting`);
     const { waiting } = await resp.json();
     if (waiting >= 1) return;
     await new Promise(r => setTimeout(r, 50));
@@ -44,23 +42,25 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Regression', () => {
   let jpegFixture: string;
   let apiContext: Awaited<ReturnType<typeof request.newContext>>;
+  let ollamaPort: number;
 
-  test.beforeAll(async ({ playwright }) => {
+  test.beforeAll(async ({ playwright, ollamaPort: port }) => {
     jpegFixture = createJpegFixture();
     apiContext = await playwright.request.newContext();
+    ollamaPort = port;
   });
 
   test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(async () => {
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
     await apiContext.dispose();
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
   test.afterEach(async () => {
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
   });
 
   test('Bug 1: photo-input has no capture attribute', async ({ page }) => {
@@ -95,14 +95,14 @@ test.describe('Regression', () => {
     const areaID = await createArea(page, name);
 
     // Close the gate so the stream blocks after the photo is committed to DB.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
 
     // Start upload.
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     await fileInput.setInputFiles(jpegFixture);
 
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
-    await waitForGate(apiContext);
+    await waitForGate(apiContext, ollamaPort);
 
     // Open a fresh page — server sees hasPhoto && !hasItems and renders the analyzing overlay.
     const freshPage = await page.context().newPage();
@@ -119,13 +119,13 @@ test.describe('Regression', () => {
     const areaID = await createArea(page, name);
 
     // Close the gate so the stream blocks after the photo is committed to DB.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
 
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     await fileInput.setInputFiles(jpegFixture);
 
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
-    await waitForGate(apiContext);
+    await waitForGate(apiContext, ollamaPort);
 
     // Reload the areas list.
     await page.goto('/areas');

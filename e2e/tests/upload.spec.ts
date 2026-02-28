@@ -4,8 +4,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-const OLLAMA_PORT = process.env.OLLAMA_PORT || '19434';
-
 /** Minimal valid JPEG: 512-byte buffer starting with JPEG magic bytes. */
 function createJpegFixture(): string {
   const buf = Buffer.alloc(512, 0);
@@ -36,10 +34,10 @@ async function uploadPhoto(page: Page, areaID: string, jpegFixture: string) {
 }
 
 /** Poll until at least one stream is blocked at the gate. */
-async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, timeoutMs = 10_000) {
+async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, ollamaPort: number, timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const resp = await apiContext.get(`http://localhost:${OLLAMA_PORT}/control/gate/waiting`);
+    const resp = await apiContext.get(`http://localhost:${ollamaPort}/control/gate/waiting`);
     const { waiting } = await resp.json();
     if (waiting >= 1) return;
     await new Promise(r => setTimeout(r, 50));
@@ -53,24 +51,26 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Upload & Analysis', () => {
   let jpegFixture: string;
   let apiContext: Awaited<ReturnType<typeof request.newContext>>;
+  let ollamaPort: number;
 
-  test.beforeAll(async ({ playwright }) => {
+  test.beforeAll(async ({ playwright, ollamaPort: port }) => {
     jpegFixture = createJpegFixture();
     apiContext = await playwright.request.newContext();
+    ollamaPort = port;
   });
 
   test.beforeEach(async ({ resetDB }) => { await resetDB(); });
 
   test.afterAll(async () => {
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
     await apiContext.dispose();
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
   test.afterEach(async () => {
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fail/reset`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fail/reset`);
   });
 
   test('upload shows analyzing indicator then 3 items stream in', async ({ page }) => {
@@ -78,18 +78,18 @@ test.describe('Upload & Analysis', () => {
     const areaID = await createArea(page, name);
 
     // Close the gate so analyzing indicator is visible long enough to assert.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
 
     await uploadPhoto(page, areaID, jpegFixture);
 
     // Wait for the stream to reach the gate (photo committed).
-    await waitForGate(apiContext);
+    await waitForGate(apiContext, ollamaPort);
 
     // Analyzing indicator should be visible.
     await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
 
     // Open the gate to let items stream through.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
 
     // 3 item rows should appear after stream completes.
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
@@ -101,18 +101,18 @@ test.describe('Upload & Analysis', () => {
     const areaID = await createArea(page, name);
 
     // Close the gate so the upload stays in progress long enough to assert.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/close`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
 
     await uploadPhoto(page, areaID, jpegFixture);
 
-    await waitForGate(apiContext);
+    await waitForGate(apiContext, ollamaPort);
 
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     // File input should be disabled while uploading.
     await expect(fileInput).toBeDisabled({ timeout: 5_000 });
 
     // Open the gate.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
 
     // After stream completes, file input re-enabled.
     await expect(fileInput).toBeEnabled({ timeout: 15_000 });
@@ -131,7 +131,7 @@ test.describe('Upload & Analysis', () => {
     await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
     // Make the next upload fail at the vision API level.
-    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fail`);
+    await apiContext.post(`http://localhost:${ollamaPort}/control/fail`);
 
     // Attempt second upload — should fail.
     await uploadPhoto(page, areaID, jpegFixture);
