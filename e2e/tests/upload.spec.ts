@@ -166,6 +166,15 @@ test.describe('Upload & Analysis', () => {
 
     // Item count should drop to 2.
     await expect(card.locator('[data-testid="item-row"]')).toHaveCount(2, { timeout: 5_000 });
+
+    // Add-item input must be present and functional without a refresh.
+    const addInput = card.locator('.add-item-name');
+    await expect(addInput).toBeVisible({ timeout: 2_000 });
+    await addInput.fill('manually added item');
+    await addInput.press('Enter');
+
+    // Item count should rise to 3.
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
   });
 
   test('second upload replaces items (still 3 item-rows)', async ({ page }) => {

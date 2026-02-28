@@ -965,11 +965,26 @@
                 // Replace streamed item rows with server-rendered partial so
                 // that all controls (delete, edit) and data-item-id attributes
                 // are present and interactive (kitchinv-c0o).
+                // Replace only the table inside .items-section to preserve the add-item-row.
                 fetch('/areas/' + areaID + '/items')
                     .then(function(r) { return r.text(); })
                     .then(function(html) {
                         var itemsSection = card.querySelector('.items-section');
-                        if (itemsSection) itemsSection.outerHTML = '<div class="items-section">' + html + '</div>';
+                        if (!itemsSection) return;
+                        // Remove existing table and toggle button, keep add-item-row.
+                        var oldTable = itemsSection.querySelector('.item-table');
+                        if (oldTable) oldTable.remove();
+                        var oldToggle = itemsSection.querySelector('.items-toggle');
+                        if (oldToggle) oldToggle.remove();
+                        var oldNoItems = itemsSection.querySelector('.no-items-text');
+                        if (oldNoItems) oldNoItems.remove();
+                        // Prepend the server-rendered table/toggle before add-item-row.
+                        var addRow = itemsSection.querySelector('.add-item-row');
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = html;
+                        while (tmp.firstChild) {
+                            itemsSection.insertBefore(tmp.firstChild, addRow);
+                        }
                     })
                     .catch(function(err) { console.error('failed to refresh items:', err); });
             }
