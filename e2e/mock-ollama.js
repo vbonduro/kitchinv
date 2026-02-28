@@ -38,6 +38,9 @@ let gateClosed = false;
 let gateWaiters = []; // resolve functions from streams waiting at the gate
 let gateWaitCount = 0; // number of streams currently blocked at the gate
 
+// Fail mode: next generate call returns 500 (simulates vision API rejection).
+let failNextCall = false;
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -54,6 +57,12 @@ function waitForGate() {
 }
 
 async function handleGenerate(req, res) {
+  if (failNextCall) {
+    failNextCall = false;
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'simulated failure' }));
+    return;
+  }
   // Read and parse request body.
   const body = await new Promise((resolve, reject) => {
     let data = '';
@@ -117,6 +126,18 @@ const server = http.createServer(async (req, res) => {
     slowMode = false;
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ slow: false }));
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/control/fail') {
+    failNextCall = true;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ fail: true }));
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/control/fail/reset') {
+    failNextCall = false;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ fail: false }));
     return;
   }
   if (req.method === 'POST' && req.url === '/control/gate/close') {

@@ -190,22 +190,41 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
 	}
 
+	// Snapshot existing items before clearing — needed to restore on failure.
+	prevItems, err := s.itemStore.ListByAreaID(ctx, areaID)
+	if err != nil {
+		_ = s.photoStore.Delete(ctx, photo.ID)
+		_ = s.photoStg.Delete(ctx, storageKey)
+		return nil, nil, fmt.Errorf("failed to snapshot items: %w", err)
+	}
+
 	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
-		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
+		_ = s.photoStore.Delete(ctx, photo.ID)
+		_ = s.photoStg.Delete(ctx, storageKey)
+		return nil, nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 
 	s.logger.Info("vision stream analysis started", "area_id", areaID)
 	rawCh, err := sa.AnalyzeStream(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
-		// Roll back only the new photo record and file — items are already
-		// cleared at this point (intentional: user is replacing the photo).
-		// This ensures the area is not left permanently stuck in "analysing"
-		// state with no photo and no way to re-upload (kitchinv-uh7).
+		// Roll back: remove the new photo record and file, and restore
+		// previous items so the area is not left stuck in "analysing" state
+		// (kitchinv-uh7).
 		if dbErr := s.photoStore.Delete(ctx, photo.ID); dbErr != nil {
 			s.logger.Error("failed to roll back photo record after stream error", "area_id", areaID, "error", dbErr)
 		}
 		if stgErr := s.photoStg.Delete(ctx, storageKey); stgErr != nil {
 			s.logger.Error("failed to roll back photo file after stream error", "area_id", areaID, "error", stgErr)
+		}
+		prevPhoto, _ := s.photoStore.GetLatestByAreaID(ctx, areaID)
+		var prevPhotoID *int64
+		if prevPhoto != nil {
+			prevPhotoID = &prevPhoto.ID
+		}
+		for _, item := range prevItems {
+			if _, createErr := s.itemStore.Create(ctx, areaID, prevPhotoID, item.Name, item.Quantity, item.Notes); createErr != nil {
+				s.logger.Error("failed to restore item after stream error", "name", item.Name, "error", createErr)
+			}
 		}
 		return nil, nil, fmt.Errorf("failed to start vision stream: %w", err)
 	}

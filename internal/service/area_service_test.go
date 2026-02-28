@@ -370,8 +370,12 @@ func TestAreaServiceUploadPhotoStream_AnalysisFailure_PreservesExistingState(t *
 	require.NotNil(t, prevPhoto, "regression(kitchinv-uh7): previous photo was deleted after failed upload")
 	assert.Equal(t, firstPhotoID, prevPhoto.ID, "regression(kitchinv-uh7): photo was replaced after failed upload")
 
-	// Items are cleared during re-upload (before AnalyzeStream is called) —
-	// this is expected behaviour when the user is intentionally replacing the photo.
+	// Previous items must be restored so the area does not show the analysing
+	// overlay (photo+no items) after a page refresh.
+	itemsAfter, err := itemStore.ListByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	require.Len(t, itemsAfter, 1, "regression(kitchinv-uh7): items not restored after failed upload")
+	assert.Equal(t, "Milk", itemsAfter[0].Name)
 }
 
 func TestAreaServiceSearchItems(t *testing.T) {

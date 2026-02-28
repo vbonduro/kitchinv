@@ -70,6 +70,7 @@ test.describe('Upload & Analysis', () => {
   test.afterEach(async () => {
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fast`);
     await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/gate/open`);
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fail/reset`);
   });
 
   test('upload shows analyzing indicator then 3 items stream in', async ({ page }) => {
@@ -115,6 +116,38 @@ test.describe('Upload & Analysis', () => {
 
     // After stream completes, file input re-enabled.
     await expect(fileInput).toBeEnabled({ timeout: 15_000 });
+  });
+
+  // Regression test for kitchinv-uh7: after a successful upload, if a
+  // subsequent upload fails, the area must show the previous photo and items
+  // both immediately (no refresh) and after a page refresh.
+  test('failed re-upload restores previous photo and items', async ({ page }) => {
+    const name = `E2E UploadFailRestore ${Date.now()}`;
+    const areaID = await createArea(page, name);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    // First upload succeeds — 3 items appear.
+    await uploadPhoto(page, areaID, jpegFixture);
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+
+    // Make the next upload fail at the vision API level.
+    await apiContext.post(`http://localhost:${OLLAMA_PORT}/control/fail`);
+
+    // Attempt second upload — should fail.
+    await uploadPhoto(page, areaID, jpegFixture);
+
+    // Error toast must appear.
+    await expect(page.locator('.toast')).toBeVisible({ timeout: 5_000 });
+
+    // Card must restore to previous state: photo present, 3 items, no analysing banner.
+    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+
+    // After page refresh the area must still show previous photo and items.
+    await page.goto('/areas');
+    const cardAfterRefresh = page.locator(`[data-testid="area-card-${areaID}"]`);
+    await expect(cardAfterRefresh.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
+    await expect(cardAfterRefresh.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
   });
 
   test('second upload replaces items (still 3 item-rows)', async ({ page }) => {
