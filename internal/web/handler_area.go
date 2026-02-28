@@ -179,7 +179,8 @@ func (s *Server) handleGetAreaItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.renderPartial(w, "partials/item_list.html", items); err != nil {
+	data := map[string]any{"AreaID": areaID, "Items": items}
+	if err := s.renderPartial(w, "partials/item_list.html", data); err != nil {
 		s.logger.Error("render partial failed", "error", err)
 	}
 }

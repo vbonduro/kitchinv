@@ -73,7 +73,7 @@
 
             <p class="section-label">Items</p>
             <div id="items">
-                {{template "item_list" .Items}}
+                {{template "item_list" (dict "AreaID" .Area.ID "Items" .Items)}}
             </div>
         </div>
     </div>

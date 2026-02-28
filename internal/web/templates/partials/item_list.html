@@ -1,5 +1,5 @@
 {{define "item_list"}}
-{{if .}}
+{{if .Items}}
     <table class="item-table">
         <thead>
             <tr>
@@ -10,9 +10,9 @@
             </tr>
         </thead>
         <tbody class="items-tbody">
-        {{range $i, $item := .}}
-        <tr class="item-row" data-testid="item-row" data-item-id="{{$item.ID}}">
-            <td class="item-name-cell">{{$item.Name}}</td>
+        {{range $i, $item := .Items}}
+        <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}}>
+            <td class="item-name-cell" onclick="startEditItem({{$item.AreaID}}, {{$item.ID}})">{{$item.Name}}</td>
             <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
             <td class="item-notes-cell">{{$item.Notes}}</td>
             <td class="item-actions">
@@ -27,6 +27,9 @@
         {{end}}
         </tbody>
     </table>
+    {{if gt (len .Items) 10}}
+    <button class="items-toggle" onclick="toggleItems({{.AreaID}})">Show {{sub (len .Items) 10}} more</button>
+    {{end}}
 {{else}}
     <div class="no-items-text">No items yet</div>
 {{end}}

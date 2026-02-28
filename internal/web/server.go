@@ -59,6 +59,15 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 		tmplFuncs: template.FuncMap{
 			"inc": func(i int) int { return i + 1 },
 			"sub": func(a, b int) int { return a - b },
+			"dict": func(pairs ...any) map[string]any {
+				m := make(map[string]any, len(pairs)/2)
+				for i := 0; i+1 < len(pairs); i += 2 {
+					if k, ok := pairs[i].(string); ok {
+						m[k] = pairs[i+1]
+					}
+				}
+				return m
+			},
 		},
 	}
 	s.registerRoutes()
