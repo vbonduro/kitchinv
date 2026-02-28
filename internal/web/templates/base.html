@@ -839,6 +839,10 @@
         var noItemsText = card.querySelector('.no-items-text');
         var uploadZone = card.querySelector('[data-testid="upload-zone-' + areaID + '"]');
 
+        // Snapshot current state so we can restore it on failure.
+        var prevPhotoHTML = photoSection ? photoSection.outerHTML : null;
+        var prevItemsHTML = itemsBody ? itemsBody.innerHTML : null;
+
         // Show photo preview.
         var previewUrl = URL.createObjectURL(file);
         var photoHTML = '<div class="area-photo-section">' +
@@ -929,22 +933,36 @@
         function finishStream(error) {
             if (streamFinished) return;
             streamFinished = true;
-            // Remove analyzing overlay.
-            var overlay = card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]');
-            if (overlay) overlay.remove();
             // Re-enable file input.
             if (fileInput) fileInput.disabled = false;
-            // Add photo controls.
-            var photoSec = card.querySelector('.area-photo-section');
-            if (photoSec && !error) {
-                // Update image src to actual server URL and add overlay/remove button.
-                var img = photoSec.querySelector('img');
-                if (img) img.src = '/areas/' + areaID + '/photo?t=' + Date.now();
-                photoSec.innerHTML = '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
-                    '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
-                    '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+
+            if (error) {
+                // Show toast first before any DOM changes.
+                showToast('Upload failed — previous state restored');
+                // Restore the previous photo section (upload zone or existing photo).
+                var currentPhotoSec = card.querySelector('.area-photo-section') || card.querySelector('.upload-zone');
+                if (prevPhotoHTML && currentPhotoSec) {
+                    currentPhotoSec.outerHTML = prevPhotoHTML;
+                    // Re-attach drop zone listener if it was an upload zone.
+                    if (prevPhotoHTML.indexOf('upload-zone') !== -1) setupDropZone(areaID);
+                }
+                // Restore previous items.
+                var tbody = card.querySelector('.items-tbody');
+                if (tbody !== null && prevItemsHTML !== null) {
+                    tbody.innerHTML = prevItemsHTML;
+                }
+            } else {
+                // Remove analyzing overlay.
+                var overlay = card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]');
+                if (overlay) overlay.remove();
+                // Update photo section with server URL and controls.
+                var photoSec = card.querySelector('.area-photo-section');
+                if (photoSec) {
+                    photoSec.innerHTML = '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
+                        '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
+                        '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+                }
             }
-            if (error) showToast('Analysis failed');
         }
     }
 
