@@ -318,6 +318,64 @@ func TestAreaServiceUploadPhotoStream_VisionStreamError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// TestAreaServiceUploadPhotoStream_AnalysisFailure_PreservesExistingState is a
+// regression test for kitchinv-uh7. When AnalyzeStream fails on an area that
+// already has a photo and items, the previous photo and items must be fully
+// preserved — nothing should be deleted.
+func TestAreaServiceUploadPhotoStream_AnalysisFailure_PreservesExistingState(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	photoStg := newStubPhotoStore()
+	areaStore := store.NewAreaStore(d)
+	photoStore := store.NewPhotoStore(d)
+	itemStore := store.NewItemStore(d)
+	ctx := context.Background()
+
+	// First upload succeeds.
+	svc := NewAreaService(areaStore, photoStore, itemStore,
+		&stubVision{result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{{Name: "Milk", Quantity: "1 litre", Notes: ""}},
+		}},
+		photoStg, slog.Default(),
+	)
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	photo, ch, err := svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	for range ch {
+	} // drain
+	firstPhotoID := photo.ID
+
+	// Verify item exists after first upload.
+	items, err := itemStore.ListByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	require.Len(t, items, 1, "expected 1 item after first upload")
+	assert.Equal(t, "Milk", items[0].Name)
+
+	// Second upload fails at AnalyzeStream.
+	svc.visionAPI = &stubVision{
+		result:    &vision.AnalysisResult{},
+		streamErr: errors.New("image exceeds 5 MB maximum"),
+	}
+	_, _, err = svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	assert.Error(t, err)
+
+	// Previous photo must still exist.
+	prevPhoto, err := photoStore.GetLatestByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	require.NotNil(t, prevPhoto, "regression(kitchinv-uh7): previous photo was deleted after failed upload")
+	assert.Equal(t, firstPhotoID, prevPhoto.ID, "regression(kitchinv-uh7): photo was replaced after failed upload")
+
+	// Previous items must still exist.
+	itemsAfter, err := itemStore.ListByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	require.Len(t, itemsAfter, 1, "regression(kitchinv-uh7): items were deleted after failed upload")
+	assert.Equal(t, "Milk", itemsAfter[0].Name)
+}
+
 func TestAreaServiceSearchItems(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)

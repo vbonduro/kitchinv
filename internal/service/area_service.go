@@ -24,6 +24,7 @@ type areaRepository interface {
 type photoRepository interface {
 	Create(ctx context.Context, areaID int64, storageKey, mimeType string) (*domain.Photo, error)
 	GetLatestByAreaID(ctx context.Context, areaID int64) (*domain.Photo, error)
+	Delete(ctx context.Context, id int64) error
 	DeleteByArea(ctx context.Context, areaID int64) (*domain.Photo, error)
 }
 
@@ -189,14 +190,24 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
 	}
 
-	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
-		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
-	}
-
 	s.logger.Info("vision stream analysis started", "area_id", areaID)
 	rawCh, err := sa.AnalyzeStream(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
-		return photo, nil, fmt.Errorf("failed to start vision stream: %w", err)
+		// Roll back only the new photo record and file — do not touch the
+		// previous photo or items so the area is restored to its prior state
+		// (kitchinv-uh7).
+		if dbErr := s.photoStore.Delete(ctx, photo.ID); dbErr != nil {
+			s.logger.Error("failed to roll back photo record after stream error", "area_id", areaID, "error", dbErr)
+		}
+		if stgErr := s.photoStg.Delete(ctx, storageKey); stgErr != nil {
+			s.logger.Error("failed to roll back photo file after stream error", "area_id", areaID, "error", stgErr)
+		}
+		return nil, nil, fmt.Errorf("failed to start vision stream: %w", err)
+	}
+
+	// Analysis is starting — now safe to clear old items.
+	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
+		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 
 	out := make(chan vision.StreamEvent, 16)

@@ -41,6 +41,20 @@ Close issues when the PR merges, not before:
 bd close <id>
 ```
 
+## TDD Workflow
+
+Follow this cycle for all bug fixes and new features:
+
+1. **Write a failing test first** that reproduces the issue or specifies the behaviour.
+2. **Run the test and confirm it fails** for the right reason.
+3. **Write the minimum code** to make the test pass.
+4. **Run the test and confirm it passes.**
+5. **Run the full suite** (`make test`) to ensure nothing is broken.
+6. **Spin up the service and verify manually** where applicable.
+
+For server-side logic, prefer unit/integration tests in `internal/service/` or `internal/web/`.
+For UI behaviour that can't be tested server-side, cover it with E2E tests in `e2e/`.
+
 ## Commands
 
 ```bash

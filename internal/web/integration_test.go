@@ -23,6 +23,21 @@ import (
 	"github.com/vbonduro/kitchinv/internal/web/templates"
 )
 
+// failingVision is a VisionAnalyzer/StreamAnalyzer stub whose AnalyzeStream
+// always returns an error. Used to simulate vision API failures (e.g. image
+// too large) after the photo has already been saved to storage.
+type failingVision struct {
+	err error
+}
+
+func (f *failingVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
+	return nil, f.err
+}
+
+func (f *failingVision) AnalyzeStream(_ context.Context, _ io.Reader, _ string) (<-chan vision.StreamEvent, error) {
+	return nil, f.err
+}
+
 // blockingVision is a VisionAnalyzer/StreamAnalyzer stub whose AnalyzeStream
 // blocks until release is closed. This lets tests inspect server state while
 // analysis is in progress (simulating a user navigating away mid-stream).
@@ -578,6 +593,55 @@ func TestIntegration_GetAreaItems(t *testing.T) {
 		t.Errorf("regression(kitchinv-5mw): items endpoint did not return stored items:\n%s", b)
 	}
 }
+
+// TestIntegration_UploadPhotoStream_AnalysisFailure_NoExistingPhoto is a
+// regression test for kitchinv-uh7. When the vision API rejects an upload on
+// an area with no prior photo, the photo must be rolled back and the area must
+// render without an analysing banner.
+func TestIntegration_UploadPhotoStream_AnalysisFailure_NoExistingPhoto(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	vis := &failingVision{err: fmt.Errorf("image exceeds 5 MB maximum")}
+	srv, cleanup := newTestServer(t, vis)
+	defer cleanup()
+
+	createArea(t, srv, "Fridge")
+
+	body, contentType := buildMultipartBody(t, minimalJPEG)
+	resp, err := http.Post(srv.URL+"/areas/1/photos/stream", contentType, body)
+	if err != nil {
+		t.Fatalf("POST /areas/1/photos/stream: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		t.Fatal("regression(kitchinv-uh7): expected non-200 on vision failure, got 200")
+	}
+
+	// No photo should exist — GET /areas/1/photo should 404.
+	photoResp, err := http.Get(srv.URL + "/areas/1/photo")
+	if err != nil {
+		t.Fatalf("GET /areas/1/photo: %v", err)
+	}
+	_ = photoResp.Body.Close()
+	if photoResp.StatusCode != http.StatusNotFound {
+		t.Errorf("regression(kitchinv-uh7): photo not rolled back — GET /areas/1/photo returned %d, want 404", photoResp.StatusCode)
+	}
+
+	// Area must not show the analysing banner.
+	areasResp, err := http.Get(srv.URL + "/areas")
+	if err != nil {
+		t.Fatalf("GET /areas: %v", err)
+	}
+	b, _ := io.ReadAll(areasResp.Body)
+	_ = areasResp.Body.Close()
+	if strings.Contains(string(b), `data-testid="analyzing-indicator-1"`) {
+		t.Errorf("regression(kitchinv-uh7): area stuck in analysing state\nHTML:\n%s", b)
+	}
+}
+
 
 // TestIntegration_Search verifies that items stored after an upload are
 // findable via GET /search?q=<term>.
