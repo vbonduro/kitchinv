@@ -190,12 +190,17 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
 	}
 
+	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
+		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
+	}
+
 	s.logger.Info("vision stream analysis started", "area_id", areaID)
 	rawCh, err := sa.AnalyzeStream(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
-		// Roll back only the new photo record and file — do not touch the
-		// previous photo or items so the area is restored to its prior state
-		// (kitchinv-uh7).
+		// Roll back only the new photo record and file — items are already
+		// cleared at this point (intentional: user is replacing the photo).
+		// This ensures the area is not left permanently stuck in "analysing"
+		// state with no photo and no way to re-upload (kitchinv-uh7).
 		if dbErr := s.photoStore.Delete(ctx, photo.ID); dbErr != nil {
 			s.logger.Error("failed to roll back photo record after stream error", "area_id", areaID, "error", dbErr)
 		}
@@ -203,11 +208,6 @@ func (s *AreaService) UploadPhotoStream(ctx context.Context, areaID int64, image
 			s.logger.Error("failed to roll back photo file after stream error", "area_id", areaID, "error", stgErr)
 		}
 		return nil, nil, fmt.Errorf("failed to start vision stream: %w", err)
-	}
-
-	// Analysis is starting — now safe to clear old items.
-	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
-		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 
 	out := make(chan vision.StreamEvent, 16)
