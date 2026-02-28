@@ -150,6 +150,24 @@ test.describe('Upload & Analysis', () => {
     await expect(cardAfterRefresh.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
   });
 
+  // Regression test for kitchinv-c0o: after upload completes, item controls
+  // (delete, edit) must be interactive immediately without a page refresh.
+  test('item controls are interactive after upload without refresh', async ({ page }) => {
+    const name = `E2E UploadInteractive ${Date.now()}`;
+    const areaID = await createArea(page, name);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    await uploadPhoto(page, areaID, jpegFixture);
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+
+    // Delete the first item without refreshing — must work immediately.
+    const firstRow = card.locator('[data-testid="item-row"]').first();
+    await firstRow.locator('button[aria-label="Delete item"]').click();
+
+    // Item count should drop to 2.
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(2, { timeout: 5_000 });
+  });
+
   test('second upload replaces items (still 3 item-rows)', async ({ page }) => {
     const name = `E2E UploadReplace ${Date.now()}`;
     const areaID = await createArea(page, name);
