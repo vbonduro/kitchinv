@@ -635,9 +635,13 @@
         @media (max-width: 640px) {
             .header-search { max-width: none; }
             .logo-text { display: none; }
-            .area-photo-overlay { opacity: 1; background: rgba(0,0,0,0.2); }
-            .area-photo-remove { opacity: 1; }
             .item-actions { opacity: 1; }
+        }
+
+        /* Photo controls on touch: show only when .photo-controls-visible is set */
+        @media (hover: none) {
+            .area-photo-section.photo-controls-visible .area-photo-overlay { opacity: 1; background: rgba(0,0,0,0.35); }
+            .area-photo-section.photo-controls-visible .area-photo-remove { opacity: 1; }
         }
     </style>
 </head>
@@ -834,6 +838,33 @@
         startStream(areaID, input.files[0]);
     }
 
+    function setupPhotoTouchToggle(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var section = card.querySelector('.area-photo-section');
+        if (!section) return;
+
+        section.addEventListener('touchstart', function(e) {
+            var isVisible = section.classList.contains('photo-controls-visible');
+            // If controls are hidden, show them and cancel the default action
+            // so we don't also trigger the overlay's onclick (upload).
+            if (!isVisible) {
+                e.preventDefault();
+                section.classList.add('photo-controls-visible');
+                // Dismiss when user touches anywhere outside this section.
+                function dismiss(ev) {
+                    if (!section.contains(ev.target)) {
+                        section.classList.remove('photo-controls-visible');
+                        document.removeEventListener('touchstart', dismiss, true);
+                    }
+                }
+                document.addEventListener('touchstart', dismiss, true);
+            }
+            // If controls are already visible, let the touch proceed normally
+            // (overlay onclick or remove button onclick will fire).
+        }, { passive: false });
+    }
+
     function setupDragDrop(areaID) {
         var zone = document.querySelector('[data-testid="upload-zone-' + areaID + '"]');
         if (!zone) return;
@@ -979,6 +1010,7 @@
                     photoSec.innerHTML = '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
                         '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
                         '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+                    setupPhotoTouchToggle(areaID);
                 }
                 // Replace streamed item rows with server-rendered partial so
                 // that all controls (delete, edit) and data-item-id attributes
@@ -1335,12 +1367,16 @@
         }
     }
 
-    /* ── Init drag-drop on page load ───────────────────── */
+    /* ── Init drag-drop and touch-toggle on page load ──── */
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.area-card').forEach(function(card) {
             var testid = card.getAttribute('data-testid') || '';
             var m = testid.match(/area-card-(\d+)/);
-            if (m) setupDragDrop(parseInt(m[1], 10));
+            if (m) {
+                var id = parseInt(m[1], 10);
+                setupDragDrop(id);
+                setupPhotoTouchToggle(id);
+            }
         });
     });
     </script>
