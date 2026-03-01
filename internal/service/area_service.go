@@ -73,7 +73,14 @@ func NewAreaService(
 }
 
 func (s *AreaService) CreateArea(ctx context.Context, name string) (*domain.Area, error) {
-	return s.areaStore.Create(ctx, name)
+	area, err := s.areaStore.Create(ctx, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, ErrNameTaken
+		}
+		return nil, err
+	}
+	return area, nil
 }
 
 func (s *AreaService) ListAreas(ctx context.Context) ([]*domain.Area, error) {

@@ -68,6 +68,21 @@ test.describe('Areas', () => {
     await expect(page.locator('[data-testid="new-area-btn"]')).toBeVisible({ timeout: 3_000 });
   });
 
+  // Regression test for kitchinv-1wd: errors in create area dialog must be shown
+  // inline (not as toasts) because toasts are hidden behind the <dialog> top-layer.
+  test('create area dialog shows inline error on duplicate name', async ({ page }) => {
+    const name = `E2E DupDialog ${Date.now()}`;
+    await createArea(page, name);
+    await page.click('[data-testid="new-area-btn"]');
+    await page.locator('#new-area-dialog').waitFor({ state: 'visible' });
+    await page.fill('#new-area-dialog input[name="name"]', name);
+    await page.click('#new-area-dialog button[type="submit"]');
+    const dialogError = page.locator('[data-testid="dialog-error"]');
+    await expect(dialogError).toBeVisible({ timeout: 3_000 });
+    await expect(dialogError).toContainText('already exists');
+    await expect(page.locator('#new-area-dialog')).toBeVisible();
+  });
+
   test('empty state removed when first area added', async ({ page }) => {
     await page.goto('/areas');
 
