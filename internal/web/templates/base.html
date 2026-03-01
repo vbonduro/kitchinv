@@ -1227,13 +1227,43 @@
                 });
 
                 if (!q) {
+                    // Restore all rows to their natural visibility state.
+                    card.querySelectorAll('.item-row').forEach(function(row) {
+                        var isHidden = row.classList.contains('item-row-hidden');
+                        row.style.display = isHidden ? 'none' : '';
+                    });
+                    // Restore the "show more" toggle.
+                    var toggle = card.querySelector('.items-toggle');
+                    if (toggle) toggle.style.display = '';
                     card.style.display = '';
                     anyVisible = true;
                     return;
                 }
 
-                var text = card.textContent.toLowerCase();
-                if (text.indexOf(q) >= 0) {
+                // Filter item rows — match against name, qty, and notes cells.
+                var rows = card.querySelectorAll('.item-row');
+                var cardHasMatch = false;
+
+                // Also check the area name itself.
+                var areaName = card.querySelector('.area-card-name');
+                var areaNameMatch = areaName && areaName.textContent.toLowerCase().indexOf(q) >= 0;
+                if (areaNameMatch) cardHasMatch = true;
+
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    if (text.indexOf(q) >= 0) {
+                        row.style.display = '';
+                        cardHasMatch = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Hide the "show more" toggle while filtering — all matching rows are visible.
+                var toggle = card.querySelector('.items-toggle');
+                if (toggle) toggle.style.display = q ? 'none' : '';
+
+                if (cardHasMatch) {
                     card.style.display = '';
                     anyVisible = true;
                     highlightText(card, q);
