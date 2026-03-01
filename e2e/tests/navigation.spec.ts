@@ -80,17 +80,19 @@ test.describe('Navigation', () => {
     // Navigate away while the gate is still closed (stream mid-flight).
     await page.goto('about:blank');
 
-    // Navigate back — server renders card with photo but no items (analyzing state).
+    // Navigate back — server renders card with photo but no items.
+    // No stuck analysing overlay on page load (overlay is JS-only, shown only on the
+    // tab that initiated the upload).
     await page.goto('/areas');
 
-    // The card should show the analyzing overlay.
-    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+    // Photo is visible, no stuck overlay.
+    await expect(page.locator('.area-photo-img')).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible();
 
     // Open the gate — server-side goroutine resumes writing items to DB.
     await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
 
-    // Reload the page to see items.
-    // The analyzing overlay goes away and items render server-side.
+    // Reload the page to see items once analysis is complete.
     await page.waitForTimeout(2_000);
     await page.goto('/areas');
 
@@ -98,7 +100,9 @@ test.describe('Navigation', () => {
     await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 20_000 });
   });
 
-  test('areas list shows analyzing overlay during analysis, not empty items text', async ({ page }) => {
+  // Updated: page load with photo+no items shows photo with controls and empty items
+  // section — no stuck analysing overlay (overlay is JS-only).
+  test('areas list with photo+no items: shows photo and empty items section', async ({ page }) => {
     const name = `E2E NavAnalysing ${Date.now()}`;
     const areaID = await createArea(page, name);
 
@@ -112,16 +116,18 @@ test.describe('Navigation', () => {
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
     await waitForGate(apiContext, ollamaPort);
 
-    // Reload the areas list — server should render the analyzing state.
+    // Reload the areas list.
     await page.goto('/areas');
 
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Should show the analyzing indicator.
-    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+    // Photo is visible, no stuck overlay.
+    await expect(card.locator('.area-photo-img')).toBeVisible({ timeout: 5_000 });
+    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible();
 
-    // Should NOT show "no items" text.
-    await expect(card.locator('.no-items-text')).not.toBeVisible();
+    // Items section visible with add-item row accessible.
+    await expect(card.locator('.items-section')).toBeVisible();
+    await expect(card.locator('.add-item-name')).toBeVisible();
   });
 
   test('items persist after navigation (context.WithoutCancel)', async ({ page }) => {

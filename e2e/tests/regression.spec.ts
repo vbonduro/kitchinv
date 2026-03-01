@@ -90,7 +90,10 @@ test.describe('Regression', () => {
     }
   });
 
-  test('Bug 3: analyzing overlay is server-rendered, not JS-only', async ({ page }) => {
+  // Bug 3 (updated): on page load with photo+no items (mid-stream on another connection),
+  // the card must show the photo with controls — not a stuck analysing overlay.
+  // The analysing overlay is JS-only (shown only on the tab that initiated the upload).
+  test('Bug 3: page load with photo+no items shows photo with controls, not stuck overlay', async ({ page }) => {
     const name = `E2E RegServerSpinner ${Date.now()}`;
     const areaID = await createArea(page, name);
 
@@ -104,17 +107,22 @@ test.describe('Regression', () => {
     // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
     await waitForGate(apiContext, ollamaPort);
 
-    // Open a fresh page — server sees hasPhoto && !hasItems and renders the analyzing overlay.
+    // Open a fresh page — should show photo with controls, not the stuck analysing overlay.
     const freshPage = await page.context().newPage();
     await freshPage.goto('/areas');
 
-    // The fresh page must show the analyzing indicator (server-rendered: hasPhoto && !hasItems).
-    await expect(freshPage.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+    const freshCard = freshPage.locator(`[data-testid="area-card-${areaID}"]`);
+    // Photo is visible.
+    await expect(freshCard.locator('.area-photo-img')).toBeVisible({ timeout: 5_000 });
+    // No stuck analysing overlay on a fresh page load.
+    await expect(freshCard.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible();
 
     await freshPage.close();
   });
 
-  test('Bug 4: analyzing overlay shown (not "no items") during analysis', async ({ page }) => {
+  // Bug 4 (updated): on page load with photo+no items, items section is visible
+  // and the add-item row is accessible.
+  test('Bug 4: page load with photo+no items shows empty items section', async ({ page }) => {
     const name = `E2E RegAnalysingCard ${Date.now()}`;
     const areaID = await createArea(page, name);
 
@@ -132,35 +140,11 @@ test.describe('Regression', () => {
 
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Positive: analyzing indicator is present.
-    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+    // No stuck analysing overlay.
+    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible();
 
-    // Negative: "no items" text is absent.
-    await expect(card.locator('.no-items-text')).not.toBeVisible();
-  });
-
-  // Regression test for kitchinv-ywq: when a page is loaded with photo+no items
-  // (analysis was interrupted), a remove button must be visible so the user can
-  // escape the stuck analysing state.
-  test('Bug 5: stuck analysing overlay has a visible remove-photo button', async ({ page }) => {
-    const name = `E2E RegStuckOverlay ${Date.now()}`;
-    const areaID = await createArea(page, name);
-
-    // Close the gate to hold the stream open (photo in DB, no items).
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
-
-    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
-    await fileInput.setInputFiles(jpegFixture);
-    await waitForGate(apiContext, ollamaPort);
-
-    // Reload to get the server-rendered stuck state.
-    await page.goto('/areas');
-
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
-
-    // The remove button must be immediately visible (no hover required).
-    const removeBtn = card.locator('button[aria-label="Remove photo"]');
-    await expect(removeBtn).toBeVisible({ timeout: 3_000 });
+    // Items section and add-item row must be visible.
+    await expect(card.locator('.items-section')).toBeVisible();
+    await expect(card.locator('.add-item-name')).toBeVisible();
   });
 });
