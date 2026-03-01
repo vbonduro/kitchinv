@@ -715,9 +715,13 @@
             var es = document.querySelector('[data-testid="empty-state"]');
             if (es) es.remove();
             // Insert before the "new area" button.
-            var btn = document.getElementById('new-area-btn-wrap');
-            if (btn) btn.insertAdjacentHTML('beforebegin', html);
-            else list.insertAdjacentHTML('beforeend', html);
+            var btnWrap = document.getElementById('new-area-btn-wrap');
+            if (btnWrap) {
+                btnWrap.insertAdjacentHTML('beforebegin', html);
+                btnWrap.style.display = ''; // show if it was hidden (empty state)
+            } else {
+                list.insertAdjacentHTML('beforeend', html);
+            }
             nameInput.value = '';
             document.getElementById('new-area-dialog').close();
             showToast('Area created');
