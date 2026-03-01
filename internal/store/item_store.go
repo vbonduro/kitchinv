@@ -86,6 +86,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.notes, i.created_at FROM items i
+		INNER JOIN areas a ON i.area_id = a.id
 		WHERE LOWER(i.name) LIKE ?
 		ORDER BY i.name ASC
 	`, pattern)

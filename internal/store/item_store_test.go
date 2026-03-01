@@ -117,6 +117,27 @@ func TestItemStoreSearch_NoMatch(t *testing.T) {
 	assert.Empty(t, results)
 }
 
+// Regression test for kitchinv-foy: search must not return items whose area
+// has been deleted.
+func TestItemStoreSearch_DeletedArea(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "ToDelete")
+	require.NoError(t, err)
+	_, err = items.Create(ctx, area.ID, nil, "Milk", "1 liter", "")
+	require.NoError(t, err)
+
+	// Delete the area — items should cascade-delete.
+	require.NoError(t, areas.Delete(ctx, area.ID))
+
+	results, err := items.Search(ctx, "Milk")
+	require.NoError(t, err)
+	assert.Empty(t, results, "search must not return items from deleted areas")
+}
+
 func TestItemStoreUpdate(t *testing.T) {
 	d := openTestDB(t)
 	areas := NewAreaStore(d)
