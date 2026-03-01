@@ -276,6 +276,7 @@
         }
         .area-photo-section:hover .area-photo-remove { opacity: 1; }
         .area-photo-remove:hover { background: var(--danger); }
+        .area-photo-remove-stuck { opacity: 1; }
 
         /* Analyzing state */
         .area-analysing-overlay {
@@ -897,13 +898,13 @@
         var prevPhotoHTML = photoSection ? photoSection.outerHTML : null;
         var prevItemsHTML = itemsBody ? itemsBody.innerHTML : null;
 
-        // Show photo preview.
+        // Show photo preview with "Uploading..." state.
         var previewUrl = URL.createObjectURL(file);
         var photoHTML = '<div class="area-photo-section">' +
             '<img src="' + previewUrl + '" class="area-photo-img" alt="Uploading...">' +
             '<div class="area-analysing-overlay" data-testid="analyzing-indicator-' + areaID + '">' +
             '<div class="spinner"></div>' +
-            '<span class="area-analysing-text">Analyzing your space...</span>' +
+            '<span class="area-analysing-text" data-upload-status="uploading">Uploading...</span>' +
             '</div></div>';
 
         if (uploadZone) {
@@ -956,6 +957,9 @@
             body: formData,
         }).then(function(resp) {
             if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+            // Upload complete — switch banner to "Analysing..." state.
+            var statusEl = card.querySelector('[data-upload-status="uploading"]');
+            if (statusEl) statusEl.textContent = 'Analyzing your space...';
             var reader = resp.body.getReader();
             var decoder = new TextDecoder();
             var buf = '';
