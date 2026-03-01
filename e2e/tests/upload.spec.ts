@@ -45,10 +45,9 @@ async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newCont
   throw new Error('Timed out waiting for stream to reach gate');
 }
 
-// Gate-based tests mutate shared mock state — run serially.
-test.describe.configure({ mode: 'serial' });
-
 test.describe('Upload & Analysis', () => {
+  // Gate-based tests mutate shared mock state — run serially.
+  test.describe.configure({ mode: 'serial' });
   let jpegFixture: string;
   let apiContext: Awaited<ReturnType<typeof request.newContext>>;
   let ollamaPort: number;
@@ -71,6 +70,24 @@ test.describe('Upload & Analysis', () => {
     await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
     await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
     await apiContext.post(`http://localhost:${ollamaPort}/control/fail/reset`);
+  });
+
+  test('analyzing overlay appears immediately on file select', async ({ page }) => {
+    const name = `E2E UploadBanner ${Date.now()}`;
+    const areaID = await createArea(page, name);
+
+    // Close gate so the stream blocks after upload, keeping overlay visible.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+
+    await uploadPhoto(page, areaID, jpegFixture);
+
+    // Wait for the gate — guarantees upload committed, analysis blocked.
+    await waitForGate(apiContext, ollamaPort);
+
+    // Overlay must be visible showing "Analyzing your space...".
+    const overlay = page.locator(`[data-testid="analyzing-indicator-${areaID}"]`);
+    await expect(overlay).toBeVisible({ timeout: 5_000 });
+    await expect(overlay.locator('.area-analysing-text')).toHaveText('Analyzing your space...');
   });
 
   test('upload shows analyzing indicator then 3 items stream in', async ({ page }) => {

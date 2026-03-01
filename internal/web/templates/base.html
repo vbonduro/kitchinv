@@ -897,13 +897,14 @@
         var prevPhotoHTML = photoSection ? photoSection.outerHTML : null;
         var prevItemsHTML = itemsBody ? itemsBody.innerHTML : null;
 
-        // Show photo preview with "Uploading..." state.
+        // Show photo preview with analyzing overlay immediately on file select.
+        // min-height ensures the overlay is Playwright-visible before the image loads.
         var previewUrl = URL.createObjectURL(file);
-        var photoHTML = '<div class="area-photo-section">' +
-            '<img src="' + previewUrl + '" class="area-photo-img" alt="Uploading...">' +
+        var photoHTML = '<div class="area-photo-section" style="min-height:120px">' +
+            '<img src="' + previewUrl + '" class="area-photo-img" alt="">' +
             '<div class="area-analysing-overlay" data-testid="analyzing-indicator-' + areaID + '">' +
             '<div class="spinner"></div>' +
-            '<span class="area-analysing-text" data-upload-status="uploading">Uploading...</span>' +
+            '<span class="area-analysing-text">Analyzing your space...</span>' +
             '</div></div>';
 
         if (uploadZone) {
@@ -911,6 +912,13 @@
         } else if (photoSection) {
             photoSection.outerHTML = photoHTML;
         }
+
+        // Disable file input.
+        var fileInput = card.querySelector('[data-testid="photo-input-' + areaID + '"]');
+        if (fileInput) fileInput.disabled = true;
+
+        var formData = new FormData();
+        formData.append('image', file);
 
         // Hide items section during analysis.
         if (itemsSection) {
@@ -943,22 +951,12 @@
             itemsBody = card.querySelector('.items-tbody');
         }
 
-        // Disable file input.
-        var fileInput = card.querySelector('[data-testid="photo-input-' + areaID + '"]');
-        if (fileInput) fileInput.disabled = true;
-
-        var formData = new FormData();
-        formData.append('image', file);
-
         var streamFinished = false;
         fetch('/areas/' + areaID + '/photos/stream', {
             method: 'POST',
             body: formData,
         }).then(function(resp) {
             if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
-            // Upload complete — switch banner to "Analysing..." state.
-            var statusEl = card.querySelector('[data-upload-status="uploading"]');
-            if (statusEl) statusEl.textContent = 'Analyzing your space...';
             var reader = resp.body.getReader();
             var decoder = new TextDecoder();
             var buf = '';
