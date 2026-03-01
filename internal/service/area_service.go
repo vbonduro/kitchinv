@@ -3,13 +3,19 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
+
+// ErrNameTaken is returned by UpdateArea when the requested name is already
+// used by another area.
+var ErrNameTaken = errors.New("an area with this name already exists")
 
 // areaRepository is the subset of store.AreaStore that AreaService requires.
 type areaRepository interface {
@@ -281,6 +287,9 @@ func (s *AreaService) GetAreaWithItems(ctx context.Context, areaID int64) (*doma
 
 func (s *AreaService) UpdateArea(ctx context.Context, areaID int64, name string) (*domain.Area, error) {
 	if err := s.areaStore.Update(ctx, areaID, name); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, ErrNameTaken
+		}
 		return nil, fmt.Errorf("failed to update area: %w", err)
 	}
 	return s.areaStore.GetByID(ctx, areaID)

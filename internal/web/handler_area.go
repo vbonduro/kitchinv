@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -104,6 +105,10 @@ func (s *Server) handleUpdateArea(w http.ResponseWriter, r *http.Request) {
 
 	area, err := s.service.UpdateArea(r.Context(), areaID, name)
 	if err != nil {
+		if errors.Is(err, service.ErrNameTaken) {
+			http.Error(w, "an area with this name already exists", http.StatusConflict)
+			return
+		}
 		http.Error(w, "failed to update area", http.StatusInternalServerError)
 		s.logger.Error("update area failed", "area_id", areaID, "error", err)
 		return

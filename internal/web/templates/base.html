@@ -778,7 +778,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({name: val}),
             }).then(function(resp) {
-                if (!resp.ok) throw new Error('Failed');
+                if (!resp.ok) return resp.text().then(function(msg) { throw new Error(msg.trim()); });
                 return resp.text();
             }).then(function(html) {
                 // Replace the entire card.
@@ -787,8 +787,9 @@
                     card.outerHTML = html;
                 }
                 showToast('Area renamed');
-            }).catch(function() {
-                showToast('Failed to rename area');
+            }).catch(function(err) {
+                var msg = (err && err.message) ? err.message : 'Failed to rename area';
+                showToast(msg);
                 var span = document.createElement('span');
                 span.className = 'area-card-name';
                 span.setAttribute('data-testid', 'area-name-' + areaID);

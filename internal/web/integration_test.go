@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -688,5 +689,39 @@ func TestIntegration_Search(t *testing.T) {
 	}
 	if !strings.Contains(string(b), "Milk") {
 		t.Errorf("search response does not contain 'Milk':\n%s", b)
+	}
+}
+
+// TestIntegration_RenameArea_DuplicateName verifies that PUT /areas/{id} with a
+// name already used by another area returns 409 with a descriptive message.
+func TestIntegration_RenameArea_DuplicateName(t *testing.T) {
+	srv, cleanup := newTestServer(t, &failingVision{err: errors.New("unused")})
+	t.Cleanup(cleanup)
+
+	createArea(t, srv, "Fridge")
+	createArea(t, srv, "Pantry")
+
+	// Try to rename Pantry (id=2) to "Fridge".
+	body := strings.NewReader(`{"name":"Fridge"}`)
+	req, err := http.NewRequest(http.MethodPut, srv.URL+"/areas/2", body)
+	if err != nil {
+		t.Fatalf("build PUT request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("PUT /areas/2: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+
+	if resp.StatusCode != http.StatusConflict {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("expected 409, got %d: %s", resp.StatusCode, b)
+	}
+
+	b, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(b), "already exists") {
+		t.Errorf("expected 'already exists' in response body, got: %s", b)
 	}
 }
