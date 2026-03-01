@@ -911,22 +911,25 @@
             photoSection.outerHTML = photoHTML;
         }
 
-        // Clear existing items and show table.
-        if (noItemsText) noItemsText.remove();
-        if (!itemsSection) {
-            // Create items section.
+        // Hide items section during analysis.
+        if (itemsSection) {
+            itemsSection.style.display = 'none';
+            if (noItemsText) noItemsText.remove();
+            if (itemsBody) itemsBody.innerHTML = '';
+        } else {
+            // Create a hidden items section to stream into.
             var photoEl = card.querySelector('.area-photo-section');
             if (photoEl) {
                 photoEl.insertAdjacentHTML('afterend',
-                    '<div class="items-section"><table class="item-table"><thead><tr>' +
+                    '<div class="items-section" style="display:none"><table class="item-table"><thead><tr>' +
                     '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
                     '</tr></thead><tbody class="items-tbody"></tbody></table></div>');
             }
+            itemsSection = card.querySelector('.items-section');
             itemsBody = card.querySelector('.items-tbody');
-        } else if (itemsBody) {
-            itemsBody.innerHTML = '';
-        } else {
-            // Items section exists (has add-item row) but no table yet.
+        }
+        // Ensure a table body exists for streaming items into.
+        if (itemsSection && !itemsBody) {
             var addRow = itemsSection.querySelector('.add-item-row');
             var tableHTML = '<table class="item-table"><thead><tr>' +
                 '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
@@ -999,11 +1002,13 @@
                     // Re-attach drop zone listener if it was an upload zone.
                     if (prevPhotoHTML.indexOf('upload-zone') !== -1) setupDropZone(areaID);
                 }
-                // Restore previous items.
+                // Restore previous items and show items section.
                 var tbody = card.querySelector('.items-tbody');
                 if (tbody !== null && prevItemsHTML !== null) {
                     tbody.innerHTML = prevItemsHTML;
                 }
+                var itemsSec = card.querySelector('.items-section');
+                if (itemsSec) itemsSec.style.display = '';
             } else {
                 // Remove analyzing overlay.
                 var overlay = card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]');
@@ -1039,6 +1044,8 @@
                         while (tmp.firstChild) {
                             itemsSection.insertBefore(tmp.firstChild, addRow);
                         }
+                        // Reveal items section now that analysis is complete.
+                        itemsSection.style.display = '';
                     })
                     .catch(function(err) { console.error('failed to refresh items:', err); });
             }

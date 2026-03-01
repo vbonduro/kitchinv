@@ -66,8 +66,8 @@
     <input type="file" data-testid="photo-input-{{.ID}}" accept="image/*" style="display:none"
            onchange="handleFileSelect({{.ID}}, this)">
 
-    <!-- Items section -->
-    <div class="items-section">
+    <!-- Items section: hidden while analysing (photo present, no items yet) -->
+    <div class="items-section"{{if and .Photo (not .Items)}} style="display:none"{{end}}>
         {{if .Items}}
         <table class="item-table">
             <thead>
