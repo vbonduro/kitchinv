@@ -37,6 +37,7 @@
     <form onsubmit="submitNewArea(event)">
         <div class="dialog-title">New Area</div>
         <input class="dialog-input" type="text" name="name" placeholder="e.g. Upstairs Fridge" required autocomplete="off" autocorrect="off">
+        <p class="dialog-error" data-testid="dialog-error" style="display:none"></p>
         <div class="dialog-actions">
             <button type="button" class="dialog-cancel" onclick="this.closest('dialog').close()">Cancel</button>
             <button type="submit" class="btn btn-primary btn-sm">Create</button>

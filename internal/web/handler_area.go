@@ -41,6 +41,10 @@ func (s *Server) handleCreateArea(w http.ResponseWriter, r *http.Request) {
 
 	area, err := s.service.CreateArea(r.Context(), name)
 	if err != nil {
+		if errors.Is(err, service.ErrNameTaken) {
+			http.Error(w, "an area with this name already exists", http.StatusConflict)
+			return
+		}
 		http.Error(w, "failed to create area", http.StatusInternalServerError)
 		s.logger.Error("create area failed", "error", err)
 		return

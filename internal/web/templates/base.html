@@ -563,6 +563,12 @@
             border-radius: var(--radius-sm);
         }
         .dialog-cancel:hover { background: #f1f5f9; }
+        .dialog-error {
+            font-size: 0.8125rem;
+            color: var(--danger);
+            margin: -0.5rem 0 0.75rem;
+            padding: 0;
+        }
 
         /* ── Animations ────────────────────────────────────── */
         @keyframes fadeIn {
@@ -701,14 +707,16 @@
         evt.preventDefault();
         var form = evt.target;
         var nameInput = form.querySelector('input[name="name"]');
+        var errorEl = form.querySelector('[data-testid="dialog-error"]');
         var name = nameInput.value.trim();
         if (!name) return;
+        if (errorEl) errorEl.style.display = 'none';
         fetch('/areas', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'name=' + encodeURIComponent(name),
         }).then(function(resp) {
-            if (!resp.ok) throw new Error('Failed');
+            if (!resp.ok) return resp.text().then(function(msg) { throw new Error(msg.trim()); });
             return resp.text();
         }).then(function(html) {
             var list = document.getElementById('area-list');
@@ -725,7 +733,12 @@
             nameInput.value = '';
             document.getElementById('new-area-dialog').close();
             showToast('Area created');
-        }).catch(function() { showToast('Failed to create area'); });
+        }).catch(function(err) {
+            if (errorEl) {
+                errorEl.textContent = (err && err.message) ? err.message : 'Failed to create area';
+                errorEl.style.display = '';
+            }
+        });
     }
 
     /* ── Delete area ────────────────────────────────────── */
