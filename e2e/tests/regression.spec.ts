@@ -138,4 +138,29 @@ test.describe('Regression', () => {
     // Negative: "no items" text is absent.
     await expect(card.locator('.no-items-text')).not.toBeVisible();
   });
+
+  // Regression test for kitchinv-ywq: when a page is loaded with photo+no items
+  // (analysis was interrupted), a remove button must be visible so the user can
+  // escape the stuck analysing state.
+  test('Bug 5: stuck analysing overlay has a visible remove-photo button', async ({ page }) => {
+    const name = `E2E RegStuckOverlay ${Date.now()}`;
+    const areaID = await createArea(page, name);
+
+    // Close the gate to hold the stream open (photo in DB, no items).
+    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+
+    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+    await fileInput.setInputFiles(jpegFixture);
+    await waitForGate(apiContext, ollamaPort);
+
+    // Reload to get the server-rendered stuck state.
+    await page.goto('/areas');
+
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+
+    // The remove button must be immediately visible (no hover required).
+    const removeBtn = card.locator('button[aria-label="Remove photo"]');
+    await expect(removeBtn).toBeVisible({ timeout: 3_000 });
+  });
 });
