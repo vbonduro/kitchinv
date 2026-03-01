@@ -55,6 +55,19 @@ test.describe('Areas', () => {
     await expect(page.locator('.area-card-name', { hasText: name2 })).toBeVisible();
   });
 
+  // Regression test for kitchinv-oct: add area button must remain visible after
+  // the first area is created, without requiring a page refresh.
+  test('add area button visible after first area created (no refresh)', async ({ page }) => {
+    await page.goto('/areas');
+
+    const name = `E2E FirstAreaBtn ${Date.now()}`;
+    await addAreaViaDialog(page, name);
+    await page.locator('.area-card-name', { hasText: name }).waitFor({ timeout: 5_000 });
+
+    // The add area button must still be visible without a page refresh.
+    await expect(page.locator('[data-testid="new-area-btn"]')).toBeVisible({ timeout: 3_000 });
+  });
+
   test('empty state removed when first area added', async ({ page }) => {
     await page.goto('/areas');
 
