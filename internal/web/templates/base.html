@@ -726,14 +726,18 @@
             var list = document.getElementById('area-list');
             var es = document.querySelector('[data-testid="empty-state"]');
             if (es) es.remove();
-            // Insert before the "new area" button.
+            // Insert before the "new area" button, re-creating it if it was removed.
             var btnWrap = document.getElementById('new-area-btn-wrap');
-            if (btnWrap) {
-                btnWrap.insertAdjacentHTML('beforebegin', html);
-                btnWrap.style.display = ''; // show if it was hidden (empty state)
-            } else {
-                list.insertAdjacentHTML('beforeend', html);
+            if (!btnWrap) {
+                var btnWrapHTML = '<div id="new-area-btn-wrap" style="text-align:center; padding-top: 0.5rem;">' +
+                    '<button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">' +
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>' +
+                    'Add Area</button></div>';
+                list.insertAdjacentHTML('beforeend', btnWrapHTML);
+                btnWrap = document.getElementById('new-area-btn-wrap');
             }
+            btnWrap.insertAdjacentHTML('beforebegin', html);
+            btnWrap.style.display = '';
             nameInput.value = '';
             document.getElementById('new-area-dialog').close();
             showToast('Area created');
@@ -757,13 +761,13 @@
             var list = document.getElementById('area-list');
             if (list && !list.querySelector('.area-card')) {
                 var btn = document.getElementById('new-area-btn-wrap');
+                if (btn) btn.remove();
                 var emptyHTML = '<div data-testid="empty-state" class="empty-state">' +
                     '<div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></div>' +
                     '<div class="empty-state-title">No areas yet</div>' +
                     '<div class="empty-state-text">Add your first storage area to start tracking inventory.</div>' +
                     '<button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Add Area</button></div>';
-                if (btn) btn.insertAdjacentHTML('beforebegin', emptyHTML);
-                else list.insertAdjacentHTML('afterbegin', emptyHTML);
+                list.insertAdjacentHTML('afterbegin', emptyHTML);
             }
             showToast('Area deleted');
         }).catch(function() { showToast('Failed to delete area'); });

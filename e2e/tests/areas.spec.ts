@@ -98,4 +98,31 @@ test.describe('Areas', () => {
     // Empty state must be gone.
     await expect(emptyState).toHaveCount(0);
   });
+
+  // Regression test for kitchinv-zec: deleting all areas must show exactly one
+  // "Add Area" button (the empty state), not two.
+  test('deleting all areas shows exactly one add area button', async ({ page }) => {
+    const name1 = `E2E DelAll A ${Date.now()}`;
+    const name2 = `E2E DelAll B ${Date.now()}`;
+    await createArea(page, name1);
+    await createArea(page, name2);
+
+    await page.goto('/areas');
+    page.on('dialog', (d) => d.accept());
+
+    // Delete first area and wait for its card to disappear.
+    const cards = page.locator('.area-card');
+    await expect(cards).toHaveCount(2);
+    await page.locator('[data-testid="delete-area-btn"]').first().click();
+    await expect(cards).toHaveCount(1, { timeout: 5_000 });
+
+    // Delete second area.
+    await page.locator('[data-testid="delete-area-btn"]').first().click();
+
+    // Wait for empty state.
+    await expect(page.locator('[data-testid="empty-state"]')).toBeVisible({ timeout: 5_000 });
+
+    // Exactly one "Add Area" button must be visible.
+    await expect(page.locator('[data-testid="new-area-btn"]')).toHaveCount(1);
+  });
 });
