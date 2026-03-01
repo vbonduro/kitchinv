@@ -424,6 +424,22 @@ func TestAreaServiceUpdateArea(t *testing.T) {
 	assert.Equal(t, "New Name", updated.Name)
 }
 
+func TestAreaServiceUpdateArea_DuplicateName_ReturnsErrNameTaken(t *testing.T) {
+	svc, cleanup := newTestService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	_, err := svc.CreateArea(ctx, "Area One")
+	require.NoError(t, err)
+
+	areaTwo, err := svc.CreateArea(ctx, "Area Two")
+	require.NoError(t, err)
+
+	// Renaming Area Two to "Area One" should return ErrNameTaken.
+	_, err = svc.UpdateArea(ctx, areaTwo.ID, "Area One")
+	require.ErrorIs(t, err, ErrNameTaken)
+}
+
 func TestAreaServiceDeletePhoto(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
