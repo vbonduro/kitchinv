@@ -106,4 +106,46 @@ test.describe('Search', () => {
     // Card should reappear.
     await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
+
+  // Regression tests for kitchinv-s91: search must filter individual item rows,
+  // not just show/hide the whole card.
+
+  test('search hides non-matching item rows within card', async ({ page }) => {
+    const areaID = await setupAreaWithItems(page, jpegFixture);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    // Filter to only "Milk" — Butter and Orange Juice rows must be hidden.
+    await page.fill('[data-testid="search-input"]', 'Milk');
+
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Milk' })).toBeVisible({ timeout: 5_000 });
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Butter' })).toBeHidden({ timeout: 5_000 });
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Orange Juice' })).toBeHidden({ timeout: 5_000 });
+  });
+
+  test('area with no matching items is hidden entirely', async ({ page }) => {
+    // Create two areas with items; only one will match.
+    const areaID1 = await setupAreaWithItems(page, jpegFixture);
+    const areaID2 = await setupAreaWithItems(page, jpegFixture);
+
+    // Both areas have the same mock items. Search for something that exists so
+    // both are visible first, then search for something that won't match.
+    await page.fill('[data-testid="search-input"]', 'ZZZNoMatch');
+
+    await expect(page.locator(`[data-testid="area-card-${areaID1}"]`)).toBeHidden({ timeout: 5_000 });
+    await expect(page.locator(`[data-testid="area-card-${areaID2}"]`)).toBeHidden({ timeout: 5_000 });
+  });
+
+  test('clear search restores all item rows', async ({ page }) => {
+    const areaID = await setupAreaWithItems(page, jpegFixture);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    await page.fill('[data-testid="search-input"]', 'Milk');
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Butter' })).toBeHidden({ timeout: 5_000 });
+
+    await page.click('[data-testid="search-clear"]');
+
+    // All rows should be visible again.
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Butter' })).toBeVisible({ timeout: 5_000 });
+    await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Orange Juice' })).toBeVisible({ timeout: 5_000 });
+  });
 });
