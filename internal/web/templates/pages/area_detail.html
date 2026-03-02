@@ -141,84 +141,44 @@ function startStream(evt, areaID) {
 
     // Clear items and show scanning indicator
     itemsEl.innerHTML = '<div class="analyse-scanning"><span class="spinner"></span>Scanning&hellip;</div><table class="item-table"><thead><tr><th class="item-table-th item-table-idx">#</th><th class="item-table-th">Name</th><th class="item-table-th">Qty</th><th class="item-table-th">Notes</th></tr></thead><tbody id="stream-list"></tbody></table>';
-    const list = document.getElementById('stream-list');
-    let itemIndex = 0;
 
-    let streamFinished = false;
+    let uploadFinished = false;
 
-    fetch('/areas/' + areaID + '/photos/stream', {
+    fetch('/areas/' + areaID + '/photos', {
         method: 'POST',
         body: formData,
     }).then(function(resp) {
-        if (!resp.ok) {
-            throw new Error('Upload failed: ' + resp.status);
-        }
-
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-
-        function pump() {
-            return reader.read().then(function(result) {
-                if (result.done) {
-                    finishStream();
-                    return;
-                }
-                buf += decoder.decode(result.value, { stream: true });
-
-                // Process complete SSE lines
-                const lines = buf.split('\n');
-                buf = lines.pop(); // keep incomplete last chunk
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const json = line.slice(6).trim();
-                        try {
-                            const item = JSON.parse(json);
-                            appendItem(item, ++itemIndex);
-                        } catch(e) { /* skip malformed */ }
-                    } else if (line.startsWith('event: done')) {
-                        finishStream();
-                        return;
-                    }
-                }
-                return pump();
-            });
-        }
-
-        return pump();
+        if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+        finishUpload();
     }).catch(function(err) {
-        console.error('Stream error:', err);
-        finishStream(true);
+        console.error('Upload error:', err);
+        finishUpload(true);
     });
 
-    function appendItem(item, idx) {
-        const tr = document.createElement('tr');
-        tr.className = 'item-row item-row-entering';
-        const idxStr = String(idx).padStart(2, '0');
-        tr.innerHTML =
-            '<td class="item-table-td item-table-idx">' + idxStr + '</td>' +
-            '<td class="item-table-td item-name">' + esc(item.name) + '</td>' +
-            '<td class="item-table-td item-qty">' + esc(item.quantity || '') + '</td>' +
-            '<td class="item-table-td item-notes">' + esc(item.notes || '') + '</td>';
-        list.appendChild(tr);
-    }
-
-    function finishStream(error) {
-        if (streamFinished) return;
-        streamFinished = true;
+    function finishUpload(error) {
+        if (uploadFinished) return;
+        uploadFinished = true;
 
         // Remove scanning indicator
         const scanning = itemsEl.querySelector('.analyse-scanning');
         if (scanning) scanning.remove();
 
-        // If no items landed, show empty state
-        if (list && list.children.length === 0) {
-            if (error) {
-                itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Analysis failed — please try again</div></div>';
-            } else {
-                itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No items detected</div></div>';
-            }
+        if (error) {
+            itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Analysis failed — please try again</div></div>';
+        } else {
+            // Reload items from server now that analysis is complete.
+            fetch('/areas/' + areaID + '/items')
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    const list = document.getElementById('stream-list');
+                    if (list) list.innerHTML = html;
+                    if (list && list.children.length === 0) {
+                        itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No items detected</div></div>';
+                    }
+                })
+                .catch(function() {
+                    itemsEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Failed to load items</div></div>';
+                });
         }
 
         // Restore button and file picker

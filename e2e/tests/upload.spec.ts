@@ -33,20 +33,8 @@ async function uploadPhoto(page: Page, areaID: string, jpegFixture: string) {
   await fileInput.setInputFiles(jpegFixture);
 }
 
-/** Poll until at least one stream is blocked at the gate. */
-async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, ollamaPort: number, timeoutMs = 10_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const resp = await apiContext.get(`http://localhost:${ollamaPort}/control/gate/waiting`);
-    const { waiting } = await resp.json();
-    if (waiting >= 1) return;
-    await new Promise(r => setTimeout(r, 50));
-  }
-  throw new Error('Timed out waiting for stream to reach gate');
-}
-
 test.describe('Upload & Analysis', () => {
-  // Gate-based tests mutate shared mock state — run serially.
+  // Slow-mode tests mutate shared mock state — run serially.
   test.describe.configure({ mode: 'serial' });
   let jpegFixture: string;
   let apiContext: Awaited<ReturnType<typeof request.newContext>>;
@@ -68,7 +56,6 @@ test.describe('Upload & Analysis', () => {
 
   test.afterEach(async () => {
     await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
     await apiContext.post(`http://localhost:${ollamaPort}/control/fail/reset`);
   });
 
@@ -76,13 +63,11 @@ test.describe('Upload & Analysis', () => {
     const name = `E2E UploadBanner ${Date.now()}`;
     const areaID = await createArea(page, name);
 
-    // Close gate so the stream blocks after upload, keeping overlay visible.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+    // Slow mode delays the mock response so the overlay stays visible long enough to assert.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
 
+    // Select the file — JS immediately shows the overlay before the fetch completes.
     await uploadPhoto(page, areaID, jpegFixture);
-
-    // Wait for the gate — guarantees upload committed, analysis blocked.
-    await waitForGate(apiContext, ollamaPort);
 
     // Overlay must be visible showing "Analyzing your space...".
     const overlay = page.locator(`[data-testid="analyzing-indicator-${areaID}"]`);
@@ -90,25 +75,19 @@ test.describe('Upload & Analysis', () => {
     await expect(overlay.locator('.area-analysing-text')).toHaveText('Analyzing your space...');
   });
 
-  test('upload shows analyzing indicator then 3 items stream in', async ({ page }) => {
+  test('upload shows analyzing indicator then 3 items appear', async ({ page }) => {
     const name = `E2E UploadStream ${Date.now()}`;
     const areaID = await createArea(page, name);
 
-    // Close the gate so analyzing indicator is visible long enough to assert.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+    // Slow mode so overlay is visible long enough to assert before items load.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
 
     await uploadPhoto(page, areaID, jpegFixture);
 
-    // Wait for the stream to reach the gate (photo committed).
-    await waitForGate(apiContext, ollamaPort);
-
-    // Analyzing indicator should be visible.
+    // Analyzing indicator should be visible while upload is in progress.
     await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
 
-    // Open the gate to let items stream through.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
-
-    // 3 item rows should appear after stream completes.
+    // 3 item rows should appear after upload completes.
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
     await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
   });
@@ -117,21 +96,16 @@ test.describe('Upload & Analysis', () => {
     const name = `E2E UploadBtnState ${Date.now()}`;
     const areaID = await createArea(page, name);
 
-    // Close the gate so the upload stays in progress long enough to assert.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+    // Slow mode keeps the upload in progress long enough to assert disabled state.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
 
     await uploadPhoto(page, areaID, jpegFixture);
-
-    await waitForGate(apiContext, ollamaPort);
 
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     // File input should be disabled while uploading.
     await expect(fileInput).toBeDisabled({ timeout: 5_000 });
 
-    // Open the gate.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
-
-    // After stream completes, file input re-enabled.
+    // After upload completes, file input re-enabled.
     await expect(fileInput).toBeEnabled({ timeout: 15_000 });
   });
 

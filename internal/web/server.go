@@ -15,7 +15,6 @@ import (
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/service"
-	"github.com/vbonduro/kitchinv/internal/vision"
 )
 
 // kitchenService is the subset of service.AreaService that the web layer uses.
@@ -31,7 +30,6 @@ type kitchenService interface {
 	DeleteArea(ctx context.Context, areaID int64) error
 	DeletePhoto(ctx context.Context, areaID int64) error
 	UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error)
-	UploadPhotoStream(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, <-chan vision.StreamEvent, error)
 	CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error)
 	UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error)
 	DeleteItem(ctx context.Context, itemID int64) error
@@ -85,7 +83,6 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("DELETE /areas/{id}", s.handleDeleteArea)
 	s.mux.HandleFunc("DELETE /areas/{id}/photo", s.handleDeletePhoto)
 	s.mux.HandleFunc("POST /areas/{id}/photos", s.handleUploadPhoto)
-	s.mux.HandleFunc("POST /areas/{id}/photos/stream", s.handleStreamPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/photo", s.handleGetPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/items", s.handleGetAreaItems)
 	s.mux.HandleFunc("POST /areas/{id}/items", s.handleCreateItem)

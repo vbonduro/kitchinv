@@ -1,7 +1,6 @@
 package web_test
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -24,9 +23,7 @@ import (
 	"github.com/vbonduro/kitchinv/internal/web/templates"
 )
 
-// failingVision is a VisionAnalyzer/StreamAnalyzer stub whose AnalyzeStream
-// always returns an error. Used to simulate vision API failures (e.g. image
-// too large) after the photo has already been saved to storage.
+// failingVision is a VisionAnalyzer stub that always returns an error.
 type failingVision struct {
 	err error
 }
@@ -34,41 +31,6 @@ type failingVision struct {
 func (f *failingVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
 	return nil, f.err
 }
-
-func (f *failingVision) AnalyzeStream(_ context.Context, _ io.Reader, _ string) (<-chan vision.StreamEvent, error) {
-	return nil, f.err
-}
-
-// blockingVision is a VisionAnalyzer/StreamAnalyzer stub whose AnalyzeStream
-// blocks until release is closed. This lets tests inspect server state while
-// analysis is in progress (simulating a user navigating away mid-stream).
-type blockingVision struct {
-	release chan struct{} // close to unblock
-	result  *vision.AnalysisResult
-}
-
-func newBlockingVision(result *vision.AnalysisResult) *blockingVision {
-	return &blockingVision{release: make(chan struct{}), result: result}
-}
-
-func (b *blockingVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
-	<-b.release
-	return b.result, nil
-}
-
-func (b *blockingVision) AnalyzeStream(_ context.Context, _ io.Reader, _ string) (<-chan vision.StreamEvent, error) {
-	ch := make(chan vision.StreamEvent, len(b.result.Items)+1)
-	go func() {
-		<-b.release
-		for i := range b.result.Items {
-			ch <- vision.StreamEvent{Item: &b.result.Items[i]}
-		}
-		close(ch)
-	}()
-	return ch, nil
-}
-
-func (b *blockingVision) Release() { close(b.release) }
 
 // minimalJPEG is 512 bytes with the JPEG magic bytes header followed by zeros.
 // http.DetectContentType identifies JPEG from the leading 0xFF 0xD8 bytes.
@@ -82,7 +44,7 @@ var minimalJPEG = func() []byte {
 }()
 
 // recordingVision captures the image bytes passed to it and returns a
-// pre-configured result. It implements both VisionAnalyzer and StreamAnalyzer.
+// pre-configured result.
 type recordingVision struct {
 	mu        sync.Mutex
 	lastBytes []byte
@@ -98,22 +60,6 @@ func (r *recordingVision) Analyze(_ context.Context, rd io.Reader, _ string) (*v
 	r.lastBytes = data
 	r.mu.Unlock()
 	return r.result, nil
-}
-
-func (r *recordingVision) AnalyzeStream(_ context.Context, rd io.Reader, _ string) (<-chan vision.StreamEvent, error) {
-	data, err := io.ReadAll(rd)
-	if err != nil {
-		return nil, fmt.Errorf("recordingVision: read image: %w", err)
-	}
-	r.mu.Lock()
-	r.lastBytes = data
-	r.mu.Unlock()
-	ch := make(chan vision.StreamEvent, len(r.result.Items)+1)
-	for i := range r.result.Items {
-		ch <- vision.StreamEvent{Item: &r.result.Items[i]}
-	}
-	close(ch)
-	return ch, nil
 }
 
 func (r *recordingVision) LastBytes() []byte {
@@ -364,11 +310,11 @@ func TestIntegration_UploadPhoto(t *testing.T) {
 	}
 }
 
-// TestIntegration_UploadPhotoStream_NonEmptyImageBytes is a regression test for
+// TestIntegration_UploadPhoto_NonEmptyImageBytes is a regression test for
 // the bug where a disabled <input type="file"> produced empty FormData,
 // causing the server to receive zero image bytes. It verifies that the bytes
 // received by the vision analyzer are non-empty.
-func TestIntegration_UploadPhotoStream_NonEmptyImageBytes(t *testing.T) {
+func TestIntegration_UploadPhoto_NonEmptyImageBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -386,9 +332,9 @@ func TestIntegration_UploadPhotoStream_NonEmptyImageBytes(t *testing.T) {
 	createArea(t, srv, "Fridge")
 
 	body, contentType := buildMultipartBody(t, minimalJPEG)
-	resp, err := http.Post(srv.URL+"/areas/1/photos/stream", contentType, body)
+	resp, err := http.Post(srv.URL+"/areas/1/photos", contentType, body)
 	if err != nil {
-		t.Fatalf("POST /areas/1/photos/stream: %v", err)
+		t.Fatalf("POST /areas/1/photos: %v", err)
 	}
 	t.Cleanup(func() { _ = resp.Body.Close() })
 
@@ -397,21 +343,13 @@ func TestIntegration_UploadPhotoStream_NonEmptyImageBytes(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, b)
 	}
 
-	// Drain SSE until "event: done".
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "event: done") {
-			break
-		}
-	}
-
 	if got := len(vis.LastBytes()); got == 0 {
 		t.Error("regression: vision analyzer received zero image bytes — empty FormData bug may be present")
 	}
 }
 
 // TestIntegration_AreaDetail_PhotoServedAfterUpload is a regression test for
-// kitchinv-5mw (photo preview missing). It verifies that after a stream upload
+// kitchinv-5mw (photo preview missing). It verifies that after an upload
 // completes, GET /areas/{id} includes an <img> tag pointing to the photo
 // endpoint, confirming the server correctly exposes the photo for the preview.
 func TestIntegration_AreaDetail_PhotoServedAfterUpload(t *testing.T) {
@@ -431,17 +369,10 @@ func TestIntegration_AreaDetail_PhotoServedAfterUpload(t *testing.T) {
 
 	createArea(t, srv, "Fridge")
 
-	// Upload via stream and drain until done.
 	body, contentType := buildMultipartBody(t, minimalJPEG)
-	resp, err := http.Post(srv.URL+"/areas/1/photos/stream", contentType, body)
+	resp, err := http.Post(srv.URL+"/areas/1/photos", contentType, body)
 	if err != nil {
-		t.Fatalf("POST /areas/1/photos/stream: %v", err)
-	}
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "event: done") {
-			break
-		}
+		t.Fatalf("POST /areas/1/photos: %v", err)
 	}
 	_ = resp.Body.Close()
 
@@ -463,81 +394,8 @@ func TestIntegration_AreaDetail_PhotoServedAfterUpload(t *testing.T) {
 	}
 	html := string(b)
 
-	// The template renders <img src="/areas/1/photo" ...> when a photo exists.
 	if !strings.Contains(html, `/areas/1/photo`) {
 		t.Errorf("regression(kitchinv-5mw): area detail page missing photo img tag after upload\nHTML:\n%s", html)
-	}
-}
-
-// TestIntegration_AreaDetail_MidStreamNavigation is a regression test for
-// kitchinv-5mw (analysis state lost on navigation). It simulates a user
-// navigating away while streaming is in progress: the photo is already saved
-// to the DB but items are not yet written. On page load, the server must
-// surface the photo (so the preview can be shown) even though items are empty.
-func TestIntegration_AreaDetail_MidStreamNavigation(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
-	}
-
-	vis := newBlockingVision(&vision.AnalysisResult{
-		Items: []vision.DetectedItem{
-			{Name: "Cheese", Quantity: "1 block", Notes: ""},
-		},
-	})
-
-	srv, cleanup := newTestServer(t, vis)
-	defer cleanup()
-
-	createArea(t, srv, "Fridge")
-
-	// Start a stream upload in the background; the vision stub blocks so items
-	// are not yet written to the DB.
-	uploadDone := make(chan struct{})
-	go func() {
-		defer close(uploadDone)
-		body, contentType := buildMultipartBody(t, minimalJPEG)
-		resp, err := http.Post(srv.URL+"/areas/1/photos/stream", contentType, body)
-		if err != nil {
-			return
-		}
-		_ = resp.Body.Close()
-	}()
-
-	// The service saves the photo record before calling AnalyzeStream, so after
-	// a brief yield the photo row exists in the DB but zero items do.
-	// Poll until the photo is visible on the area detail page.
-	var midStreamHTML string
-	for range 20 {
-		resp, err := http.Get(srv.URL + "/areas/1")
-		if err != nil {
-			t.Fatalf("GET /areas/1: %v", err)
-		}
-		b, _ := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		if strings.Contains(string(b), `/areas/1/photo`) {
-			midStreamHTML = string(b)
-			break
-		}
-		// Small sleep via channel to avoid import of "time" package.
-		select {
-		case <-uploadDone:
-			// Stream finished unexpectedly early; the test is no longer meaningful.
-			t.Skip("stream finished before mid-stream check could run")
-		default:
-		}
-	}
-
-	// Unblock the vision stub so the goroutine can finish.
-	vis.Release()
-	<-uploadDone
-
-	if midStreamHTML == "" {
-		t.Fatal("regression(kitchinv-5mw): photo never appeared in area detail page during stream")
-	}
-
-	// The photo must be present even though items haven't arrived yet.
-	if !strings.Contains(midStreamHTML, `/areas/1/photo`) {
-		t.Errorf("regression(kitchinv-5mw): photo img tag missing mid-stream; page showed no photo while analysis was in progress\nHTML:\n%s", midStreamHTML)
 	}
 }
 
@@ -595,11 +453,10 @@ func TestIntegration_GetAreaItems(t *testing.T) {
 	}
 }
 
-// TestIntegration_UploadPhotoStream_AnalysisFailure_NoExistingPhoto is a
-// regression test for kitchinv-uh7. When the vision API rejects an upload on
-// an area with no prior photo, the photo must be rolled back and the area must
-// render without an analysing banner.
-func TestIntegration_UploadPhotoStream_AnalysisFailure_NoExistingPhoto(t *testing.T) {
+// TestIntegration_UploadPhoto_AnalysisFailure_NoExistingPhoto is a regression
+// test for kitchinv-uh7. When the vision API rejects an upload on an area with
+// no prior photo, the server must return a non-200 response.
+func TestIntegration_UploadPhoto_AnalysisFailure_NoExistingPhoto(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -611,35 +468,14 @@ func TestIntegration_UploadPhotoStream_AnalysisFailure_NoExistingPhoto(t *testin
 	createArea(t, srv, "Fridge")
 
 	body, contentType := buildMultipartBody(t, minimalJPEG)
-	resp, err := http.Post(srv.URL+"/areas/1/photos/stream", contentType, body)
+	resp, err := http.Post(srv.URL+"/areas/1/photos", contentType, body)
 	if err != nil {
-		t.Fatalf("POST /areas/1/photos/stream: %v", err)
+		t.Fatalf("POST /areas/1/photos: %v", err)
 	}
 	_ = resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		t.Fatal("regression(kitchinv-uh7): expected non-200 on vision failure, got 200")
-	}
-
-	// No photo should exist — GET /areas/1/photo should 404.
-	photoResp, err := http.Get(srv.URL + "/areas/1/photo")
-	if err != nil {
-		t.Fatalf("GET /areas/1/photo: %v", err)
-	}
-	_ = photoResp.Body.Close()
-	if photoResp.StatusCode != http.StatusNotFound {
-		t.Errorf("regression(kitchinv-uh7): photo not rolled back — GET /areas/1/photo returned %d, want 404", photoResp.StatusCode)
-	}
-
-	// Area must not show the analysing banner.
-	areasResp, err := http.Get(srv.URL + "/areas")
-	if err != nil {
-		t.Fatalf("GET /areas: %v", err)
-	}
-	b, _ := io.ReadAll(areasResp.Body)
-	_ = areasResp.Body.Close()
-	if strings.Contains(string(b), `data-testid="analyzing-indicator-1"`) {
-		t.Errorf("regression(kitchinv-uh7): area stuck in analysing state\nHTML:\n%s", b)
 	}
 }
 
