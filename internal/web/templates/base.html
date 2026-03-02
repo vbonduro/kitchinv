@@ -899,8 +899,8 @@
 
         // Show photo preview.
         var previewUrl = URL.createObjectURL(file);
-        var photoHTML = '<div class="area-photo-section">' +
-            '<img src="' + previewUrl + '" class="area-photo-img" alt="Uploading...">' +
+        var photoHTML = '<div class="area-photo-section" style="min-height:120px">' +
+            '<img src="' + previewUrl + '" class="area-photo-img" alt="">' +
             '<div class="area-analysing-overlay" data-testid="analyzing-indicator-' + areaID + '">' +
             '<div class="spinner"></div>' +
             '<span class="area-analysing-text">Analyzing your space...</span>' +
