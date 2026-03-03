@@ -78,6 +78,8 @@ async function handleGenerate(req, res) {
 
   if (!streaming) {
     // Non-streaming: return single JSON object.
+    // In slow mode, delay the response so tests can assert upload-in-progress state.
+    if (slowMode) await sleep(2000);
     const response = ITEMS.join('\n');
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ response, done: true }));

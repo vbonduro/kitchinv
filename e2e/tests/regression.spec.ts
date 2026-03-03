@@ -24,19 +24,7 @@ async function createArea(page: Page, name: string): Promise<string> {
   return testid!.replace('area-card-', '');
 }
 
-/** Poll until at least one stream is blocked at the gate (photo committed, no items yet). */
-async function waitForGate(apiContext: Awaited<ReturnType<typeof request.newContext>>, ollamaPort: number, timeoutMs = 10_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const resp = await apiContext.get(`http://localhost:${ollamaPort}/control/gate/waiting`);
-    const { waiting } = await resp.json();
-    if (waiting >= 1) return;
-    await new Promise(r => setTimeout(r, 50));
-  }
-  throw new Error('Timed out waiting for stream to reach gate');
-}
-
-// Gate-based tests mutate shared mock state — run this suite serially.
+// Slow-mode tests mutate shared mock state — run this suite serially.
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Regression', () => {
@@ -60,7 +48,6 @@ test.describe('Regression', () => {
 
   test.afterEach(async () => {
     await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/open`);
   });
 
   test('Bug 1: photo-input has no capture attribute', async ({ page }) => {
@@ -90,45 +77,29 @@ test.describe('Regression', () => {
     }
   });
 
-  test('Bug 3: analyzing overlay is server-rendered, not JS-only', async ({ page }) => {
-    const name = `E2E RegServerSpinner ${Date.now()}`;
+  test('Bug 3: analyzing overlay appears immediately on file select (JS-driven)', async ({ page }) => {
+    const name = `E2E RegClientSpinner ${Date.now()}`;
     const areaID = await createArea(page, name);
 
-    // Close the gate so the stream blocks after the photo is committed to DB.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+    // Slow mode keeps the upload in progress long enough to assert overlay visibility.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
 
-    // Start upload.
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     await fileInput.setInputFiles(jpegFixture);
 
-    // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
-    await waitForGate(apiContext, ollamaPort);
-
-    // Open a fresh page — server sees hasPhoto && !hasItems and renders the analyzing overlay.
-    const freshPage = await page.context().newPage();
-    await freshPage.goto('/areas');
-
-    // The fresh page must show the analyzing indicator (server-rendered: hasPhoto && !hasItems).
-    await expect(freshPage.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
-
-    await freshPage.close();
+    // Overlay must appear immediately on the client side while upload is in progress.
+    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
   });
 
   test('Bug 4: analyzing overlay shown (not "no items") during analysis', async ({ page }) => {
     const name = `E2E RegAnalysingCard ${Date.now()}`;
     const areaID = await createArea(page, name);
 
-    // Close the gate so the stream blocks after the photo is committed to DB.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/gate/close`);
+    // Slow mode keeps the upload in progress long enough to assert overlay visibility.
+    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
 
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
     await fileInput.setInputFiles(jpegFixture);
-
-    // Poll until the stream is blocked at the gate: photo is in DB, no items yet.
-    await waitForGate(apiContext, ollamaPort);
-
-    // Reload the areas list.
-    await page.goto('/areas');
 
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 

@@ -917,30 +917,6 @@
             itemsSection.style.display = 'none';
             if (noItemsText) noItemsText.remove();
             if (itemsBody) itemsBody.innerHTML = '';
-        } else {
-            // Create a hidden items section to stream into.
-            var photoEl = card.querySelector('.area-photo-section');
-            if (photoEl) {
-                photoEl.insertAdjacentHTML('afterend',
-                    '<div class="items-section" style="display:none"><table class="item-table"><thead><tr>' +
-                    '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
-                    '</tr></thead><tbody class="items-tbody"></tbody></table></div>');
-            }
-            itemsSection = card.querySelector('.items-section');
-            itemsBody = card.querySelector('.items-tbody');
-        }
-        // Ensure a table body exists for streaming items into.
-        if (itemsSection && !itemsBody) {
-            var addRow = itemsSection.querySelector('.add-item-row');
-            var tableHTML = '<table class="item-table"><thead><tr>' +
-                '<th>Name</th><th>Qty</th><th>Notes</th><th></th>' +
-                '</tr></thead><tbody class="items-tbody"></tbody></table>';
-            if (addRow) {
-                addRow.insertAdjacentHTML('beforebegin', tableHTML);
-            } else {
-                itemsSection.insertAdjacentHTML('afterbegin', tableHTML);
-            }
-            itemsBody = card.querySelector('.items-tbody');
         }
 
         // Disable file input.
@@ -951,39 +927,14 @@
         formData.append('image', file);
 
         var streamFinished = false;
-        fetch('/areas/' + areaID + '/photos/stream', {
+        fetch('/areas/' + areaID + '/photos', {
             method: 'POST',
             body: formData,
         }).then(function(resp) {
             if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
-            var reader = resp.body.getReader();
-            var decoder = new TextDecoder();
-            var buf = '';
-
-            function pump() {
-                return reader.read().then(function(result) {
-                    if (result.done) { finishStream(); return; }
-                    buf += decoder.decode(result.value, { stream: true });
-                    var lines = buf.split('\n');
-                    buf = lines.pop();
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
-                        if (line.startsWith('data: ')) {
-                            try {
-                                var item = JSON.parse(line.slice(6).trim());
-                                appendStreamItem(areaID, item);
-                            } catch(e) { /* skip */ }
-                        } else if (line.startsWith('event: done')) {
-                            finishStream();
-                            return;
-                        }
-                    }
-                    return pump();
-                });
-            }
-            return pump();
+            finishStream();
         }).catch(function(err) {
-            console.error('Stream error:', err);
+            console.error('Upload error:', err);
             finishStream(true);
         });
 
@@ -1053,23 +1004,7 @@
         }
     }
 
-    function appendStreamItem(areaID, item) {
-        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
-        if (!card) return;
-        var tbody = card.querySelector('.items-tbody');
-        if (!tbody) return;
-        var tr = document.createElement('tr');
-        tr.className = 'item-row item-row-entering';
-        tr.setAttribute('data-testid', 'item-row');
-        tr.innerHTML =
-            '<td class="item-name-cell">' + esc(item.name) + '</td>' +
-            '<td>' + (item.quantity ? '<span class="item-qty-badge">' + esc(item.quantity) + '</span>' : '') + '</td>' +
-            '<td class="item-notes-cell">' + esc(item.notes || '') + '</td>' +
-            '<td></td>';
-        tbody.appendChild(tr);
-    }
-
-    /* ── Remove photo ──────────────────────────────────── */
+/* ── Remove photo ──────────────────────────────────── */
     function removePhoto(areaID) {
         fetch('/areas/' + areaID + '/photo', { method: 'DELETE' })
         .then(function(resp) {

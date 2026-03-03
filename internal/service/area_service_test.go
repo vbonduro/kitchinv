@@ -17,25 +17,12 @@ import (
 
 // stubVision is a minimal VisionAnalyzer for tests.
 type stubVision struct {
-	result    *vision.AnalysisResult
-	err       error
-	streamErr error // error returned from AnalyzeStream call itself
+	result *vision.AnalysisResult
+	err    error
 }
 
 func (s *stubVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
 	return s.result, s.err
-}
-
-func (s *stubVision) AnalyzeStream(_ context.Context, _ io.Reader, _ string) (<-chan vision.StreamEvent, error) {
-	if s.streamErr != nil {
-		return nil, s.streamErr
-	}
-	ch := make(chan vision.StreamEvent, len(s.result.Items)+1)
-	for i := range s.result.Items {
-		ch <- vision.StreamEvent{Item: &s.result.Items[i]}
-	}
-	close(ch)
-	return ch, s.err
 }
 
 // stubPhotoStore is a minimal in-memory photostore.PhotoStore for tests.
@@ -251,132 +238,6 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAreaServiceUploadPhotoStream_StreamsItems(t *testing.T) {
-	d, err := db.OpenForTesting()
-	require.NoError(t, err)
-	t.Cleanup(func() { assert.NoError(t, d.Close()) })
-
-	visionResult := &vision.AnalysisResult{
-		Items: []vision.DetectedItem{
-			{Name: "Milk", Quantity: "1 liter", Notes: "opened"},
-			{Name: "Butter", Quantity: "250 g", Notes: ""},
-		},
-	}
-
-	svc := NewAreaService(
-		store.NewAreaStore(d),
-		store.NewPhotoStore(d),
-		store.NewItemStore(d),
-		&stubVision{result: visionResult},
-		newStubPhotoStore(),
-		slog.Default(),
-	)
-	ctx := context.Background()
-
-	area, err := svc.CreateArea(ctx, "Fridge")
-	require.NoError(t, err)
-
-	photo, ch, err := svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
-	require.NoError(t, err)
-	assert.NotNil(t, photo)
-
-	var names []string
-	for ev := range ch {
-		require.NoError(t, ev.Err)
-		names = append(names, ev.Item.Name)
-	}
-	assert.Equal(t, []string{"Milk", "Butter"}, names)
-}
-
-func TestAreaServiceUploadPhotoStream_AreaNotFound(t *testing.T) {
-	svc, cleanup := newTestService(t)
-	defer cleanup()
-
-	_, _, err := svc.UploadPhotoStream(context.Background(), 99999, []byte{0xFF, 0xD8}, "image/jpeg")
-	assert.Error(t, err)
-}
-
-func TestAreaServiceUploadPhotoStream_VisionStreamError(t *testing.T) {
-	d, err := db.OpenForTesting()
-	require.NoError(t, err)
-	t.Cleanup(func() { assert.NoError(t, d.Close()) })
-
-	svc := NewAreaService(
-		store.NewAreaStore(d),
-		store.NewPhotoStore(d),
-		store.NewItemStore(d),
-		&stubVision{result: &vision.AnalysisResult{}, streamErr: errors.New("stream unavailable")},
-		newStubPhotoStore(),
-		slog.Default(),
-	)
-	ctx := context.Background()
-
-	area, err := svc.CreateArea(ctx, "Fridge")
-	require.NoError(t, err)
-
-	_, _, err = svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
-	assert.Error(t, err)
-}
-
-// TestAreaServiceUploadPhotoStream_AnalysisFailure_PreservesExistingState is a
-// regression test for kitchinv-uh7. When AnalyzeStream fails on an area that
-// already has a photo and items, the previous photo and items must be fully
-// preserved — nothing should be deleted.
-func TestAreaServiceUploadPhotoStream_AnalysisFailure_PreservesExistingState(t *testing.T) {
-	d, err := db.OpenForTesting()
-	require.NoError(t, err)
-	t.Cleanup(func() { assert.NoError(t, d.Close()) })
-
-	photoStg := newStubPhotoStore()
-	areaStore := store.NewAreaStore(d)
-	photoStore := store.NewPhotoStore(d)
-	itemStore := store.NewItemStore(d)
-	ctx := context.Background()
-
-	// First upload succeeds.
-	svc := NewAreaService(areaStore, photoStore, itemStore,
-		&stubVision{result: &vision.AnalysisResult{
-			Items: []vision.DetectedItem{{Name: "Milk", Quantity: "1 litre", Notes: ""}},
-		}},
-		photoStg, slog.Default(),
-	)
-	area, err := svc.CreateArea(ctx, "Fridge")
-	require.NoError(t, err)
-
-	photo, ch, err := svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
-	require.NoError(t, err)
-	for range ch {
-	} // drain
-	firstPhotoID := photo.ID
-
-	// Verify item exists after first upload.
-	items, err := itemStore.ListByAreaID(ctx, area.ID)
-	require.NoError(t, err)
-	require.Len(t, items, 1, "expected 1 item after first upload")
-	assert.Equal(t, "Milk", items[0].Name)
-
-	// Second upload fails at AnalyzeStream.
-	svc.visionAPI = &stubVision{
-		result:    &vision.AnalysisResult{},
-		streamErr: errors.New("image exceeds 5 MB maximum"),
-	}
-	_, _, err = svc.UploadPhotoStream(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
-	assert.Error(t, err)
-
-	// Previous photo must still exist — the area must not be stuck in
-	// "analysing" state with no photo and no way to re-upload.
-	prevPhoto, err := photoStore.GetLatestByAreaID(ctx, area.ID)
-	require.NoError(t, err)
-	require.NotNil(t, prevPhoto, "regression(kitchinv-uh7): previous photo was deleted after failed upload")
-	assert.Equal(t, firstPhotoID, prevPhoto.ID, "regression(kitchinv-uh7): photo was replaced after failed upload")
-
-	// Previous items must be restored so the area does not show the analysing
-	// overlay (photo+no items) after a page refresh.
-	itemsAfter, err := itemStore.ListByAreaID(ctx, area.ID)
-	require.NoError(t, err)
-	require.Len(t, itemsAfter, 1, "regression(kitchinv-uh7): items not restored after failed upload")
-	assert.Equal(t, "Milk", itemsAfter[0].Name)
-}
 
 func TestAreaServiceSearchItems(t *testing.T) {
 	d, err := db.OpenForTesting()

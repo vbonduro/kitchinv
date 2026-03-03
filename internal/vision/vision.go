@@ -15,23 +15,6 @@ type VisionAnalyzer interface {
 	Analyze(ctx context.Context, r io.Reader, mimeType string) (*AnalysisResult, error)
 }
 
-// StreamAnalyzer is an optional extension of VisionAnalyzer that can stream
-// detected items incrementally as the model produces output.
-type StreamAnalyzer interface {
-	VisionAnalyzer
-	// AnalyzeStream sends StreamEvents on the returned channel as the model
-	// produces output. The channel is closed when the stream ends or ctx is
-	// cancelled. If the stream fails mid-way, a StreamEvent with a non-nil Err
-	// field is sent before the channel is closed.
-	AnalyzeStream(ctx context.Context, r io.Reader, mimeType string) (<-chan StreamEvent, error)
-}
-
-// StreamEvent is either a DetectedItem or an error emitted during streaming.
-type StreamEvent struct {
-	Item *DetectedItem
-	Err  error
-}
-
 type AnalysisResult struct {
 	Items       []DetectedItem
 	RawResponse string
