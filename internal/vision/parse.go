@@ -1,8 +1,14 @@
 package vision
 
 import (
+	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 )
+
+// jsonExtractRe extracts a JSON object from a string that may contain surrounding prose or code fences.
+var jsonExtractRe = regexp.MustCompile(`(?s)\{.*\}`)
 
 // ParseResponse parses vision model response in format: name | quantity | notes
 // One item per line.
@@ -49,4 +55,74 @@ func ParseLine(line string) *DetectedItem {
 		return nil
 	}
 	return &item
+}
+
+// jsonItem is the wire representation of a single item in the JSON response.
+type jsonItem struct {
+	Name     string  `json:"name"`
+	Quantity *string `json:"quantity"`
+	Notes    *string `json:"notes"`
+}
+
+// jsonResponse is the wire representation of the full JSON response.
+type jsonResponse struct {
+	Status *string    `json:"status"`
+	Items  []jsonItem `json:"items"`
+}
+
+var validStatuses = map[AnalysisStatus]bool{
+	StatusOK:      true,
+	StatusNoItems: true,
+	StatusNotFood: true,
+	StatusUnclear: true,
+}
+
+// ParseJSONResponse parses a structured JSON response from the vision model.
+// It extracts the JSON object liberally (tolerating surrounding prose or code
+// fences), then validates the status enum and required fields before mapping
+// to an AnalysisResult.
+func ParseJSONResponse(raw string) (*AnalysisResult, error) {
+	// Extract JSON object from potentially noisy response.
+	jsonStr := jsonExtractRe.FindString(raw)
+	if jsonStr == "" {
+		return nil, fmt.Errorf("no JSON object found in response")
+	}
+
+	var wire jsonResponse
+	if err := json.Unmarshal([]byte(jsonStr), &wire); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+
+	if wire.Status == nil {
+		return nil, fmt.Errorf("response missing required field: status")
+	}
+	if wire.Items == nil {
+		return nil, fmt.Errorf("response missing required field: items")
+	}
+
+	status := AnalysisStatus(*wire.Status)
+	if !validStatuses[status] {
+		return nil, fmt.Errorf("invalid status value: %q", *wire.Status)
+	}
+
+	items := make([]DetectedItem, 0, len(wire.Items))
+	for i, wi := range wire.Items {
+		if wi.Name == "" {
+			return nil, fmt.Errorf("item at index %d missing required field: name", i)
+		}
+		item := DetectedItem{Name: wi.Name}
+		if wi.Quantity != nil {
+			item.Quantity = *wi.Quantity
+		}
+		if wi.Notes != nil {
+			item.Notes = *wi.Notes
+		}
+		items = append(items, item)
+	}
+
+	return &AnalysisResult{
+		Status:      status,
+		Items:       items,
+		RawResponse: raw,
+	}, nil
 }

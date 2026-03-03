@@ -28,19 +28,16 @@ func NewOllamaAnalyzer(host, model string) *OllamaAnalyzer {
 }
 
 func (a *OllamaAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType string) (*vision.AnalysisResult, error) {
-	// Read image data
 	imageData, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image: %w", err)
 	}
 
-	// Encode image to base64
 	encoded := base64.StdEncoding.EncodeToString(imageData)
 
-	// Build request
 	reqBody := map[string]interface{}{
 		"model":  a.model,
-		"prompt": vision.AnalysisPrompt,
+		"prompt": vision.OllamaAnalysisPrompt,
 		"images": []string{encoded},
 		"stream": false,
 	}
@@ -79,10 +76,14 @@ func (a *OllamaAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	items := vision.ParseResponse(respBody.Response)
+	result, err := vision.ParseJSONResponse(respBody.Response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse vision response: %w", err)
+	}
 
-	return &vision.AnalysisResult{
-		Items:       items,
-		RawResponse: respBody.Response,
-	}, nil
+	if result.Status == vision.StatusUnclear {
+		return nil, fmt.Errorf("image is unclear: please retake the photo")
+	}
+
+	return result, nil
 }

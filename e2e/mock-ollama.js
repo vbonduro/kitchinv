@@ -24,12 +24,15 @@ const http = require('http');
 
 const PORT = parseInt(process.env.MOCK_OLLAMA_PORT || '19434', 10);
 
-// Items the mock always returns (name | qty | notes format).
-const ITEMS = [
-  'Milk | 2 liters | semi-skimmed',
-  'Butter | 1 block | opened',
-  'Orange Juice | 1 carton |',
-];
+// Items the mock always returns as a structured JSON response.
+const JSON_RESPONSE = JSON.stringify({
+  status: 'ok',
+  items: [
+    { name: 'Milk',         quantity: '2 liters',  notes: 'semi-skimmed' },
+    { name: 'Butter',       quantity: '1 block',   notes: 'opened' },
+    { name: 'Orange Juice', quantity: '1 carton',  notes: null },
+  ],
+});
 
 let slowMode = false;
 
@@ -77,35 +80,22 @@ async function handleGenerate(req, res) {
   const streaming = body.stream !== false; // default true
 
   if (!streaming) {
-    // Non-streaming: return single JSON object.
+    // Non-streaming: return single JSON object containing the structured response.
     // In slow mode, delay the response so tests can assert upload-in-progress state.
     if (slowMode) await sleep(2000);
-    const response = ITEMS.join('\n');
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ response, done: true }));
+    res.end(JSON.stringify({ response: JSON_RESPONSE, done: true }));
     return;
   }
 
-  // Streaming NDJSON — each chunk is one JSON line.
-  // Send headers immediately so the caller knows the photo is committed to DB.
+  // Streaming NDJSON — emit the full JSON response as a single chunk.
   res.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
 
-  // Block here until the gate is opened (if closed).
   await waitForGate();
 
-  for (let i = 0; i < ITEMS.length; i++) {
-    if (slowMode) await sleep(500);
-
-    // Emit the item text.
-    const itemChunk = { response: ITEMS[i], done: false };
-    res.write(JSON.stringify(itemChunk) + '\n');
-
-    // Emit the newline separator (how Ollama terminates each line).
-    const isLast = i === ITEMS.length - 1;
-    const nlChunk = { response: '\n', done: isLast };
-    res.write(JSON.stringify(nlChunk) + '\n');
-  }
-
+  if (slowMode) await sleep(500);
+  res.write(JSON.stringify({ response: JSON_RESPONSE, done: false }) + '\n');
+  res.write(JSON.stringify({ response: '', done: true }) + '\n');
   res.end();
 }
 
