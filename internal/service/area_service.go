@@ -140,7 +140,10 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to analyze image: %w", err)
 	}
-	s.logger.Info("vision analysis complete", "area_id", areaID, "items_detected", len(result.Items))
+	s.logger.Info("vision analysis complete", "area_id", areaID, "status", result.Status, "items_detected", len(result.Items))
+	if result.Status != vision.StatusOK && result.Status != "" {
+		s.logger.Info("vision analysis non-ok result", "area_id", areaID, "status", result.Status)
+	}
 
 	storageKey, err := s.photoStg.Save(ctx, fmt.Sprintf("area_%d", areaID), mimeType, bytes.NewReader(imageData))
 	if err != nil {

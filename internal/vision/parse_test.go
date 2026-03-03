@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseLine(t *testing.T) {
@@ -112,6 +113,94 @@ Orange | 4 | `,
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseResponse(tt.raw)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseJSONResponse(t *testing.T) {
+	tests := []struct {
+		name        string
+		raw         string
+		wantStatus  AnalysisStatus
+		wantItems   []DetectedItem
+		wantErr     bool
+	}{
+		{
+			name:       "ok with items",
+			raw:        `{"status":"ok","items":[{"name":"Milk","quantity":"2 litres","notes":"opened"},{"name":"Butter","quantity":"1 block","notes":null}]}`,
+			wantStatus: StatusOK,
+			wantItems: []DetectedItem{
+				{Name: "Milk", Quantity: "2 litres", Notes: "opened"},
+				{Name: "Butter", Quantity: "1 block", Notes: ""},
+			},
+		},
+		{
+			name:       "no_items status",
+			raw:        `{"status":"no_items","items":[]}`,
+			wantStatus: StatusNoItems,
+			wantItems:  []DetectedItem{},
+		},
+		{
+			name:       "not_food status",
+			raw:        `{"status":"not_food","items":[]}`,
+			wantStatus: StatusNotFood,
+			wantItems:  []DetectedItem{},
+		},
+		{
+			name:       "unclear status",
+			raw:        `{"status":"unclear","items":[]}`,
+			wantStatus: StatusUnclear,
+			wantItems:  []DetectedItem{},
+		},
+		{
+			name:    "malformed JSON",
+			raw:     `not json at all`,
+			wantErr: true,
+		},
+		{
+			name:    "invalid status enum",
+			raw:     `{"status":"unknown","items":[]}`,
+			wantErr: true,
+		},
+		{
+			name:    "missing status field",
+			raw:     `{"items":[]}`,
+			wantErr: true,
+		},
+		{
+			name:    "missing items field",
+			raw:     `{"status":"ok"}`,
+			wantErr: true,
+		},
+		{
+			name:    "item missing name",
+			raw:     `{"status":"ok","items":[{"quantity":"1"}]}`,
+			wantErr: true,
+		},
+		{
+			name:       "JSON wrapped in model prose",
+			raw:        "Here is the JSON:\n```json\n{\"status\":\"ok\",\"items\":[{\"name\":\"Eggs\",\"quantity\":\"12\",\"notes\":\"\"}]}\n```",
+			wantStatus: StatusOK,
+			wantItems:  []DetectedItem{{Name: "Eggs", Quantity: "12", Notes: ""}},
+		},
+		{
+			name:       "null quantity and notes normalised to empty string",
+			raw:        `{"status":"ok","items":[{"name":"Cheese","quantity":null,"notes":null}]}`,
+			wantStatus: StatusOK,
+			wantItems:  []DetectedItem{{Name: "Cheese", Quantity: "", Notes: ""}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ParseJSONResponse(tt.raw)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantStatus, result.Status)
+			assert.Equal(t, tt.wantItems, result.Items)
 		})
 	}
 }

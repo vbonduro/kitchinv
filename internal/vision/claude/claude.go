@@ -22,6 +22,7 @@ const anthropicVersion = "2023-06-01"
 type request struct {
 	Model     string    `json:"model"`
 	MaxTokens int       `json:"max_tokens"`
+	System    string    `json:"system,omitempty"`
 	Messages  []message `json:"messages"`
 }
 
@@ -78,7 +79,7 @@ func buildMessages(imageData []byte, mimeType string) []message {
 					Data:      base64.StdEncoding.EncodeToString(imageData),
 				},
 			},
-			{Type: "text", Text: vision.AnalysisPrompt},
+			{Type: "text", Text: vision.ClaudeUserPrompt},
 		},
 	}}
 }
@@ -106,6 +107,7 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		// 1024 tokens is well above the expected response for a typical pantry photo
 		// (≈30 items × ~15 tokens each = ~450 tokens), with headroom for verbose models.
 		MaxTokens: 1024,
+		System:    vision.ClaudeSystemPrompt,
 		Messages:  buildMessages(imageData, mimeType),
 	}
 
@@ -147,10 +149,16 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 		}
 	}
 
-	return &vision.AnalysisResult{
-		Items:       vision.ParseResponse(responseText),
-		RawResponse: responseText,
-	}, nil
+	result, err := vision.ParseJSONResponse(responseText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse vision response: %w", err)
+	}
+
+	if result.Status == vision.StatusUnclear {
+		return nil, fmt.Errorf("image is unclear: please retake the photo")
+	}
+
+	return result, nil
 }
 
 // normaliseMIME maps browser MIME types to the values the Anthropic API accepts.
