@@ -20,6 +20,11 @@ If status is not "ok", set items to [].`
 // schema tokens cost ~10% of normal input price on subsequent calls.
 const ClaudeSystemPrompt = `You analyse food storage area photos and return structured JSON.
 
+For each distinct food product you can identify, provide:
+- name: the food product name (e.g. "Whole Milk", "Cheddar Cheese", "Orange Juice")
+- quantity: approximate quantity, count, volume, or weight (e.g. "2", "1 litre", "500g", "half full"). Always provide a best-effort estimate; never return null.
+- notes: where in the image this item is located (e.g. "top shelf left", "door bottom", "crisper drawer"). Always provide a location.
+
 Respond with JSON that validates against this schema — no prose, no code fences:
 {
   "required": ["status", "items"],
@@ -46,7 +51,7 @@ Status meanings:
 - unclear  : image is too blurry, dark, or otherwise unreadable`
 
 // ClaudeUserPrompt is the short user-turn message sent alongside the image.
-const ClaudeUserPrompt = `List every food item visible in this photo.`
+const ClaudeUserPrompt = `List every food item visible in this photo. Be as specific as possible — include brand names where visible (e.g. "Natrel Whole Milk" not "Milk", "Kraft Peanut Butter" not "Peanut Butter"). List every individual item you can see, do not group or summarise.`
 
 // AnalysisStatus represents the outcome of a vision analysis.
 type AnalysisStatus string
