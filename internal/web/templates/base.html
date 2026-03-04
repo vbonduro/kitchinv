@@ -227,13 +227,18 @@
             flex-shrink: 0;
         }
 
-        /* ── Photo section ─────────────────────────────────── */
-        .area-photo-section {
+        /* ── Sticky header+photo wrapper ───────────────────── */
+        .area-sticky {
             position: sticky;
             top: var(--header-h);
             z-index: 10;
-            /* Clip photo to card shape when at the top of the card (before scrolling). */
-            overflow: hidden;
+            background: var(--card-bg);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        /* ── Photo section ─────────────────────────────────── */
+        .area-photo-section {
+            position: relative;
         }
         .area-photo-img {
             display: block;
@@ -304,9 +309,6 @@
 
         /* Upload zone */
         .upload-zone {
-            position: sticky;
-            top: var(--header-h);
-            z-index: 10;
             border: 2px dashed #cbd5e1;
             border-radius: var(--radius-sm);
             padding: 2rem 1rem;

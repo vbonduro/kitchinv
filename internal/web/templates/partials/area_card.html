@@ -1,5 +1,7 @@
 {{define "area_card"}}
 <div class="area-card" data-testid="area-card-{{.ID}}">
+    <!-- Sticky wrapper: header + photo anchor together while scrolling items -->
+    <div class="area-sticky">
     <!-- Card header -->
     <div class="area-card-header">
         <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="startRenameArea({{.ID}})">{{.Name}}</span>
@@ -65,6 +67,7 @@
     <!-- Hidden file input (always present) -->
     <input type="file" data-testid="photo-input-{{.ID}}" accept="image/*" style="display:none"
            onchange="handleFileSelect({{.ID}}, this)">
+    </div><!-- /.area-sticky -->
 
     <!-- Items section: hidden while analysing (photo present, no items yet) -->
     <div class="items-section"{{if and .Photo (not .Items)}} style="display:none"{{end}}>
