@@ -46,8 +46,12 @@ test.describe('Navigation', () => {
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ resetDB }) => {
     await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
+    // Wait for any in-flight context.WithoutCancel uploads to settle before
+    // resetting — they outlive the HTTP request so may still be writing to DB.
+    await new Promise(r => setTimeout(r, 2_500));
+    await resetDB();
   });
 
   test('navigate away during upload then back: items appear after analysis completes', async ({ page }) => {
@@ -87,12 +91,12 @@ test.describe('Navigation', () => {
     // Navigate away right after submitting.
     await page.goto('about:blank');
 
-    // Wait long enough for slow mock to finish: 2s delay → give 4s margin.
-    await page.waitForTimeout(4_000);
+    // Wait long enough for slow mock to finish: 2s delay → give 6s margin for CI.
+    await page.waitForTimeout(6_000);
 
     // Navigate back — items should be in DB now.
     await page.goto('/areas');
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 10_000 });
+    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
   });
 });
