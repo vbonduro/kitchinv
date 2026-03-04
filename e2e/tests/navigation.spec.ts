@@ -46,12 +46,8 @@ test.describe('Navigation', () => {
     try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
   });
 
-  test.afterEach(async ({ resetDB }) => {
+  test.afterEach(async () => {
     await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    // Wait for any in-flight context.WithoutCancel uploads to settle before
-    // resetting — they outlive the HTTP request so may still be writing to DB.
-    await new Promise(r => setTimeout(r, 2_500));
-    await resetDB();
   });
 
   test('navigate away during upload then back: items appear after analysis completes', async ({ page }) => {

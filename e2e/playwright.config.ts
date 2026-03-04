@@ -23,8 +23,19 @@ export default defineConfig({
 
   projects: [
     {
+      // Main suite: all tests except navigation (which needs serial isolation).
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/navigation.spec.ts',
+    },
+    {
+      // Navigation tests run after the main suite and get their own dedicated
+      // worker so they don't interleave with parallel search/areas tests that
+      // share the same per-worker server instance.
+      name: 'navigation',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/navigation.spec.ts',
+      dependencies: ['chromium'],
     },
     {
       name: 'mobile-chrome',
