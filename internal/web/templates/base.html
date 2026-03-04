@@ -175,7 +175,8 @@
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: var(--radius);
-            overflow: hidden;
+            /* overflow must not be hidden so that position:sticky works on
+               .area-photo-section and .upload-zone children (kitchinv-yma). */
             box-shadow: var(--card-shadow);
             transition: box-shadow 0.2s, border-color 0.2s;
         }
@@ -228,7 +229,11 @@
 
         /* ── Photo section ─────────────────────────────────── */
         .area-photo-section {
-            position: relative;
+            position: sticky;
+            top: var(--header-h);
+            z-index: 10;
+            /* Clip photo to card shape when at the top of the card (before scrolling). */
+            overflow: hidden;
         }
         .area-photo-img {
             display: block;
@@ -299,6 +304,9 @@
 
         /* Upload zone */
         .upload-zone {
+            position: sticky;
+            top: var(--header-h);
+            z-index: 10;
             border: 2px dashed #cbd5e1;
             border-radius: var(--radius-sm);
             padding: 2rem 1rem;
