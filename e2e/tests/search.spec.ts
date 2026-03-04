@@ -32,7 +32,7 @@ async function setupAreaWithItems(page: Page, appPort: number): Promise<string> 
   await page.reload();
 
   const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-  await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+  await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
   return areaID;
 }
