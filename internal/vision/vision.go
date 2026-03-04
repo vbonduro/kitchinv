@@ -10,7 +10,7 @@ import (
 // while still guiding the model toward structured output.
 const OllamaAnalysisPrompt = `List every food item visible in this photo.
 Respond with JSON only, exactly matching this shape (no prose, no code fences):
-{"status":"ok","items":[{"name":"Milk","quantity":"2 litres","notes":"opened"}]}
+{"status":"ok","items":[{"name":"Milk","quantity":2,"notes":"top shelf left"}]}
 
 status must be one of: "ok" (items found), "no_items" (nothing identifiable), "not_food" (not a food area), "unclear" (image unreadable).
 If status is not "ok", set items to [].`
@@ -22,7 +22,7 @@ const ClaudeSystemPrompt = `You analyse food storage area photos and return stru
 
 For each distinct food product you can identify, provide:
 - name: the food product name (e.g. "Whole Milk", "Cheddar Cheese", "Orange Juice")
-- quantity: approximate quantity, count, volume, or weight (e.g. "2", "1 litre", "500g", "half full"). Always provide a best-effort estimate; never return null.
+- quantity: your best-estimate count of how many of this item are visible (e.g. 1, 2, 6). Must be a whole number. Never null.
 - notes: where in the image this item is located (e.g. "top shelf left", "door bottom", "crisper drawer"). Always provide a location.
 
 Respond with JSON that validates against this schema — no prose, no code fences:
@@ -36,7 +36,7 @@ Respond with JSON that validates against this schema — no prose, no code fence
         "required": ["name"],
         "properties": {
           "name":     { "type": "string" },
-          "quantity": { "type": ["string", "null"] },
+          "quantity": { "type": "integer", "minimum": 1 },
           "notes":    { "type": ["string", "null"] }
         }
       }

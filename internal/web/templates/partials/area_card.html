@@ -109,7 +109,7 @@
         <!-- Add item row -->
         <div class="add-item-row">
             <input type="text" class="add-item-name" placeholder="Add item..." onkeydown="addItem(event, {{.ID}})">
-            <input type="text" class="add-item-qty" placeholder="Qty" style="max-width:80px" onkeydown="addItem(event, {{.ID}})">
+            <input type="number" min="1" class="add-item-qty" placeholder="Qty" style="max-width:80px" onkeydown="addItem(event, {{.ID}})">
             <button class="btn btn-ghost btn-sm" onclick="addItem({key:'Enter',preventDefault:function(){}}, {{.ID}})">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 5v14"/><path d="M5 12h14"/>

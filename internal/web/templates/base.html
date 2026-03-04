@@ -344,9 +344,19 @@
         }
         .item-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             font-size: 0.8125rem;
         }
+        /* Col 1: Name, Col 2: Qty, Col 3: Location, Col 4: Delete */
+        .item-table th:nth-child(1),
+        .item-table td:nth-child(1) { width: 37%; }
+        .item-table th:nth-child(2),
+        .item-table td:nth-child(2) { width: 18%; }
+        .item-table th:nth-child(3),
+        .item-table td:nth-child(3) { width: 37%; }
+        .item-table th:nth-child(4),
+        .item-table td:nth-child(4) { width: 8%; text-align: center; }
         .item-table thead th {
             font-size: 0.6875rem;
             font-weight: 600;
@@ -385,6 +395,7 @@
             font-weight: 600;
             padding: 0.125rem 0.5rem;
             border-radius: 999px;
+            vertical-align: middle;
         }
         .item-notes-cell {
             color: var(--text-muted);
@@ -1103,7 +1114,7 @@
         }
         var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
         if (qtyCell) {
-            qtyCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
+            qtyCell.innerHTML = '<input type="number" min="1" class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
         }
         if (notesCell) {
             notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';

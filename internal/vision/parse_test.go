@@ -127,11 +127,11 @@ func TestParseJSONResponse(t *testing.T) {
 	}{
 		{
 			name:       "ok with items",
-			raw:        `{"status":"ok","items":[{"name":"Milk","quantity":"2 litres","notes":"opened"},{"name":"Butter","quantity":"1 block","notes":null}]}`,
+			raw:        `{"status":"ok","items":[{"name":"Milk","quantity":2,"notes":"opened"},{"name":"Butter","quantity":1,"notes":null}]}`,
 			wantStatus: StatusOK,
 			wantItems: []DetectedItem{
-				{Name: "Milk", Quantity: "2 litres", Notes: "opened"},
-				{Name: "Butter", Quantity: "1 block", Notes: ""},
+				{Name: "Milk", Quantity: "2", Notes: "opened"},
+				{Name: "Butter", Quantity: "1", Notes: ""},
 			},
 		},
 		{
@@ -174,12 +174,12 @@ func TestParseJSONResponse(t *testing.T) {
 		},
 		{
 			name:    "item missing name",
-			raw:     `{"status":"ok","items":[{"quantity":"1"}]}`,
+			raw:     `{"status":"ok","items":[{"quantity":1}]}`,
 			wantErr: true,
 		},
 		{
 			name:       "JSON wrapped in model prose",
-			raw:        "Here is the JSON:\n```json\n{\"status\":\"ok\",\"items\":[{\"name\":\"Eggs\",\"quantity\":\"12\",\"notes\":\"\"}]}\n```",
+			raw:        "Here is the JSON:\n```json\n{\"status\":\"ok\",\"items\":[{\"name\":\"Eggs\",\"quantity\":12,\"notes\":\"\"}]}\n```",
 			wantStatus: StatusOK,
 			wantItems:  []DetectedItem{{Name: "Eggs", Quantity: "12", Notes: ""}},
 		},

@@ -23,7 +23,7 @@ func TestClaudeAnalyze(t *testing.T) {
 
 		resp := map[string]interface{}{
 			"content": []map[string]interface{}{
-				{"type": "text", "text": `{"status":"ok","items":[{"name":"Milk","quantity":"1 liter","notes":"opened"},{"name":"Butter","quantity":"250 g","notes":null}]}`},
+				{"type": "text", "text": `{"status":"ok","items":[{"name":"Milk","quantity":1,"notes":"opened"},{"name":"Butter","quantity":1,"notes":null}]}`},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -41,7 +41,7 @@ func TestClaudeAnalyze(t *testing.T) {
 	assert.Equal(t, vision.StatusOK, result.Status)
 	assert.Len(t, result.Items, 2)
 	assert.Equal(t, "Milk", result.Items[0].Name)
-	assert.Equal(t, "1 liter", result.Items[0].Quantity)
+	assert.Equal(t, "1", result.Items[0].Quantity)
 	assert.Equal(t, "opened", result.Items[0].Notes)
 	assert.Equal(t, "Butter", result.Items[1].Name)
 }
