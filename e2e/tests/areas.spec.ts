@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures';
-import { Page } from '@playwright/test';
+import { Page, request as playwrightRequest } from '@playwright/test';
 
 async function addAreaViaDialog(page: Page, name: string) {
   await page.click('[data-testid="new-area-btn"]');
@@ -16,6 +16,24 @@ async function createArea(page: Page, name: string) {
   await page.goto('/areas');
   await addAreaViaDialog(page, name);
   await page.locator('.area-card-name', { hasText: name }).waitFor({ timeout: 10_000 });
+}
+
+async function createAreaWithItems(page: Page, appPort: number): Promise<string> {
+  const name = `E2E ItemEdit ${Date.now()}`;
+  await page.goto('/areas');
+  await addAreaViaDialog(page, name);
+  const card = page.locator('.area-card', { hasText: name });
+  await card.waitFor({ timeout: 10_000 });
+  const testid = await card.getAttribute('data-testid');
+  const areaID = testid!.replace('area-card-', '');
+
+  const ctx = await playwrightRequest.newContext({ baseURL: `http://localhost:${appPort}` });
+  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Milk', quantity: '2', notes: 'top shelf' } });
+  await ctx.dispose();
+
+  await page.reload();
+  await expect(card.locator('[data-testid="item-row"]')).toHaveCount(1, { timeout: 10_000 });
+  return areaID;
 }
 
 test.describe('Areas', () => {
@@ -139,5 +157,45 @@ test.describe('Areas', () => {
 
     // Exactly one "Add Area" button must be visible.
     await expect(page.locator('[data-testid="new-area-btn"]')).toHaveCount(1);
+  });
+
+  // Regression tests for kitchinv-13c: clicking any cell in an item row must
+  // start inline editing, not just the name cell.
+  test('clicking qty cell starts inline edit', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const row = card.locator('[data-testid="item-row"]').first();
+
+    // Click the qty cell (second td).
+    await row.locator('td').nth(1).click();
+
+    // Inline edit inputs must appear.
+    await expect(row.locator('input[data-field="name"]')).toBeVisible({ timeout: 3_000 });
+    await expect(row.locator('input[data-field="qty"]')).toBeVisible({ timeout: 3_000 });
+  });
+
+  test('clicking notes cell starts inline edit', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const row = card.locator('[data-testid="item-row"]').first();
+
+    // Click the notes cell (third td).
+    await row.locator('td').nth(2).click();
+
+    // Inline edit inputs must appear.
+    await expect(row.locator('input[data-field="name"]')).toBeVisible({ timeout: 3_000 });
+    await expect(row.locator('input[data-field="qty"]')).toBeVisible({ timeout: 3_000 });
+  });
+
+  test('qty inline edit input is type=number', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const row = card.locator('[data-testid="item-row"]').first();
+
+    await row.locator('td').first().click();
+
+    const qtyInput = row.locator('input[data-field="qty"]');
+    await expect(qtyInput).toBeVisible({ timeout: 3_000 });
+    await expect(qtyInput).toHaveAttribute('type', 'number');
   });
 });
