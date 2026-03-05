@@ -19,8 +19,6 @@ async function createArea(page: Page, name: string) {
 }
 
 test.describe('Areas', () => {
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
-
   test('empty state is visible on a fresh load', async ({ page }) => {
     await page.goto('/areas');
     await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
@@ -101,6 +99,23 @@ test.describe('Areas', () => {
 
   // Regression test for kitchinv-zec: deleting all areas must show exactly one
   // "Add Area" button (the empty state), not two.
+  // kitchinv-yma: area title + photo anchor to the top while the user scrolls
+  // through a long item list so they can always refer to the image.
+  // Verified via computed style on the .area-sticky wrapper.
+  test('area photo section is sticky while scrolling through items', async ({ page }) => {
+    const name = `E2E Sticky ${Date.now()}`;
+    await createArea(page, name);
+
+    const stickyWrapper = page.locator('.area-card', { hasText: name })
+      .locator('.area-sticky');
+    await stickyWrapper.waitFor();
+
+    const position = await stickyWrapper.evaluate((el) =>
+      window.getComputedStyle(el).position
+    );
+    expect(position).toBe('sticky');
+  });
+
   test('deleting all areas shows exactly one add area button', async ({ page }) => {
     const name1 = `E2E DelAll A ${Date.now()}`;
     const name2 = `E2E DelAll B ${Date.now()}`;

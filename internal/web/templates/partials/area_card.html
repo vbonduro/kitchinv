@@ -1,5 +1,7 @@
 {{define "area_card"}}
 <div class="area-card" data-testid="area-card-{{.ID}}">
+    <!-- Sticky wrapper: header + photo anchor together while scrolling items -->
+    <div class="area-sticky">
     <!-- Card header -->
     <div class="area-card-header">
         <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="startRenameArea({{.ID}})">{{.Name}}</span>
@@ -65,6 +67,7 @@
     <!-- Hidden file input (always present) -->
     <input type="file" data-testid="photo-input-{{.ID}}" accept="image/*" style="display:none"
            onchange="handleFileSelect({{.ID}}, this)">
+    </div><!-- /.area-sticky -->
 
     <!-- Items section: hidden while analysing (photo present, no items yet) -->
     <div class="items-section"{{if and .Photo (not .Items)}} style="display:none"{{end}}>
@@ -106,7 +109,7 @@
         <!-- Add item row -->
         <div class="add-item-row">
             <input type="text" class="add-item-name" placeholder="Add item..." onkeydown="addItem(event, {{.ID}})">
-            <input type="text" class="add-item-qty" placeholder="Qty" style="max-width:80px" onkeydown="addItem(event, {{.ID}})">
+            <input type="number" min="1" class="add-item-qty" placeholder="Qty" style="max-width:80px" onkeydown="addItem(event, {{.ID}})">
             <button class="btn btn-ghost btn-sm" onclick="addItem({key:'Enter',preventDefault:function(){}}, {{.ID}})">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 5v14"/><path d="M5 12h14"/>

@@ -24,32 +24,7 @@ async function createArea(page: Page, name: string): Promise<string> {
   return testid!.replace('area-card-', '');
 }
 
-// Slow-mode tests mutate shared mock state — run this suite serially.
-test.describe.configure({ mode: 'serial' });
-
 test.describe('Regression', () => {
-  let jpegFixture: string;
-  let apiContext: Awaited<ReturnType<typeof request.newContext>>;
-  let ollamaPort: number;
-
-  test.beforeAll(async ({ playwright, ollamaPort: port }) => {
-    jpegFixture = createJpegFixture();
-    apiContext = await playwright.request.newContext();
-    ollamaPort = port;
-  });
-
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
-
-  test.afterAll(async () => {
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    await apiContext.dispose();
-    try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
-  });
-
-  test.afterEach(async () => {
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-  });
-
   test('Bug 1: photo-input has no capture attribute', async ({ page }) => {
     const name = `E2E RegCapture ${Date.now()}`;
     const areaID = await createArea(page, name);
@@ -77,36 +52,54 @@ test.describe('Regression', () => {
     }
   });
 
-  test('Bug 3: analyzing overlay appears immediately on file select (JS-driven)', async ({ page }) => {
-    const name = `E2E RegClientSpinner ${Date.now()}`;
-    const areaID = await createArea(page, name);
+  test('Bug 3: analyzing overlay appears immediately on file select (JS-driven)', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-    // Slow mode keeps the upload in progress long enough to assert overlay visibility.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
+    try {
+      const name = `E2E RegClientSpinner ${Date.now()}`;
+      const areaID = await createArea(page, name);
 
-    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
-    await fileInput.setInputFiles(jpegFixture);
+      // Slow mode keeps the upload in progress long enough to assert overlay visibility.
+      await apiContext.post('/control/slow');
 
-    // Overlay must appear immediately on the client side while upload is in progress.
-    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+      const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+      await fileInput.setInputFiles(jpegFixture);
+
+      // Overlay must appear immediately on the client side while upload is in progress.
+      await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+    } finally {
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
-  test('Bug 4: analyzing overlay shown (not "no items") during analysis', async ({ page }) => {
-    const name = `E2E RegAnalysingCard ${Date.now()}`;
-    const areaID = await createArea(page, name);
+  test('Bug 4: analyzing overlay shown (not "no items") during analysis', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-    // Slow mode keeps the upload in progress long enough to assert overlay visibility.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
+    try {
+      const name = `E2E RegAnalysingCard ${Date.now()}`;
+      const areaID = await createArea(page, name);
 
-    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
-    await fileInput.setInputFiles(jpegFixture);
+      // Slow mode keeps the upload in progress long enough to assert overlay visibility.
+      await apiContext.post('/control/slow');
 
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+      const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+      await fileInput.setInputFiles(jpegFixture);
 
-    // Positive: analyzing indicator is present.
-    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Negative: "no items" text is absent.
-    await expect(card.locator('.no-items-text')).not.toBeVisible();
+      // Positive: analyzing indicator is present.
+      await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+
+      // Negative: "no items" text is absent.
+      await expect(card.locator('.no-items-text')).not.toBeVisible();
+    } finally {
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 });

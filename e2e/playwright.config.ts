@@ -11,11 +11,12 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   retries: 0,
   workers: CI ? 2 : 2,
+  fullyParallel: true,
 
   reporter: CI ? 'github' : 'list',
 
   use: {
-    // baseURL is provided per-worker by the appPort fixture in fixtures.ts.
+    // baseURL is provided per-test by the appPort fixture in fixtures.ts.
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
@@ -30,7 +31,6 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
       testMatch: '**/regression.spec.ts',
-      dependencies: ['chromium'],
     },
   ],
 });

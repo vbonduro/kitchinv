@@ -1,16 +1,5 @@
 import { test, expect } from '../fixtures';
-import { Page } from '@playwright/test';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-
-function createJpegFixture(): string {
-  const buf = Buffer.alloc(512, 0);
-  buf[0] = 0xff; buf[1] = 0xd8; buf[2] = 0xff; buf[3] = 0xe0;
-  const tmpFile = path.join(os.tmpdir(), `e2e-search-${Date.now()}.jpg`);
-  fs.writeFileSync(tmpFile, buf);
-  return tmpFile;
-}
+import { Page, request as playwrightRequest } from '@playwright/test';
 
 async function createArea(page: Page, name: string): Promise<string> {
   await page.goto('/areas');
@@ -24,16 +13,24 @@ async function createArea(page: Page, name: string): Promise<string> {
   return testid!.replace('area-card-', '');
 }
 
-/** Create an area, upload a photo, wait for items. Returns area ID. */
-async function setupAreaWithItems(page: Page, jpegFixture: string): Promise<string> {
+/**
+ * Create an area and seed it with the same 3 items the mock-ollama returns
+ * (Milk, Butter, Orange Juice) via the REST API — no photo upload needed.
+ * This is synchronous and race-free, avoiding the flakiness of waiting for
+ * an async upload pipeline to complete under parallel worker load.
+ */
+async function setupAreaWithItems(page: Page, appPort: number): Promise<string> {
   const name = `E2E SearchArea ${Date.now()}`;
   const areaID = await createArea(page, name);
 
-  // Upload photo via file input.
-  const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
-  await fileInput.setInputFiles(jpegFixture);
+  const ctx = await playwrightRequest.newContext({ baseURL: `http://localhost:${appPort}` });
+  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Milk',         quantity: '2 liters', notes: '' } });
+  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Butter',       quantity: '1 block',  notes: '' } });
+  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Orange Juice', quantity: '1 carton', notes: '' } });
+  await ctx.dispose();
 
-  // Wait for items to stream in.
+  await page.reload();
+
   const card = page.locator(`[data-testid="area-card-${areaID}"]`);
   await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
@@ -41,20 +38,8 @@ async function setupAreaWithItems(page: Page, jpegFixture: string): Promise<stri
 }
 
 test.describe('Search', () => {
-  let jpegFixture: string;
-
-  test.beforeAll(() => {
-    jpegFixture = createJpegFixture();
-  });
-
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
-
-  test.afterAll(() => {
-    try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
-  });
-
-  test('search filters cards by item name', async ({ page }) => {
-    await setupAreaWithItems(page, jpegFixture);
+  test('search filters cards by item name', async ({ page, appPort }) => {
+    await setupAreaWithItems(page, appPort);
 
     // Use the header search bar to filter.
     await page.fill('[data-testid="search-input"]', 'Milk');
@@ -63,8 +48,8 @@ test.describe('Search', () => {
     await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search highlights matching text', async ({ page }) => {
-    await setupAreaWithItems(page, jpegFixture);
+  test('search highlights matching text', async ({ page, appPort }) => {
+    await setupAreaWithItems(page, appPort);
 
     await page.fill('[data-testid="search-input"]', 'Milk');
 
@@ -72,8 +57,8 @@ test.describe('Search', () => {
     await expect(page.locator('.area-card mark')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search unknown term → no matches state', async ({ page }) => {
-    await setupAreaWithItems(page, jpegFixture);
+  test('search unknown term → no matches state', async ({ page, appPort }) => {
+    await setupAreaWithItems(page, appPort);
 
     await page.fill('[data-testid="search-input"]', 'ZZZThisDoesNotExist999');
 
@@ -84,8 +69,8 @@ test.describe('Search', () => {
     await expect(page.locator('#no-search-matches')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('search is case-insensitive', async ({ page }) => {
-    await setupAreaWithItems(page, jpegFixture);
+  test('search is case-insensitive', async ({ page, appPort }) => {
+    await setupAreaWithItems(page, appPort);
 
     await page.fill('[data-testid="search-input"]', 'milk');
 
@@ -93,8 +78,8 @@ test.describe('Search', () => {
     await expect(page.locator('.area-card')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('clear search restores all cards', async ({ page }) => {
-    await setupAreaWithItems(page, jpegFixture);
+  test('clear search restores all cards', async ({ page, appPort }) => {
+    await setupAreaWithItems(page, appPort);
 
     // Search for something that hides the card.
     await page.fill('[data-testid="search-input"]', 'ZZZNotFound');
@@ -110,8 +95,8 @@ test.describe('Search', () => {
   // Regression tests for kitchinv-s91: search must filter individual item rows,
   // not just show/hide the whole card.
 
-  test('search hides non-matching item rows within card', async ({ page }) => {
-    const areaID = await setupAreaWithItems(page, jpegFixture);
+  test('search hides non-matching item rows within card', async ({ page, appPort }) => {
+    const areaID = await setupAreaWithItems(page, appPort);
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
     // Filter to only "Milk" — Butter and Orange Juice rows must be hidden.
@@ -122,10 +107,10 @@ test.describe('Search', () => {
     await expect(card.locator('[data-testid="item-row"]').filter({ hasText: 'Orange Juice' })).toBeHidden({ timeout: 5_000 });
   });
 
-  test('area with no matching items is hidden entirely', async ({ page }) => {
+  test('area with no matching items is hidden entirely', async ({ page, appPort }) => {
     // Create two areas with items; only one will match.
-    const areaID1 = await setupAreaWithItems(page, jpegFixture);
-    const areaID2 = await setupAreaWithItems(page, jpegFixture);
+    const areaID1 = await setupAreaWithItems(page, appPort);
+    const areaID2 = await setupAreaWithItems(page, appPort);
 
     // Both areas have the same mock items. Search for something that exists so
     // both are visible first, then search for something that won't match.
@@ -135,8 +120,8 @@ test.describe('Search', () => {
     await expect(page.locator(`[data-testid="area-card-${areaID2}"]`)).toBeHidden({ timeout: 5_000 });
   });
 
-  test('clear search restores all item rows', async ({ page }) => {
-    const areaID = await setupAreaWithItems(page, jpegFixture);
+  test('clear search restores all item rows', async ({ page, appPort }) => {
+    const areaID = await setupAreaWithItems(page, appPort);
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
     await page.fill('[data-testid="search-input"]', 'Milk');

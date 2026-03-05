@@ -175,7 +175,8 @@
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: var(--radius);
-            overflow: hidden;
+            /* overflow must not be hidden so that position:sticky works on
+               .area-photo-section and .upload-zone children (kitchinv-yma). */
             box-shadow: var(--card-shadow);
             transition: box-shadow 0.2s, border-color 0.2s;
         }
@@ -224,6 +225,16 @@
             align-items: center;
             gap: 0.25rem;
             flex-shrink: 0;
+        }
+
+        /* ── Sticky header+photo wrapper ───────────────────── */
+        .area-sticky {
+            position: sticky;
+            top: var(--header-h);
+            z-index: 10;
+            background: var(--card-bg);
+            border-radius: var(--radius) var(--radius) 0 0;
+            box-shadow: 0 4px 8px -2px rgba(0,0,0,0.12);
         }
 
         /* ── Photo section ─────────────────────────────────── */
@@ -334,10 +345,24 @@
         }
         .item-table {
             width: 100%;
-            border-collapse: collapse;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.8125rem;
         }
+        /* Col 1: Name, Col 2: Qty, Col 3: Location, Col 4: Delete */
+        .item-table th:nth-child(1),
+        .item-table td:nth-child(1) { width: 37%; }
+        .item-table th:nth-child(2),
+        .item-table td:nth-child(2) { width: 18%; }
+        .item-table th:nth-child(3),
+        .item-table td:nth-child(3) { width: 37%; }
+        .item-table th:nth-child(4),
+        .item-table td:nth-child(4) { width: 8%; text-align: center; }
         .item-table thead th {
+            position: sticky;
+            top: var(--thead-top, 64px);
+            z-index: 2;
             font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -375,6 +400,7 @@
             font-weight: 600;
             padding: 0.125rem 0.5rem;
             border-radius: 999px;
+            vertical-align: middle;
         }
         .item-notes-cell {
             color: var(--text-muted);
@@ -870,6 +896,17 @@
         }, { passive: false });
     }
 
+    function updateStickyTheadTop(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var sticky = card.querySelector('.area-sticky');
+        if (!sticky) return;
+        var stickyH = sticky.getBoundingClientRect().height;
+        var headerEl = document.querySelector('.header');
+        var headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
+        card.style.setProperty('--thead-top', (headerH + stickyH) + 'px');
+    }
+
     function setupDragDrop(areaID) {
         var zone = document.querySelector('[data-testid="upload-zone-' + areaID + '"]');
         if (!zone) return;
@@ -972,6 +1009,7 @@
                         '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
                         '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
                     setupPhotoTouchToggle(areaID);
+                    updateStickyTheadTop(areaID);
                 }
                 // Replace streamed item rows with server-rendered partial so
                 // that all controls (delete, edit) and data-item-id attributes
@@ -1093,7 +1131,7 @@
         }
         var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
         if (qtyCell) {
-            qtyCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
+            qtyCell.innerHTML = '<input type="number" min="1" class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
         }
         if (notesCell) {
             notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';
@@ -1314,6 +1352,14 @@
         }
     }
 
+    function updateAllStickyTheadTops() {
+        document.querySelectorAll('.area-card').forEach(function(card) {
+            var testid = card.getAttribute('data-testid') || '';
+            var m = testid.match(/area-card-(\d+)/);
+            if (m) updateStickyTheadTop(parseInt(m[1], 10));
+        });
+    }
+
     /* ── Init drag-drop and touch-toggle on page load ──── */
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.area-card').forEach(function(card) {
@@ -1325,7 +1371,11 @@
                 setupPhotoTouchToggle(id);
             }
         });
+        updateAllStickyTheadTops();
     });
+
+    /* Re-measure after images load (photo changes area-sticky height). */
+    window.addEventListener('load', updateAllStickyTheadTops);
     </script>
 </body>
 </html>

@@ -23,7 +23,7 @@ func TestOllamaAnalyze(t *testing.T) {
 
 		resp := map[string]interface{}{
 			"model":    req.Model,
-			"response": `{"status":"ok","items":[{"name":"Milk","quantity":"1 liter","notes":null},{"name":"Butter","quantity":"1 block","notes":"opened"}]}`,
+			"response": `{"status":"ok","items":[{"name":"Milk","quantity":1,"notes":null},{"name":"Butter","quantity":1,"notes":"opened"}]}`,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -43,7 +43,7 @@ func TestOllamaAnalyze(t *testing.T) {
 	assert.Equal(t, vision.StatusOK, result.Status)
 	assert.Len(t, result.Items, 2)
 	assert.Equal(t, "Milk", result.Items[0].Name)
-	assert.Equal(t, "1 liter", result.Items[0].Quantity)
+	assert.Equal(t, "1", result.Items[0].Quantity)
 	assert.Equal(t, "Butter", result.Items[1].Name)
 	assert.Equal(t, "opened", result.Items[1].Notes)
 }

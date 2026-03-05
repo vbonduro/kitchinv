@@ -28,9 +28,9 @@ const PORT = parseInt(process.env.MOCK_OLLAMA_PORT || '19434', 10);
 const JSON_RESPONSE = JSON.stringify({
   status: 'ok',
   items: [
-    { name: 'Milk',         quantity: '2 liters',  notes: 'semi-skimmed' },
-    { name: 'Butter',       quantity: '1 block',   notes: 'opened' },
-    { name: 'Orange Juice', quantity: '1 carton',  notes: null },
+    { name: 'Milk',         quantity: 2, notes: 'semi-skimmed' },
+    { name: 'Butter',       quantity: 1, notes: 'opened' },
+    { name: 'Orange Juice', quantity: 1, notes: null },
   ],
 });
 

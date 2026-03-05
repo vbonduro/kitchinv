@@ -34,151 +34,179 @@ async function uploadPhoto(page: Page, areaID: string, jpegFixture: string) {
 }
 
 test.describe('Upload & Analysis', () => {
-  // Slow-mode tests mutate shared mock state — run serially.
-  test.describe.configure({ mode: 'serial' });
-  let jpegFixture: string;
-  let apiContext: Awaited<ReturnType<typeof request.newContext>>;
-  let ollamaPort: number;
+  test('analyzing overlay appears immediately on file select', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-  test.beforeAll(async ({ playwright, ollamaPort: port }) => {
-    jpegFixture = createJpegFixture();
-    apiContext = await playwright.request.newContext();
-    ollamaPort = port;
+    try {
+      const name = `E2E UploadBanner ${Date.now()}`;
+      const areaID = await createArea(page, name);
+
+      // Slow mode delays the mock response so the overlay stays visible long enough to assert.
+      await apiContext.post('/control/slow');
+
+      // Select the file — JS immediately shows the overlay before the fetch completes.
+      await uploadPhoto(page, areaID, jpegFixture);
+
+      // Overlay must be visible showing "Analyzing your space...".
+      const overlay = page.locator(`[data-testid="analyzing-indicator-${areaID}"]`);
+      await expect(overlay).toBeVisible({ timeout: 5_000 });
+      await expect(overlay.locator('.area-analysing-text')).toHaveText('Analyzing your space...');
+    } finally {
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
+  test('upload shows analyzing indicator then 3 items appear', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-  test.afterAll(async () => {
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    await apiContext.dispose();
-    try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    try {
+      const name = `E2E UploadStream ${Date.now()}`;
+      const areaID = await createArea(page, name);
+
+      // Slow mode so overlay is visible long enough to assert before items load.
+      await apiContext.post('/control/slow');
+
+      await uploadPhoto(page, areaID, jpegFixture);
+
+      // Analyzing indicator should be visible while upload is in progress.
+      await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
+
+      // 3 item rows should appear after upload completes.
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+    } finally {
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
-  test.afterEach(async () => {
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fast`);
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fail/reset`);
-  });
+  test('file input is disabled during upload and re-enabled after', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-  test('analyzing overlay appears immediately on file select', async ({ page }) => {
-    const name = `E2E UploadBanner ${Date.now()}`;
-    const areaID = await createArea(page, name);
+    try {
+      const name = `E2E UploadBtnState ${Date.now()}`;
+      const areaID = await createArea(page, name);
 
-    // Slow mode delays the mock response so the overlay stays visible long enough to assert.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
+      // Slow mode keeps the upload in progress long enough to assert disabled state.
+      await apiContext.post('/control/slow');
 
-    // Select the file — JS immediately shows the overlay before the fetch completes.
-    await uploadPhoto(page, areaID, jpegFixture);
+      await uploadPhoto(page, areaID, jpegFixture);
 
-    // Overlay must be visible showing "Analyzing your space...".
-    const overlay = page.locator(`[data-testid="analyzing-indicator-${areaID}"]`);
-    await expect(overlay).toBeVisible({ timeout: 5_000 });
-    await expect(overlay.locator('.area-analysing-text')).toHaveText('Analyzing your space...');
-  });
+      const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
+      // File input should be disabled while uploading.
+      await expect(fileInput).toBeDisabled({ timeout: 5_000 });
 
-  test('upload shows analyzing indicator then 3 items appear', async ({ page }) => {
-    const name = `E2E UploadStream ${Date.now()}`;
-    const areaID = await createArea(page, name);
-
-    // Slow mode so overlay is visible long enough to assert before items load.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
-
-    await uploadPhoto(page, areaID, jpegFixture);
-
-    // Analyzing indicator should be visible while upload is in progress.
-    await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
-
-    // 3 item rows should appear after upload completes.
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
-  });
-
-  test('file input is disabled during upload and re-enabled after', async ({ page }) => {
-    const name = `E2E UploadBtnState ${Date.now()}`;
-    const areaID = await createArea(page, name);
-
-    // Slow mode keeps the upload in progress long enough to assert disabled state.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/slow`);
-
-    await uploadPhoto(page, areaID, jpegFixture);
-
-    const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
-    // File input should be disabled while uploading.
-    await expect(fileInput).toBeDisabled({ timeout: 5_000 });
-
-    // After upload completes, file input re-enabled.
-    await expect(fileInput).toBeEnabled({ timeout: 15_000 });
+      // After upload completes, file input re-enabled.
+      await expect(fileInput).toBeEnabled({ timeout: 15_000 });
+    } finally {
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
   // Regression test for kitchinv-uh7: after a successful upload, if a
   // subsequent upload fails, the area must show the previous photo and items
   // both immediately (no refresh) and after a page refresh.
-  test('failed re-upload restores previous photo and items', async ({ page }) => {
-    const name = `E2E UploadFailRestore ${Date.now()}`;
-    const areaID = await createArea(page, name);
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+  test('failed re-upload restores previous photo and items', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-    // First upload succeeds — 3 items appear.
-    await uploadPhoto(page, areaID, jpegFixture);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+    try {
+      const name = `E2E UploadFailRestore ${Date.now()}`;
+      const areaID = await createArea(page, name);
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Make the next upload fail at the vision API level.
-    await apiContext.post(`http://localhost:${ollamaPort}/control/fail`);
+      // First upload succeeds — 3 items appear.
+      await uploadPhoto(page, areaID, jpegFixture);
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
-    // Attempt second upload — should fail.
-    await uploadPhoto(page, areaID, jpegFixture);
+      // Make the next upload fail at the vision API level.
+      await apiContext.post('/control/fail');
 
-    // Error toast must appear.
-    await expect(page.locator('.toast')).toBeVisible({ timeout: 5_000 });
+      // Attempt second upload — should fail.
+      await uploadPhoto(page, areaID, jpegFixture);
 
-    // Card must restore to previous state: photo present, 3 items, no analysing banner.
-    await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+      // Error toast must appear.
+      await expect(page.locator('.toast')).toBeVisible({ timeout: 5_000 });
 
-    // After page refresh the area must still show previous photo and items.
-    await page.goto('/areas');
-    const cardAfterRefresh = page.locator(`[data-testid="area-card-${areaID}"]`);
-    await expect(cardAfterRefresh.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
-    await expect(cardAfterRefresh.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+      // Card must restore to previous state: photo present, 3 items, no analysing banner.
+      await expect(card.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+
+      // After page refresh the area must still show previous photo and items.
+      await page.goto('/areas');
+      const cardAfterRefresh = page.locator(`[data-testid="area-card-${areaID}"]`);
+      await expect(cardAfterRefresh.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).not.toBeVisible({ timeout: 5_000 });
+      await expect(cardAfterRefresh.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+    } finally {
+      await apiContext.post('/control/fail/reset');
+      await apiContext.post('/control/fast');
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
   // Regression test for kitchinv-c0o: after upload completes, item controls
   // (delete, edit) must be interactive immediately without a page refresh.
-  test('item controls are interactive after upload without refresh', async ({ page }) => {
-    const name = `E2E UploadInteractive ${Date.now()}`;
-    const areaID = await createArea(page, name);
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+  test('item controls are interactive after upload without refresh', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-    await uploadPhoto(page, areaID, jpegFixture);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+    try {
+      const name = `E2E UploadInteractive ${Date.now()}`;
+      const areaID = await createArea(page, name);
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Delete the first item without refreshing — must work immediately.
-    const firstRow = card.locator('[data-testid="item-row"]').first();
-    await firstRow.locator('button[aria-label="Delete item"]').click();
+      await uploadPhoto(page, areaID, jpegFixture);
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
-    // Item count should drop to 2.
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(2, { timeout: 5_000 });
+      // Delete the first item without refreshing — must work immediately.
+      const firstRow = card.locator('[data-testid="item-row"]').first();
+      await firstRow.locator('button[aria-label="Delete item"]').click();
 
-    // Add-item input must be present and functional without a refresh.
-    const addInput = card.locator('.add-item-name');
-    await expect(addInput).toBeVisible({ timeout: 2_000 });
-    await addInput.fill('manually added item');
-    await addInput.press('Enter');
+      // Item count should drop to 2.
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(2, { timeout: 5_000 });
 
-    // Item count should rise to 3.
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+      // Add-item input must be present and functional without a refresh.
+      const addInput = card.locator('.add-item-name');
+      await expect(addInput).toBeVisible({ timeout: 2_000 });
+      await addInput.fill('manually added item');
+      await addInput.press('Enter');
+
+      // Item count should rise to 3.
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
+    } finally {
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 
-  test('second upload replaces items (still 3 item-rows)', async ({ page }) => {
-    const name = `E2E UploadReplace ${Date.now()}`;
-    const areaID = await createArea(page, name);
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+  test('second upload replaces items (still 3 item-rows)', async ({ page, ollamaPort }) => {
+    const jpegFixture = createJpegFixture();
+    const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
-    // First upload.
-    await uploadPhoto(page, areaID, jpegFixture);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+    try {
+      const name = `E2E UploadReplace ${Date.now()}`;
+      const areaID = await createArea(page, name);
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
 
-    // Second upload (replace photo).
-    await uploadPhoto(page, areaID, jpegFixture);
-    await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+      // First upload.
+      await uploadPhoto(page, areaID, jpegFixture);
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+
+      // Second upload (replace photo).
+      await uploadPhoto(page, areaID, jpegFixture);
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+    } finally {
+      await apiContext.dispose();
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
   });
 });

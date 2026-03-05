@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -59,8 +60,8 @@ func ParseLine(line string) *DetectedItem {
 
 // jsonItem is the wire representation of a single item in the JSON response.
 type jsonItem struct {
-	Name     string  `json:"name"`
-	Quantity *string `json:"quantity"`
+	Name     string `json:"name"`
+	Quantity *int   `json:"quantity"`
 	Notes    *string `json:"notes"`
 }
 
@@ -112,7 +113,7 @@ func ParseJSONResponse(raw string) (*AnalysisResult, error) {
 		}
 		item := DetectedItem{Name: wi.Name}
 		if wi.Quantity != nil {
-			item.Quantity = *wi.Quantity
+			item.Quantity = strconv.Itoa(*wi.Quantity)
 		}
 		if wi.Notes != nil {
 			item.Notes = *wi.Notes
