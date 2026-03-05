@@ -1,4 +1,4 @@
-import { test as base, request } from '@playwright/test';
+import { test as base } from '@playwright/test';
 import { spawn, ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as http from 'http';
@@ -6,13 +6,15 @@ import * as os from 'os';
 import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
-const BASE_APP_PORT = parseInt(process.env.APP_PORT || '9090', 10);
+const BASE_APP_PORT    = parseInt(process.env.APP_PORT    || '9090',  10);
 const BASE_OLLAMA_PORT = parseInt(process.env.OLLAMA_PORT || '19434', 10);
 
-// Reserve 10 ports per worker so app and ollama don't collide.
-const WORKER_STRIDE = 10;
+// Each worker is a separate Node process with its own module scope, so this
+// counter is per-worker. Tests within a worker run serially, so incrementing
+// it is safe — each test gets a unique slot and ports are free before reuse.
+let slotCounter = 0;
 
-/** Poll an HTTP endpoint until it returns any response. */
+/** Poll an HTTP endpoint until it returns 200/3xx. */
 function waitForPort(port: number, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve, reject) => {
@@ -22,95 +24,68 @@ function waitForPort(port: number, timeoutMs = 15_000): Promise<void> {
         resolve();
       });
       req.on('error', () => {
-        if (Date.now() >= deadline) {
-          reject(new Error(`Timed out waiting for port ${port}`));
-        } else {
-          setTimeout(attempt, 200);
-        }
+        if (Date.now() >= deadline) reject(new Error(`Timed out waiting for port ${port}`));
+        else setTimeout(attempt, 200);
       });
-      req.setTimeout(500, () => {
-        req.destroy();
-        setTimeout(attempt, 200);
-      });
+      req.setTimeout(500, () => { req.destroy(); setTimeout(attempt, 200); });
     }
     attempt();
   });
 }
 
-export type WorkerFixtures = {
+export type TestFixtures = {
   appPort: number;
   ollamaPort: number;
 };
 
-export type TestFixtures = {
-  resetDB: () => Promise<void>;
-};
-
 /**
- * Custom test object that provides per-worker kitchinv and mock-ollama servers.
- * Each worker gets its own isolated pair of servers so tests never share
- * mock-ollama state (gate, fail mode, slow mode).
+ * Per-test server pair. Each test gets its own kitchinv + mock-ollama started
+ * fresh and torn down on completion. No shared state, no resetDB needed.
+ *
+ * Port layout (2 ports per slot, 200 slots per worker):
+ *   app    = BASE_APP_PORT    + workerIndex * 400 + slot * 2
+ *   ollama = BASE_OLLAMA_PORT + workerIndex * 400 + slot * 2 + 1
  */
-export const test = base.extend<TestFixtures, WorkerFixtures>({
-  ollamaPort: [async ({}, use, workerInfo) => {
-    const port = BASE_OLLAMA_PORT + workerInfo.workerIndex * WORKER_STRIDE;
-
+export const test = base.extend<TestFixtures>({
+  ollamaPort: async ({}, use, workerInfo) => {
+    const slot = slotCounter++;
+    const port = BASE_OLLAMA_PORT + workerInfo.workerIndex * 400 + slot * 2;
     const mockOllama: ChildProcess = spawn('node', [path.join(__dirname, 'mock-ollama.js')], {
       env: { ...process.env, MOCK_OLLAMA_PORT: String(port) },
       stdio: 'inherit',
     });
-
     await waitForPort(port);
-
     await use(port);
-
     mockOllama.kill('SIGTERM');
-  }, { scope: 'worker' }],
+  },
 
-  appPort: [async ({ ollamaPort }, use, workerInfo) => {
-    const port = BASE_APP_PORT + workerInfo.workerIndex * WORKER_STRIDE;
-
-    // Create a temp dir for photos (DB is in-memory via KITCHINV_TEST_MODE).
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `kitchinv-e2e-w${workerInfo.workerIndex}-`));
+  appPort: async ({ ollamaPort }, use, workerInfo) => {
+    // App port sits one below the ollama port in each pair.
+    const slot = slotCounter - 1;
+    const port = BASE_APP_PORT + workerInfo.workerIndex * 400 + slot * 2;
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kitchinv-e2e-'));
     const photoDir = path.join(tmpDir, 'photos');
     fs.mkdirSync(photoDir, { recursive: true });
-
-    // Spawn the app server for this worker, pointed at its own mock-ollama.
     const app: ChildProcess = spawn(path.join(ROOT, 'kitchinv'), [], {
       env: {
         ...process.env,
-        LISTEN_ADDR: `:${port}`,
+        LISTEN_ADDR:      `:${port}`,
         PHOTO_LOCAL_PATH: photoDir,
-        VISION_BACKEND: 'ollama',
-        OLLAMA_HOST: `http://localhost:${ollamaPort}`,
-        OLLAMA_MODEL: 'moondream',
+        VISION_BACKEND:   'ollama',
+        OLLAMA_HOST:      `http://localhost:${ollamaPort}`,
+        OLLAMA_MODEL:     'moondream',
         KITCHINV_TEST_MODE: '1',
       },
       stdio: 'inherit',
     });
-
     await waitForPort(port);
-
     await use(port);
-
-    // Teardown: kill the server and clean up.
     app.kill('SIGTERM');
     fs.rmSync(tmpDir, { recursive: true, force: true });
-  }, { scope: 'worker' }],
-
-  // Override baseURL per-worker so page.goto('/areas') uses the right port.
-  baseURL: async ({ appPort }, use) => {
-    await use(`http://localhost:${appPort}`);
   },
 
-  // Per-test resetDB that hits the correct worker's server.
-  resetDB: async ({ appPort }, use) => {
-    const reset = async () => {
-      const ctx = await request.newContext({ baseURL: `http://localhost:${appPort}` });
-      await ctx.post('/control/reset');
-      await ctx.dispose();
-    };
-    await use(reset);
+  baseURL: async ({ appPort }, use) => {
+    await use(`http://localhost:${appPort}`);
   },
 });
 

@@ -19,8 +19,6 @@ async function createArea(page: Page, name: string) {
 }
 
 test.describe('Areas', () => {
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
-
   test('empty state is visible on a fresh load', async ({ page }) => {
     await page.goto('/areas');
     await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();

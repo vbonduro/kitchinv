@@ -38,8 +38,6 @@ async function setupAreaWithItems(page: Page, appPort: number): Promise<string> 
 }
 
 test.describe('Search', () => {
-  test.beforeEach(async ({ resetDB }) => { await resetDB(); });
-
   test('search filters cards by item name', async ({ page, appPort }) => {
     await setupAreaWithItems(page, appPort);
 
