@@ -43,13 +43,18 @@ test.describe('Navigation', () => {
       await expect(page.locator(`[data-testid="analyzing-indicator-${areaID}"]`)).toBeVisible({ timeout: 5_000 });
       await page.goto('about:blank');
 
-      // Wait long enough for slow mock to finish: 2s delay → give 6s margin for CI.
-      await page.waitForTimeout(6_000);
-
-      // Navigate back — items should be in DB now (server completed via context.WithoutCancel).
-      await page.goto('/areas');
-      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+      // Poll until items appear: navigate back repeatedly until the card shows 3 rows
+      // or we exceed the deadline. This avoids a fixed sleep that can flake on slow CI.
+      const deadline = Date.now() + 30_000;
+      let card = page.locator(`[data-testid="area-card-${areaID}"]`);
+      while (Date.now() < deadline) {
+        await page.goto('/areas');
+        card = page.locator(`[data-testid="area-card-${areaID}"]`);
+        const count = await card.locator('[data-testid="item-row"]').count();
+        if (count === 3) break;
+        await page.waitForTimeout(1_000);
+      }
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
     } finally {
       await apiContext.post('/control/fast');
       await apiContext.dispose();
@@ -73,13 +78,18 @@ test.describe('Navigation', () => {
       // Navigate away right after submitting.
       await page.goto('about:blank');
 
-      // Wait long enough for slow mock to finish: 2s delay → give 6s margin for CI.
-      await page.waitForTimeout(6_000);
-
-      // Navigate back — items should be in DB now.
-      await page.goto('/areas');
-      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
+      // Poll until items appear: navigate back repeatedly until the card shows 3 rows
+      // or we exceed the deadline. This avoids a fixed sleep that can flake on slow CI.
+      const deadline = Date.now() + 30_000;
+      let card = page.locator(`[data-testid="area-card-${areaID}"]`);
+      while (Date.now() < deadline) {
+        await page.goto('/areas');
+        card = page.locator(`[data-testid="area-card-${areaID}"]`);
+        const count = await card.locator('[data-testid="item-row"]').count();
+        if (count === 3) break;
+        await page.waitForTimeout(1_000);
+      }
+      await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
     } finally {
       await apiContext.post('/control/fast');
       await apiContext.dispose();

@@ -1087,11 +1087,12 @@
             tr.className = 'item-row item-row-entering';
             tr.setAttribute('data-testid', 'item-row');
             tr.setAttribute('data-item-id', item.ID);
+            tr.onclick = function(e) { startEditItem(areaID, item.ID, e); };
             tr.innerHTML =
-                '<td class="item-name-cell" onclick="startEditItem(' + areaID + ',' + item.ID + ')">' + esc(item.Name) + '</td>' +
+                '<td class="item-name-cell">' + esc(item.Name) + '</td>' +
                 '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
                 '<td class="item-notes-cell">' + esc(item.Notes || '') + '</td>' +
-                '<td class="item-actions"><button class="btn btn-icon btn-icon-danger" onclick="deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
+                '<td class="item-actions"><button class="btn btn-icon btn-icon-danger" onclick="event.stopPropagation();deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
             tbody.appendChild(tr);
             if (nameInput) nameInput.value = '';
             if (qtyInput) qtyInput.value = '';
@@ -1113,7 +1114,7 @@
     }
 
     /* ── Edit item inline ──────────────────────────────── */
-    function startEditItem(areaID, itemID) {
+    function startEditItem(areaID, itemID, evt) {
         var row = document.querySelector('tr[data-item-id="' + itemID + '"]');
         if (!row || row.classList.contains('editing')) return;
         row.classList.add('editing');
@@ -1121,6 +1122,14 @@
         var nameCell = row.querySelector('.item-name-cell');
         var qtyBadge = row.querySelector('.item-qty-badge');
         var notesCell = row.querySelector('.item-notes-cell');
+
+        // Determine which cell was clicked so we can focus its input.
+        var clickedCell = evt && evt.target ? evt.target.closest('td') : null;
+        var focusField = 'name';
+        if (clickedCell) {
+            if (clickedCell === (qtyBadge ? qtyBadge.parentElement : row.cells[1])) focusField = 'qty';
+            else if (clickedCell === notesCell) focusField = 'notes';
+        }
 
         var origName = nameCell ? nameCell.textContent.trim() : '';
         var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
@@ -1137,11 +1146,13 @@
             notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';
         }
 
-        var nameInput = row.querySelector('[data-field="name"]');
-        if (nameInput) { nameInput.focus(); nameInput.select(); }
+        var focusInput = row.querySelector('[data-field="' + focusField + '"]');
+        if (!focusInput) focusInput = row.querySelector('[data-field="name"]');
+        if (focusInput) { focusInput.focus(); focusInput.select(); }
 
         var inputs = row.querySelectorAll('.inline-edit-input');
         inputs.forEach(function(inp) {
+            inp.addEventListener('click', function(e) { e.stopPropagation(); });
             inp.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
                 if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
@@ -1197,7 +1208,6 @@
                 var nc = nameCell || row.cells[0];
                 nc.innerHTML = esc(name);
                 nc.className = 'item-name-cell';
-                nc.onclick = function() { startEditItem(areaID, itemID); };
             }
             var qc = qtyCell || row.cells[1];
             if (qc) {

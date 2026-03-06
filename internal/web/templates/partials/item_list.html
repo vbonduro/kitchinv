@@ -11,12 +11,12 @@
         </thead>
         <tbody class="items-tbody">
         {{range $i, $item := .Items}}
-        <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}}>
-            <td class="item-name-cell" onclick="startEditItem({{$item.AreaID}}, {{$item.ID}})">{{$item.Name}}</td>
+        <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onclick="startEditItem({{$item.AreaID}}, {{$item.ID}}, event)">
+            <td class="item-name-cell">{{$item.Name}}</td>
             <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
             <td class="item-notes-cell">{{$item.Notes}}</td>
             <td class="item-actions">
-                <button class="btn btn-icon btn-icon-danger" onclick="deleteItem({{$item.AreaID}}, {{$item.ID}})" aria-label="Delete item">
+                <button class="btn btn-icon btn-icon-danger" onclick="event.stopPropagation();deleteItem({{$item.AreaID}}, {{$item.ID}})" aria-label="Delete item">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                         <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
