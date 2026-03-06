@@ -49,10 +49,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && rm -rf /var/lib/apt/lists/*
 
 # ── 4. Go tools (staticcheck, govulncheck, beads/bd) ─────────────────────────
-ENV GOPATH=/usr/local/go-tools
-RUN go install honnef.co/go/tools/cmd/staticcheck@v0.7.0 \
-    && go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
-    && go install github.com/steveyegge/beads/cmd/bd@v0.54.0
+# Install to /usr/local/go-tools; reset GOPATH so runtime builds use ~/go
+RUN GOPATH=/usr/local/go-tools go install honnef.co/go/tools/cmd/staticcheck@v0.7.0 \
+    && GOPATH=/usr/local/go-tools go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
+    && GOPATH=/usr/local/go-tools go install github.com/steveyegge/beads/cmd/bd@v0.54.0
 
 # ── 5. golangci-lint v2.10.1 ──────────────────────────────────────────────────
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
@@ -69,10 +69,11 @@ RUN npm install -g @playwright/test@1.58.2 \
     && npx playwright install --with-deps chromium
 
 # ── 8. Non-root user ──────────────────────────────────────────────────────────
-RUN useradd -m -u 1000 -s /bin/bash vscode \
+RUN useradd -m -u 1000 -o -s /bin/bash vscode \
     && echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode
 
+# Go tools binaries on PATH; GOPATH left unset so runtime uses ~/go
 ENV PATH=/usr/local/go/bin:/usr/local/go-tools/bin:/usr/local/bin:$PATH
 
 USER vscode
