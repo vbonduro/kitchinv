@@ -10,31 +10,37 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.10.1
+        run: golangci-lint run ./...
 
   vet:
     name: Vet
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: go vet
         run: go vet ./...
@@ -42,17 +48,18 @@ jobs:
   staticcheck:
     name: Static Analysis
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: staticcheck
         run: staticcheck ./...
@@ -60,17 +67,18 @@ jobs:
   govulncheck:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: govulncheck
         run: govulncheck ./...
@@ -78,14 +86,18 @@ jobs:
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: Run tests with coverage
         run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
@@ -103,24 +115,21 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/vbonduro/kitchinv-dev:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version-file: go.mod
-          cache: true
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install Playwright
-        run: cd e2e && npm ci && npx playwright install --with-deps chromium
+      - name: Install e2e dependencies
+        run: cd e2e && npm ci
 
       - name: Run E2E tests
         run: cd e2e && npx playwright test
@@ -128,6 +137,7 @@ jobs:
           APP_PORT: '9090'
           OLLAMA_PORT: '19434'
           CI: 'true'
+          PLAYWRIGHT_BROWSERS_PATH: /usr/local/ms-playwright
 
       - name: Upload traces
         if: failure()
