@@ -14,7 +14,8 @@
     "VISION_BACKEND": "ollama",
     "OLLAMA_HOST": "http://localhost:11434",
     "OLLAMA_MODEL": "moondream",
-    "PLAYWRIGHT_BROWSERS_PATH": "/usr/local/ms-playwright"
+    "PLAYWRIGHT_BROWSERS_PATH": "/usr/local/ms-playwright",
+    "BEADS_DIR": "/workspace/.beads"
   },
   "customizations": {
     "vscode": {

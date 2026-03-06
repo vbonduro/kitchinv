@@ -63,12 +63,19 @@ RUN curl -fsSL \
     https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_x64.tar.gz \
     | tar -C /usr/local/bin -xz gitleaks
 
-# ── 7. Playwright chromium ────────────────────────────────────────────────────
+# ── 7. dolt 1.82.3 (required by beads/bd) ────────────────────────────────────
+RUN curl -fsSL \
+    https://github.com/dolthub/dolt/releases/download/v1.82.3/dolt-linux-amd64.tar.gz \
+    | tar -C /tmp -xz \
+    && mv /tmp/dolt-linux-amd64/bin/dolt /usr/local/bin/dolt \
+    && rm -rf /tmp/dolt-linux-amd64
+
+# ── 8. Playwright chromium ────────────────────────────────────────────────────
 ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/ms-playwright
 RUN npm install -g @playwright/test@1.58.2 \
     && npx playwright install --with-deps chromium
 
-# ── 8. Non-root user ──────────────────────────────────────────────────────────
+# ── 9. Non-root user ──────────────────────────────────────────────────────────
 RUN useradd -m -u 1000 -o -s /bin/bash vscode \
     && echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode
