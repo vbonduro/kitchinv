@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed
+.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed bootstrap
 
 # ---------------------------------------------------------------------------
 # Tool discovery
@@ -72,3 +72,10 @@ e2e:
 
 e2e-headed:
 	cd e2e && npm install --prefer-offline && npx playwright test --headed
+
+# ---------------------------------------------------------------------------
+# Dev setup
+# ---------------------------------------------------------------------------
+## bootstrap: install all dev tools at pinned versions
+bootstrap:
+	@bash scripts/bootstrap.sh

@@ -1,0 +1,27 @@
+{
+  "name": "kitchinv dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "cd /workspace/e2e && npm ci",
+  "forwardPorts": [8080],
+  "remoteEnv": {
+    "LISTEN_ADDR": ":8080",
+    "DB_PATH": "/workspace/dev.db",
+    "PHOTO_LOCAL_PATH": "/workspace/dev-photos",
+    "VISION_BACKEND": "ollama",
+    "OLLAMA_HOST": "http://localhost:11434",
+    "OLLAMA_MODEL": "moondream",
+    "PLAYWRIGHT_BROWSERS_PATH": "/usr/local/ms-playwright"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["golang.go", "ms-playwright.playwright"],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}
