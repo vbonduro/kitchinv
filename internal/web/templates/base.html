@@ -1087,7 +1087,7 @@
             tr.className = 'item-row item-row-entering';
             tr.setAttribute('data-testid', 'item-row');
             tr.setAttribute('data-item-id', item.ID);
-            tr.onclick = function() { startEditItem(areaID, item.ID); };
+            tr.onclick = function(e) { startEditItem(areaID, item.ID, e); };
             tr.innerHTML =
                 '<td class="item-name-cell">' + esc(item.Name) + '</td>' +
                 '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
@@ -1114,7 +1114,7 @@
     }
 
     /* ── Edit item inline ──────────────────────────────── */
-    function startEditItem(areaID, itemID) {
+    function startEditItem(areaID, itemID, evt) {
         var row = document.querySelector('tr[data-item-id="' + itemID + '"]');
         if (!row || row.classList.contains('editing')) return;
         row.classList.add('editing');
@@ -1122,6 +1122,14 @@
         var nameCell = row.querySelector('.item-name-cell');
         var qtyBadge = row.querySelector('.item-qty-badge');
         var notesCell = row.querySelector('.item-notes-cell');
+
+        // Determine which cell was clicked so we can focus its input.
+        var clickedCell = evt && evt.target ? evt.target.closest('td') : null;
+        var focusField = 'name';
+        if (clickedCell) {
+            if (clickedCell === (qtyBadge ? qtyBadge.parentElement : row.cells[1])) focusField = 'qty';
+            else if (clickedCell === notesCell) focusField = 'notes';
+        }
 
         var origName = nameCell ? nameCell.textContent.trim() : '';
         var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
@@ -1138,8 +1146,9 @@
             notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';
         }
 
-        var nameInput = row.querySelector('[data-field="name"]');
-        if (nameInput) { nameInput.focus(); nameInput.select(); }
+        var focusInput = row.querySelector('[data-field="' + focusField + '"]');
+        if (!focusInput) focusInput = row.querySelector('[data-field="name"]');
+        if (focusInput) { focusInput.focus(); focusInput.select(); }
 
         var inputs = row.querySelectorAll('.inline-edit-input');
         inputs.forEach(function(inp) {

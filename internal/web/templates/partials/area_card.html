@@ -83,7 +83,7 @@
             </thead>
             <tbody class="items-tbody">
             {{range $i, $item := .Items}}
-                <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onclick="startEditItem({{$item.AreaID}}, {{$item.ID}})">
+                <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onclick="startEditItem({{$item.AreaID}}, {{$item.ID}}, event)">
                     <td class="item-name-cell">{{$item.Name}}</td>
                     <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
                     <td class="item-notes-cell">{{$item.Notes}}</td>
