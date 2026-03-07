@@ -36,8 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV LANG=en_US.UTF-8
 
-# ── 2. Go 1.26.0 ──────────────────────────────────────────────────────────────
-RUN curl -fsSL https://go.dev/dl/go1.26.0.linux-amd64.tar.gz \
+# ── 2. Go 1.26.1 ──────────────────────────────────────────────────────────────
+RUN curl -fsSL https://go.dev/dl/go1.26.1.linux-amd64.tar.gz \
     | tar -C /usr/local -xz
 RUN printf 'export PATH=/usr/local/go/bin:$PATH\n' > /etc/profile.d/go.sh
 
