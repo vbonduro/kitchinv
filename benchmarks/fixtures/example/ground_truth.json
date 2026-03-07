@@ -1,0 +1,8 @@
+{
+  "items": [
+    {"name": "Milk", "quantity": 2},
+    {"name": "Eggs", "quantity": 12},
+    {"name": "Butter", "quantity": 1},
+    {"name": "Orange Juice", "quantity": 1}
+  ]
+}
