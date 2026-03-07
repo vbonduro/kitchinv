@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -69,6 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -88,6 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -117,6 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/vbonduro/kitchinv-dev:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
