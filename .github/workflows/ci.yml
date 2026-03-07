@@ -7,17 +7,71 @@ on:
     branches: ["**"]
 
 jobs:
+  prepare-image:
+    name: Prepare CI Image
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if Dockerfile changed
+        id: dockerfile-changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "^.devcontainer/Dockerfile$"; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set image tag
+        id: set-tag
+        run: echo "tag=kitchinv-dev:ci" >> "$GITHUB_OUTPUT"
+
+      - name: Build image from Dockerfile
+        if: steps.dockerfile-changed.outputs.changed == 'true'
+        run: docker build -f .devcontainer/Dockerfile -t kitchinv-dev:ci .
+
+      - name: Pull published image
+        if: steps.dockerfile-changed.outputs.changed == 'false'
+        run: |
+          docker pull ghcr.io/vbonduro/kitchinv-dev:latest
+          docker tag ghcr.io/vbonduro/kitchinv-dev:latest kitchinv-dev:ci
+
+      - name: Save image as artifact
+        run: docker save kitchinv-dev:ci | gzip > /tmp/kitchinv-dev.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp/kitchinv-dev.tar.gz
+          retention-days: 1
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -28,19 +82,33 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: golangci-lint
-        run: golangci-lint run ./...
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            kitchinv-dev:ci \
+            golangci-lint run ./...
 
   vet:
     name: Vet
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -51,19 +119,33 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: go vet
-        run: go vet ./...
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            kitchinv-dev:ci \
+            go vet ./...
 
   staticcheck:
     name: Static Analysis
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -74,19 +156,33 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: staticcheck
-        run: staticcheck ./...
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            kitchinv-dev:ci \
+            staticcheck ./...
 
   govulncheck:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -97,19 +193,33 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: govulncheck
-        run: govulncheck ./...
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            kitchinv-dev:ci \
+            govulncheck ./...
 
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -120,10 +230,22 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run tests with coverage
-        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            kitchinv-dev:ci \
+            go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Generate coverage report
-        run: go tool cover -func=coverage.out
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -w /workspace \
+            kitchinv-dev:ci \
+            go tool cover -func=coverage.out
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -135,14 +257,21 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/vbonduro/kitchinv-dev:latest
-      options: --user root
+    needs: prepare-image
     steps:
       - uses: actions/checkout@v4
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kitchinv-dev-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load < /tmp/kitchinv-dev.tar.gz
 
       - uses: actions/cache@v4
         with:
@@ -152,16 +281,19 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
-      - name: Install e2e dependencies
-        run: cd e2e && npm ci
-
       - name: Run E2E tests
-        run: cd e2e && npx playwright test
-        env:
-          APP_PORT: '9090'
-          OLLAMA_PORT: '19434'
-          CI: 'true'
-          PLAYWRIGHT_BROWSERS_PATH: /usr/local/ms-playwright
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            -v ~/.cache/go-build:/root/.cache/go-build \
+            -v ~/go/pkg/mod:/root/go/pkg/mod \
+            -w /workspace \
+            -e APP_PORT=9090 \
+            -e OLLAMA_PORT=19434 \
+            -e CI=true \
+            -e PLAYWRIGHT_BROWSERS_PATH=/usr/local/ms-playwright \
+            kitchinv-dev:ci \
+            bash -c "cd e2e && npm ci && npx playwright test"
 
       - name: Upload traces
         if: failure()
