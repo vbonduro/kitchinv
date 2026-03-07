@@ -29,7 +29,7 @@ func Load() *Config {
 		ClaudeAPIKey:  getEnv("CLAUDE_API_KEY", ""),
 		ClaudeModel:   getEnv("CLAUDE_MODEL", "claude-opus-4-6"),
 		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
-		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
+		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		PhotoBackend:  getEnv("PHOTO_BACKEND", "local"),
 		PhotoPath:     getEnv("PHOTO_LOCAL_PATH", "/data/photos"),
 		LogLevel:      getEnv("LOG_LEVEL", "info"),
