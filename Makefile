@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed bootstrap
+.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed benchmark bootstrap
 
 # ---------------------------------------------------------------------------
 # Tool discovery
@@ -72,6 +72,17 @@ e2e:
 
 e2e-headed:
 	cd e2e && npm install --prefer-offline && npx playwright test --headed
+
+# ---------------------------------------------------------------------------
+# Vision benchmark
+# ---------------------------------------------------------------------------
+## benchmark: run vision benchmark against fixtures in benchmarks/fixtures/
+benchmark:
+	$(GO) run ./cmd/benchmark -fixtures benchmarks/fixtures
+
+## benchmark-json: same as benchmark but outputs JSON
+benchmark-json:
+	$(GO) run ./cmd/benchmark -fixtures benchmarks/fixtures -json
 
 # ---------------------------------------------------------------------------
 # Dev setup
