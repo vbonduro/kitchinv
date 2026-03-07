@@ -189,11 +189,28 @@ func printSummary(s Summary) {
 			r.Expected, r.Detected, r.ItemMatches, r.QuantityMatches)
 		fmt.Printf("  Item accuracy:     %.0f%%\n", r.ItemAccuracy*100)
 		fmt.Printf("  Quantity accuracy: %.0f%%\n", r.QuantityAccuracy*100)
-		if len(r.UnmatchedExpected) > 0 {
-			fmt.Printf("  Missed:  %v\n", r.UnmatchedExpected)
+		fmt.Println()
+
+		for _, ir := range r.Items {
+			if ir.Detected == nil {
+				fmt.Printf("  ✗ MISS   expected: %s (qty %d)\n",
+					ir.Expected.Name, ir.Expected.Quantity)
+			} else if !ir.QuantityMatch {
+				fmt.Printf("  ~ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)\n",
+					ir.Expected.Name, ir.Expected.Quantity,
+					ir.Detected.Name, ir.Detected.Quantity)
+			} else {
+				fmt.Printf("  ✓ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)\n",
+					ir.Expected.Name, ir.Expected.Quantity,
+					ir.Detected.Name, ir.Detected.Quantity)
+			}
 		}
-		if len(r.ExtraDetected) > 0 {
-			fmt.Printf("  Extra:   %v\n", r.ExtraDetected)
+
+		if len(r.Extra) > 0 {
+			fmt.Println()
+			for _, e := range r.Extra {
+				fmt.Printf("  + EXTRA  %s (qty %s)\n", e.Name, e.Quantity)
+			}
 		}
 		fmt.Println()
 	}

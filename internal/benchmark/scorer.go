@@ -20,6 +20,22 @@ type GroundTruth struct {
 	Items []GroundTruthItem `json:"items"`
 }
 
+// ItemResult records the comparison outcome for one ground truth item.
+type ItemResult struct {
+	// Expected is the ground truth item.
+	Expected GroundTruthItem `json:"expected"`
+	// Detected is the model's matched item, nil if unmatched.
+	Detected *vision.DetectedItem `json:"detected,omitempty"`
+	// QuantityMatch is true when names matched and quantities agreed.
+	QuantityMatch bool `json:"quantity_match"`
+}
+
+// ExtraItem is a model-detected item that had no ground truth counterpart.
+type ExtraItem struct {
+	Name     string `json:"name"`
+	Quantity string `json:"quantity"`
+}
+
 // MatchResult holds the scoring outcome for a single fixture.
 type MatchResult struct {
 	// Fixture is the name of the fixture directory.
@@ -36,10 +52,10 @@ type MatchResult struct {
 	ItemAccuracy float64 `json:"item_accuracy"`
 	// QuantityAccuracy is QuantityMatches / ItemMatches (0–1), or 0 if no matches.
 	QuantityAccuracy float64 `json:"quantity_accuracy"`
-	// UnmatchedExpected lists ground truth items not found in the model output.
-	UnmatchedExpected []string `json:"unmatched_expected"`
-	// ExtraDetected lists model-detected items not in the ground truth.
-	ExtraDetected []string `json:"extra_detected"`
+	// Items is the per-item comparison: one entry per ground truth item.
+	Items []ItemResult `json:"items"`
+	// Extra lists model-detected items that had no ground truth match.
+	Extra []ExtraItem `json:"extra"`
 }
 
 // Score compares a vision AnalysisResult against a GroundTruth and returns a
@@ -47,40 +63,44 @@ type MatchResult struct {
 // matches a ground truth item if either name contains the other. Each ground
 // truth item is matched at most once (first match wins).
 func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult) MatchResult {
-	matched := make([]bool, len(gt.Items))
 	detectedUsed := make([]bool, len(result.Items))
+	itemResults := make([]ItemResult, len(gt.Items))
 	quantityMatches := 0
 
 	for i, expected := range gt.Items {
+		ir := ItemResult{Expected: expected}
 		for j, detected := range result.Items {
 			if detectedUsed[j] {
 				continue
 			}
 			if namesMatch(expected.Name, detected.Name) {
-				matched[i] = true
+				d := detected
+				ir.Detected = &d
 				detectedUsed[j] = true
 				if quantityEqual(expected.Quantity, detected.Quantity) {
+					ir.QuantityMatch = true
 					quantityMatches++
 				}
 				break
 			}
 		}
+		itemResults[i] = ir
 	}
 
 	itemMatches := 0
-	unmatched := []string{}
-	for i, m := range matched {
-		if m {
+	for _, ir := range itemResults {
+		if ir.Detected != nil {
 			itemMatches++
-		} else {
-			unmatched = append(unmatched, gt.Items[i].Name)
 		}
 	}
 
-	extra := []string{}
+	extra := []ExtraItem{}
 	for j, used := range detectedUsed {
 		if !used {
-			extra = append(extra, result.Items[j].Name)
+			extra = append(extra, ExtraItem{
+				Name:     result.Items[j].Name,
+				Quantity: result.Items[j].Quantity,
+			})
 		}
 	}
 
@@ -95,15 +115,15 @@ func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult) MatchR
 	}
 
 	return MatchResult{
-		Fixture:           fixture,
-		Expected:          len(gt.Items),
-		Detected:          len(result.Items),
-		ItemMatches:       itemMatches,
-		QuantityMatches:   quantityMatches,
-		ItemAccuracy:      itemAccuracy,
-		QuantityAccuracy:  quantityAccuracy,
-		UnmatchedExpected: unmatched,
-		ExtraDetected:     extra,
+		Fixture:          fixture,
+		Expected:         len(gt.Items),
+		Detected:         len(result.Items),
+		ItemMatches:      itemMatches,
+		QuantityMatches:  quantityMatches,
+		ItemAccuracy:     itemAccuracy,
+		QuantityAccuracy: quantityAccuracy,
+		Items:            itemResults,
+		Extra:            extra,
 	}
 }
 
