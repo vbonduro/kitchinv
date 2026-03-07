@@ -16,10 +16,11 @@ kitchinv/
 │   │   ├── photo_store.go
 │   │   └── item_store.go         # Includes case-insensitive search
 │   ├── vision/
-│   │   ├── vision.go             # VisionAnalyzer interface + shared prompt
-│   │   ├── parse.go              # Parse "name | qty | notes" response lines
+│   │   ├── vision.go             # VisionAnalyzer interface + shared prompts
+│   │   ├── parse.go              # Parse JSON vision response
 │   │   ├── ollama/               # Ollama adapter (HTTP)
-│   │   └── claude/               # Claude adapter (Anthropic Messages API)
+│   │   ├── claude/               # Claude adapter (Anthropic Messages API)
+│   │   └── gemini/               # Gemini adapter (Google AI generateContent API)
 │   ├── photostore/
 │   │   ├── photostore.go         # PhotoStore interface
 │   │   └── local/                # Filesystem adapter with path-traversal guard
@@ -56,6 +57,7 @@ kitchinv/
                                     ┌──────┴──────┐       ┌──────┴──────┐
                                     │ Ollama      │       │ local fs    │
                                     │ Claude      │       └─────────────┘
+                                    │ Gemini      │
                                     └─────────────┘
 ```
 

@@ -15,6 +15,7 @@ kitchinv lets you photograph every storage area in your home (fridge, freezer, p
 - [How it works](#how-it-works)
 - [Quick start (Docker)](#quick-start-docker)
 - [Switching to Claude](#switching-to-claude)
+- [Switching to Gemini](#switching-to-gemini)
 - [Local development](#local-development)
 - [Configuration](#configuration)
 
@@ -24,7 +25,7 @@ kitchinv lets you photograph every storage area in your home (fridge, freezer, p
 
 1. **Create an area** — give each physical storage location a name ("Upstairs Fridge", "Garage Freezer", "Pantry").
 2. **Upload a photo** — tap the camera button from your phone; the rear camera opens directly.
-3. **Vision analysis** — the photo is sent to a vision model (Ollama by default; Claude as an alternative). The model returns a line-per-item list in `name | quantity | notes` format.
+3. **Vision analysis** — the photo is sent to a vision model (Ollama by default; Claude or Gemini as alternatives). The model identifies each food item and returns structured JSON.
 4. **Browse & search** — the extracted inventory is stored in SQLite. Search across every area instantly.
 5. **Re-upload anytime** — uploading a new photo for an area replaces the existing inventory for that area.
 
@@ -91,6 +92,34 @@ The Claude model defaults to `claude-opus-4-6`. Override with `CLAUDE_MODEL=clau
 
 ---
 
+## Switching to Gemini
+
+Set two environment variables (no Ollama sidecar needed):
+
+```bash
+VISION_BACKEND=gemini
+GEMINI_API_KEY=<your-google-ai-key>
+```
+
+Or run without Compose:
+
+```bash
+docker run \
+  -e VISION_BACKEND=gemini \
+  -e GEMINI_API_KEY=<your-google-ai-key> \
+  -e DB_PATH=/data/kitchinv.db \
+  -e PHOTO_LOCAL_PATH=/data/photos \
+  -v kitchinv_data:/data \
+  -p 8080:8080 \
+  kitchinv:latest
+```
+
+The Gemini model defaults to `gemini-2.5-flash`. Override with `GEMINI_MODEL=gemini-3-flash-preview` or any model listed by the [Gemini API](https://ai.google.dev/gemini-api/docs/models).
+
+Get an API key at [aistudio.google.com](https://aistudio.google.com/).
+
+---
+
 ## Local development
 
 ### Prerequisites
@@ -137,10 +166,11 @@ sudo apt-get install pass
 gpg --gen-key
 pass init <your-gpg-email>
 
-# Store your Anthropic API key:
+# Store your API keys:
 pass insert kitchinv/claude-api-key
+pass insert kitchinv/gemini-api-key
 ```
-The `.envrc.example` shows how to reference it via `$(pass kitchinv/claude-api-key)`.
+The `.envrc.example` shows how to reference them via `$(pass kitchinv/claude-api-key)`.
 
 **4. Secret scanning pre-commit hook** is installed at `.git/hooks/pre-commit` and runs gitleaks on every `git commit`. If a secret is detected the commit is blocked. To install it in a fresh clone:
 ```bash
@@ -213,11 +243,13 @@ All configuration is via environment variables. Every variable has a sensible de
 |----------|---------|-------------|
 | `LISTEN_ADDR` | `:8080` | HTTP listen address |
 | `DB_PATH` | `/data/kitchinv.db` | SQLite database file path |
-| `VISION_BACKEND` | `ollama` | Vision provider: `ollama` or `claude` |
+| `VISION_BACKEND` | `ollama` | Vision provider: `ollama`, `claude`, or `gemini` |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API base URL |
 | `OLLAMA_MODEL` | `moondream` | Ollama vision model name |
 | `CLAUDE_API_KEY` | *(required if backend=claude)* | Anthropic API key |
 | `CLAUDE_MODEL` | `claude-opus-4-6` | Claude model ID |
+| `GEMINI_API_KEY` | *(required if backend=gemini)* | Google AI API key |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model ID |
 | `PHOTO_BACKEND` | `local` | Photo storage backend (only `local` supported) |
 | `PHOTO_LOCAL_PATH` | `/data/photos` | Directory for uploaded photo files |
 
