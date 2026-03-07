@@ -15,6 +15,7 @@ import (
 	"github.com/vbonduro/kitchinv/internal/store"
 	"github.com/vbonduro/kitchinv/internal/vision"
 	claudevision "github.com/vbonduro/kitchinv/internal/vision/claude"
+	geminivision "github.com/vbonduro/kitchinv/internal/vision/gemini"
 	ollamavision "github.com/vbonduro/kitchinv/internal/vision/ollama"
 	"github.com/vbonduro/kitchinv/internal/web"
 	"github.com/vbonduro/kitchinv/internal/web/templates"
@@ -79,8 +80,14 @@ func newVisionAnalyzer(cfg *config.Config, logger *slog.Logger) (vision.VisionAn
 		if cfg.ClaudeAPIKey == "" {
 			return nil, fmt.Errorf("CLAUDE_API_KEY must be set when VISION_BACKEND=claude")
 		}
-		logger.Info("using Claude vision backend")
+		logger.Info("using Claude vision backend", "model", cfg.ClaudeModel)
 		return claudevision.NewClaudeAnalyzer(cfg.ClaudeAPIKey, cfg.ClaudeModel), nil
+	case "gemini":
+		if cfg.GeminiAPIKey == "" {
+			return nil, fmt.Errorf("GEMINI_API_KEY must be set when VISION_BACKEND=gemini")
+		}
+		logger.Info("using Gemini vision backend", "model", cfg.GeminiModel)
+		return geminivision.NewGeminiAnalyzer(cfg.GeminiAPIKey, cfg.GeminiModel), nil
 	default:
 		logger.Info("using Ollama vision backend", "model", cfg.OllamaModel)
 		return ollamavision.NewOllamaAnalyzer(cfg.OllamaHost, cfg.OllamaModel), nil
