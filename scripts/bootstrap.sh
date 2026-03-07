@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # ── Pinned versions ────────────────────────────────────────────────────────────
-GO_VERSION="1.26.0"
+GO_VERSION="1.26.1"
 GOLANGCI_LINT_VERSION="v2.10.1"
 STATICCHECK_VERSION="v0.7.0"
 GOVULNCHECK_VERSION="v1.1.4"
