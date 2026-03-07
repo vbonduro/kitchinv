@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "name": "popsicles",
+      "quantity": 20
+    },
+    {
+      "name": "bread",
+      "quantity": 1
+    },
+    {
+      "name": "vanilla ice cream",
+      "quantity": 1
+    },
+    {
+      "name": "butterscotch ice cream",
+      "quantity": 1
+    },
+    {
+      "name": "hotdog buns",
+      "quantity": 1
+    },
+    {
+      "name": "blueberries",
+      "quantity": 1
+    },
+    {
+      "name": "steamed dumplings",
+      "quantity": 1
+    },
+    {
+      "name": "frozen vegetables",
+      "quantity": 1
+    }
+  ]
+}

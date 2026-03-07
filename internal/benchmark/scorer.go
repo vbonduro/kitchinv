@@ -20,6 +20,33 @@ type GroundTruth struct {
 	Items []GroundTruthItem `json:"items"`
 }
 
+// Override declares that a ground truth name should be considered a match for
+// a specific detected name within a given fixture, even if substring matching
+// would not connect them.
+type Override struct {
+	Fixture  string `json:"fixture"`
+	Expected string `json:"expected"`
+	Detected string `json:"detected"`
+}
+
+// Overrides is a collection of Override rules indexed for fast lookup.
+// Key: "fixture\x00expected_lower" → detected_lower
+type Overrides map[string]string
+
+// LoadOverrides builds an Overrides lookup from a slice of Override rules.
+func LoadOverrides(rules []Override) Overrides {
+	o := make(Overrides, len(rules))
+	for _, r := range rules {
+		key := overrideKey(r.Fixture, r.Expected)
+		o[key] = strings.ToLower(strings.TrimSpace(r.Detected))
+	}
+	return o
+}
+
+func overrideKey(fixture, expected string) string {
+	return fixture + "\x00" + strings.ToLower(strings.TrimSpace(expected))
+}
+
 // ItemResult records the comparison outcome for one ground truth item.
 type ItemResult struct {
 	// Expected is the ground truth item.
@@ -28,6 +55,8 @@ type ItemResult struct {
 	Detected *vision.DetectedItem `json:"detected,omitempty"`
 	// QuantityMatch is true when names matched and quantities agreed.
 	QuantityMatch bool `json:"quantity_match"`
+	// OverrideApplied is true when the match was made via an override rule.
+	OverrideApplied bool `json:"override_applied,omitempty"`
 }
 
 // ExtraItem is a model-detected item that had no ground truth counterpart.
@@ -59,16 +88,20 @@ type MatchResult struct {
 }
 
 // Score compares a vision AnalysisResult against a GroundTruth and returns a
-// MatchResult. Name matching is case-insensitive substring: a detected item
-// matches a ground truth item if either name contains the other. Each ground
-// truth item is matched at most once (first match wins).
-func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult) MatchResult {
+// MatchResult. Matching is done in two passes:
+//  1. Substring match: case-insensitive, either name contains the other.
+//  2. Override match: explicit rules from overrides (may be nil).
+//
+// Each ground truth item is matched at most once (first match wins).
+func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult, overrides Overrides) MatchResult {
 	detectedUsed := make([]bool, len(result.Items))
 	itemResults := make([]ItemResult, len(gt.Items))
 	quantityMatches := 0
 
 	for i, expected := range gt.Items {
 		ir := ItemResult{Expected: expected}
+
+		// Pass 1: substring match.
 		for j, detected := range result.Items {
 			if detectedUsed[j] {
 				continue
@@ -84,6 +117,29 @@ func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult) MatchR
 				break
 			}
 		}
+
+		// Pass 2: override match (only if not already matched).
+		if ir.Detected == nil && overrides != nil {
+			if detectedName, ok := overrides[overrideKey(fixture, expected.Name)]; ok {
+				for j, detected := range result.Items {
+					if detectedUsed[j] {
+						continue
+					}
+					if strings.ToLower(strings.TrimSpace(detected.Name)) == detectedName {
+						d := detected
+						ir.Detected = &d
+						ir.OverrideApplied = true
+						detectedUsed[j] = true
+						if quantityEqual(expected.Quantity, detected.Quantity) {
+							ir.QuantityMatch = true
+							quantityMatches++
+						}
+						break
+					}
+				}
+			}
+		}
+
 		itemResults[i] = ir
 	}
 

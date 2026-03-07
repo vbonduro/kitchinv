@@ -53,6 +53,7 @@ type Summary struct {
 
 func main() {
 	fixturesDir := flag.String("fixtures", "benchmarks/fixtures", "path to fixtures directory")
+	overridesFile := flag.String("overrides", "benchmarks/overrides.json", "path to overrides JSON file (optional)")
 	jsonOut := flag.Bool("json", false, "output results as JSON")
 	flag.Parse()
 
@@ -62,6 +63,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create vision analyzer: %v", err)
 	}
+
+	overrides := loadOverrides(*overridesFile)
 
 	entries, err := os.ReadDir(*fixturesDir)
 	if err != nil {
@@ -98,7 +101,7 @@ func main() {
 			continue
 		}
 
-		mr := benchmark.Score(entry.Name(), gt, result)
+		mr := benchmark.Score(entry.Name(), gt, result, overrides)
 		results = append(results, mr)
 	}
 
@@ -135,6 +138,21 @@ func newAnalyzer(cfg *config.Config) (vision.VisionAnalyzer, string, error) {
 	default:
 		return ollamavision.NewOllamaAnalyzer(cfg.OllamaHost, cfg.OllamaModel), cfg.OllamaModel, nil
 	}
+}
+
+func loadOverrides(path string) benchmark.Overrides {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		// Overrides file is optional — silently skip if not found.
+		return nil
+	}
+	var rules []benchmark.Override
+	if err := json.Unmarshal(data, &rules); err != nil {
+		log.Printf("warning: failed to parse overrides file %q: %v", path, err)
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "loaded %d overrides from %s\n", len(rules), path)
+	return benchmark.LoadOverrides(rules)
 }
 
 func loadFixture(dir string) (benchmark.GroundTruth, string, string, error) {
