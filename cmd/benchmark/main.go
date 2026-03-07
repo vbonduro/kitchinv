@@ -89,10 +89,12 @@ func main() {
 		}
 
 		fmt.Fprintf(os.Stderr, "analysing %s...\n", entry.Name())
-		result, err := analyzer.Analyze(context.Background(), f, mimeType)
-		f.Close()
-		if err != nil {
-			log.Printf("skipping %s: analysis failed: %v", entry.Name(), err)
+		result, analyzeErr := analyzer.Analyze(context.Background(), f, mimeType)
+		if closeErr := f.Close(); closeErr != nil {
+			log.Printf("warning: failed to close image file %s: %v", imgPath, closeErr)
+		}
+		if analyzeErr != nil {
+			log.Printf("skipping %s: analysis failed: %v", entry.Name(), analyzeErr)
 			continue
 		}
 
