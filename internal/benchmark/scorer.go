@@ -286,9 +286,7 @@ func normalizeRunes(s string) string {
 // and common spelling/compound variants.
 func stem(w string) string {
 	// Possessive: strip trailing 's (frank's→frank)
-	if strings.HasSuffix(w, "'s") {
-		w = w[:len(w)-2]
-	}
+	w = strings.TrimSuffix(w, "'s")
 	switch {
 	case w == "lasagne":
 		return "lasagna"

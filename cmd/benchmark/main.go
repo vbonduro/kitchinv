@@ -175,12 +175,16 @@ func replayAndScore(path string, overrides benchmark.Overrides, jsonOut bool) {
 	outputSummary(summary, jsonOut)
 }
 
-func writeJSON(path string, v any) error {
+func writeJSON(path string, v any) (err error) {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
