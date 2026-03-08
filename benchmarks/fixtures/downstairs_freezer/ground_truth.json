@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "name": "raisin bread",
+      "quantity": 1
+    },
+    {
+      "name": "pork loin",
+      "quantity": 1
+    },
+    {
+      "name": "bread",
+      "quantity": 1
+    },
+    {
+      "name": "burgers",
+      "quantity": 1
+    },
+    {
+      "name": "cosmo chicken nuggets",
+      "quantity": 1
+    },
+    {
+      "name": "frozen broccoli",
+      "quantity": 2
+    },
+    {
+      "name": "yakisoba noodles box",
+      "quantity": 1
+    }
+  ]
+}

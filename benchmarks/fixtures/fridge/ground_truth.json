@@ -1,0 +1,176 @@
+{
+  "items": [
+    {
+      "name": "soy sauce",
+      "quantity": 1
+    },
+    {
+      "name": "ketchup",
+      "quantity": 1
+    },
+    {
+      "name": "salad dressing",
+      "quantity": 1
+    },
+    {
+      "name": "pickle jar",
+      "quantity": 1
+    },
+    {
+      "name": "maple syrup",
+      "quantity": 2
+    },
+    {
+      "name": "ranch",
+      "quantity": 1
+    },
+    {
+      "name": "salsa",
+      "quantity": 1
+    },
+    {
+      "name": "sriracha",
+      "quantity": 1
+    },
+    {
+      "name": "vanilla greek yogurt",
+      "quantity": 1
+    },
+    {
+      "name": "plain greek yogurt",
+      "quantity": 1
+    },
+    {
+      "name": "whipped cream",
+      "quantity": 1
+    },
+    {
+      "name": "fiery ginger",
+      "quantity": 1
+    },
+    {
+      "name": "oat milk",
+      "quantity": 1
+    },
+    {
+      "name": "2% milk",
+      "quantity": 1
+    },
+    {
+      "name": "eggs",
+      "quantity": 12
+    },
+    {
+      "name": "strawberries",
+      "quantity": 2
+    },
+    {
+      "name": "lettuce",
+      "quantity": 2
+    },
+    {
+      "name": "becel margarine",
+      "quantity": 1
+    },
+    {
+      "name": "cherry tomatoes",
+      "quantity": 1
+    },
+    {
+      "name": "onions",
+      "quantity": 4
+    },
+    {
+      "name": "iogo nano",
+      "quantity": 12
+    },
+    {
+      "name": "broccoli in dish",
+      "quantity": 6
+    },
+    {
+      "name": "chopped vegetables",
+      "quantity": 1
+    },
+    {
+      "name": "tim hortons box",
+      "quantity": 1
+    },
+    {
+      "name": "sweet potato",
+      "quantity": 1
+    },
+    {
+      "name": "cucumber",
+      "quantity": 1
+    },
+    {
+      "name": "baby carrots",
+      "quantity": 1
+    },
+    {
+      "name": "lime",
+      "quantity": 2
+    },
+    {
+      "name": "sour cream",
+      "quantity": 1
+    },
+    {
+      "name": "parmesan cheese",
+      "quantity": 1
+    },
+    {
+      "name": "tofu",
+      "quantity": 1
+    },
+    {
+      "name": "shredded cheese",
+      "quantity": 2
+    },
+    {
+      "name": "peanut butter",
+      "quantity": 1
+    },
+    {
+      "name": "strawberry jam",
+      "quantity": 1
+    },
+    {
+      "name": "apple jam",
+      "quantity": 1
+    },
+    {
+      "name": "mayonnaise",
+      "quantity": 1
+    },
+    {
+      "name": "caesar dressing",
+      "quantity": 1
+    },
+    {
+      "name": "protein oats",
+      "quantity": 1
+    },
+    {
+      "name": "chipotle aioli",
+      "quantity": 1
+    },
+    {
+      "name": "franks red hot sauce",
+      "quantity": 1
+    },
+    {
+      "name": "primo pizza sauce",
+      "quantity": 1
+    },
+    {
+      "name": "bottle white wine",
+      "quantity": 1
+    },
+    {
+      "name": "tamari",
+      "quantity": 1
+    }
+  ]
+}

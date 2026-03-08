@@ -1,0 +1,222 @@
+[
+  {
+    "fixture": "downstairs_freezer",
+    "expected": "frozen broccoli",
+    "detected": "Nature's Touch Broccoli Florets"
+  },
+  {
+    "fixture": "downstairs_freezer",
+    "expected": "yakisoba noodles box",
+    "detected": "Nishiki Yakisoba Stir-Fry Noodles + Vegetables"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "alcohol free heineken",
+    "detected": "Heineken 0.0 N/A Lager"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "social vodka drink",
+    "detected": "Social Lite Vodka Soda"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "iogo nano yogurt drink pack",
+    "detected": "i\u00f6go nan\u00f6 Strawberry Yogurt Pouches"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "barbeque sauce",
+    "detected": "Brown bottle sauce"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "hersheys chocolate chips",
+    "detected": "Hershey's Milk Chocolate Chips"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "strawberry jam",
+    "detected": "Anne Maman Fruits des Champs Jam"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "gravy packets",
+    "detected": "Club House Brown Gravy Mix"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "premium plus crackers",
+    "detected": "PREMIUM PLUS Whole Wheat Crackers"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "lentil soup cans",
+    "detected": "Sprague Lentil Soup"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "french roast coffee",
+    "detected": "Le Caf\u00e9 de Puechout Torr\u00e9faction Fran\u00e7aise Coffee, 800g"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned soup",
+    "detected": "Aylmer Canned Vegetables (various)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "premium plus crackers",
+    "detected": "PREMIUM PLUS Whole Wheat Crackers"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "pizza sauce",
+    "detected": "Kirkland Organic Tomato Sauce"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned chickpeas",
+    "detected": "Aylmer Canned Vegetables (various)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "tomato paste box",
+    "detected": "Kirkland Organic Tomato Sauce"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "alcohol free guinness",
+    "detected": "Guinness Beer Can"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned corn",
+    "detected": "Aylmer Whole Kernel Corn"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned navy beans",
+    "detected": "Aylmer Canned Vegetables (various)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "welches fruit snacks box",
+    "detected": "Welch's Fruit Snacks"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "kirkland cookies box",
+    "detected": "Kirkland Italian Pasta Lasagne"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "lettuce",
+    "detected": "Crunchy Greens Salad Mix"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "barbeque sauce",
+    "detected": "Sauce Bottle"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "salad dressing",
+    "detected": "Unknown Dressing in Clear Bottle"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "pickle jar",
+    "detected": "Unknown Jar with Yellow Lid"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "vanilla greek yogurt",
+    "detected": "Liberte Greek 0% Vanilla Yogurt"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "plain greek yogurt",
+    "detected": "Liberte Greek 0% Yogurt"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "2% milk",
+    "detected": "Natrel Fine-Filtered Sans Lactose Free Milk"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "becel margarine",
+    "detected": "Becel V\u00e9g\u00e9tale Spread"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "chopped vegetables",
+    "detected": "Chopped Mixed Vegetables"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "baby carrots",
+    "detected": "Bag of Carrots"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "parmesan cheese",
+    "detected": "Wrapped Cheese Block"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "strawberry jam",
+    "detected": "Strawberry Jam (Red Checkered Lid)"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "franks red hot sauce",
+    "detected": "Strawberry Jam (Red Checkered Lid)"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "primo pizza sauce",
+    "detected": "Classico Traditional Pizza Sauce"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "vanilla ice cream",
+    "detected": "President's Choice Vanilla Madagascar Ice Cream"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "steamed dumplings",
+    "detected": "Steamed Pork & Vegetable Dumplings"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "frozen vegetables",
+    "detected": "Frozen Fruit Pops"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Coffee Pods (unspecified flavor)"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "hersheys cocoa",
+    "detected": "Cocoa Powder"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "baking powder",
+    "detected": "White Powder (unidentified, blue lid container)"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "cinnamon cereal",
+    "detected": "Unidentified Cereal Flakes"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "kirkland cookies",
+    "detected": "Kirkland Signature Biscuits"
+  }
+]

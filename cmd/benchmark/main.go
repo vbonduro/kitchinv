@@ -3,7 +3,8 @@
 //
 // Usage:
 //
-//	benchmark -fixtures ./benchmarks/fixtures [-json]
+//	benchmark -fixtures ./benchmarks/fixtures [-json] [-save run.json]
+//	benchmark -replay run.json [-overrides benchmarks/overrides.json] [-json]
 //
 // Fixture layout:
 //
@@ -43,18 +44,42 @@ var imageExts = map[string]string{
 
 // Summary is the aggregate result across all fixtures.
 type Summary struct {
-	Model         string                `json:"model"`
-	Backend       string                `json:"backend"`
-	Fixtures      int                   `json:"fixtures"`
-	Results       []benchmark.MatchResult `json:"results"`
-	AvgItemAccuracy     float64         `json:"avg_item_accuracy"`
-	AvgQuantityAccuracy float64         `json:"avg_quantity_accuracy"`
+	Model               string                  `json:"model"`
+	Backend             string                  `json:"backend"`
+	Fixtures            int                     `json:"fixtures"`
+	Results             []benchmark.MatchResult `json:"results"`
+	AvgItemAccuracy     float64                 `json:"avg_item_accuracy"`
+	AvgQuantityAccuracy float64                 `json:"avg_quantity_accuracy"`
+}
+
+// RawFixtureResult stores a single fixture's model output for offline replay.
+type RawFixtureResult struct {
+	Fixture string               `json:"fixture"`
+	GT      benchmark.GroundTruth `json:"ground_truth"`
+	Result  vision.AnalysisResult `json:"result"`
+}
+
+// RawRun stores all fixture outputs from one benchmark run.
+type RawRun struct {
+	Backend string             `json:"backend"`
+	Model   string             `json:"model"`
+	Fixtures []RawFixtureResult `json:"fixtures"`
 }
 
 func main() {
 	fixturesDir := flag.String("fixtures", "benchmarks/fixtures", "path to fixtures directory")
+	overridesFile := flag.String("overrides", "benchmarks/overrides.json", "path to overrides JSON file (optional)")
+	saveFile := flag.String("save", "", "save raw model outputs to this file for offline replay")
+	replayFile := flag.String("replay", "", "replay and rescore a saved raw run instead of calling the API")
 	jsonOut := flag.Bool("json", false, "output results as JSON")
 	flag.Parse()
+
+	overrides := loadOverrides(*overridesFile)
+
+	if *replayFile != "" {
+		replayAndScore(*replayFile, overrides, *jsonOut)
+		return
+	}
 
 	cfg := config.Load()
 
@@ -68,6 +93,7 @@ func main() {
 		log.Fatalf("failed to read fixtures directory %q: %v", *fixturesDir, err)
 	}
 
+	var rawFixtures []RawFixtureResult
 	var results []benchmark.MatchResult
 
 	for _, entry := range entries {
@@ -98,7 +124,12 @@ func main() {
 			continue
 		}
 
-		mr := benchmark.Score(entry.Name(), gt, result)
+		rawFixtures = append(rawFixtures, RawFixtureResult{
+			Fixture: entry.Name(),
+			GT:      gt,
+			Result:  *result,
+		})
+		mr := benchmark.Score(entry.Name(), gt, result, overrides)
 		results = append(results, mr)
 	}
 
@@ -106,9 +137,61 @@ func main() {
 		log.Fatal("no fixtures processed")
 	}
 
-	summary := buildSummary(cfg.VisionBackend, modelName, results)
+	if *saveFile != "" {
+		raw := RawRun{Backend: cfg.VisionBackend, Model: modelName, Fixtures: rawFixtures}
+		if err := writeJSON(*saveFile, raw); err != nil {
+			log.Printf("warning: failed to save raw run to %q: %v", *saveFile, err)
+		} else {
+			fmt.Fprintf(os.Stderr, "raw run saved to %s\n", *saveFile)
+		}
+	}
 
-	if *jsonOut {
+	summary := buildSummary(cfg.VisionBackend, modelName, results)
+	outputSummary(summary, *jsonOut)
+}
+
+func replayAndScore(path string, overrides benchmark.Overrides, jsonOut bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Fatalf("failed to read replay file %q: %v", path, err)
+	}
+	var raw RawRun
+	if err := json.Unmarshal(data, &raw); err != nil {
+		log.Fatalf("failed to parse replay file %q: %v", path, err)
+	}
+
+	var results []benchmark.MatchResult
+	for _, f := range raw.Fixtures {
+		r := f.Result
+		mr := benchmark.Score(f.Fixture, f.GT, &r, overrides)
+		results = append(results, mr)
+	}
+
+	if len(results) == 0 {
+		log.Fatal("no fixtures in replay file")
+	}
+
+	summary := buildSummary(raw.Backend, raw.Model, results)
+	outputSummary(summary, jsonOut)
+}
+
+func writeJSON(path string, v any) (err error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
+}
+
+func outputSummary(summary Summary, jsonOut bool) {
+	if jsonOut {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(summary); err != nil {
@@ -116,7 +199,6 @@ func main() {
 		}
 		return
 	}
-
 	printSummary(summary)
 }
 
@@ -135,6 +217,21 @@ func newAnalyzer(cfg *config.Config) (vision.VisionAnalyzer, string, error) {
 	default:
 		return ollamavision.NewOllamaAnalyzer(cfg.OllamaHost, cfg.OllamaModel), cfg.OllamaModel, nil
 	}
+}
+
+func loadOverrides(path string) benchmark.Overrides {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		// Overrides file is optional — silently skip if not found.
+		return nil
+	}
+	var rules []benchmark.Override
+	if err := json.Unmarshal(data, &rules); err != nil {
+		log.Printf("warning: failed to parse overrides file %q: %v", path, err)
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "loaded %d overrides from %s\n", len(rules), path)
+	return benchmark.LoadOverrides(rules)
 }
 
 func loadFixture(dir string) (benchmark.GroundTruth, string, string, error) {
