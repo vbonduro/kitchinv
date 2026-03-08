@@ -115,6 +115,47 @@ func TestGeminiRequestIncludesAPIKey(t *testing.T) {
 	assert.Contains(t, capturedURL, "key=my-api-key")
 }
 
+func TestGeminiAnalyzeWithFileURI(t *testing.T) {
+	var capturedBody []byte
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		capturedBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(geminiResp(`{"status":"ok","items":[{"name":"Butter","quantity":1,"notes":"door shelf"}]}`))
+	}))
+	defer server.Close()
+
+	analyzer := NewGeminiAnalyzer("test-key", "gemini-2.0-flash")
+	analyzer.baseURL = server.URL
+
+	result, err := analyzer.AnalyzeWithFileURI(context.Background(), "https://files.example.com/abc123", "image/jpeg")
+	require.NoError(t, err)
+	assert.Equal(t, vision.StatusOK, result.Status)
+	assert.Len(t, result.Items, 1)
+	assert.Equal(t, "Butter", result.Items[0].Name)
+
+	// Verify file_data (not inline_data) is in the request body
+	assert.Contains(t, string(capturedBody), "file_data")
+	assert.NotContains(t, string(capturedBody), "inline_data")
+}
+
+func TestGeminiAnalyzeWithFileURI_serverError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	analyzer := NewGeminiAnalyzer("test-key", "gemini-2.0-flash")
+	analyzer.baseURL = server.URL
+
+	_, err := analyzer.AnalyzeWithFileURI(context.Background(), "https://files.example.com/abc123", "image/jpeg")
+	assert.Error(t, err)
+}
+
 // errReader always returns an error on Read.
 type errReader struct{}
 

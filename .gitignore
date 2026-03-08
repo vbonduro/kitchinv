@@ -41,3 +41,6 @@ good_inventory.txt
 
 # Downloaded files
 go1.*.linux-amd64.tar.gz
+
+# Benchmark artifacts (Gemini file URIs expire after 48h)
+benchmarks/file-uris.json
