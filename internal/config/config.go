@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 type Config struct {
 	ListenAddr    string
@@ -26,9 +29,9 @@ func Load() *Config {
 		VisionBackend: getEnv("VISION_BACKEND", "ollama"),
 		OllamaHost:    getEnv("OLLAMA_HOST", "http://localhost:11434"),
 		OllamaModel:   getEnv("OLLAMA_MODEL", "moondream"),
-		ClaudeAPIKey:  getEnv("CLAUDE_API_KEY", ""),
+		ClaudeAPIKey:  getSecret("CLAUDE_API_KEY", "CLAUDE_API_KEY_FILE"),
 		ClaudeModel:   getEnv("CLAUDE_MODEL", "claude-opus-4-6"),
-		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
+		GeminiAPIKey:  getSecret("GEMINI_API_KEY", "GEMINI_API_KEY_FILE"),
 		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		PhotoBackend:  getEnv("PHOTO_BACKEND", "local"),
 		PhotoPath:     getEnv("PHOTO_LOCAL_PATH", "/data/photos"),
@@ -43,4 +46,19 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+// getSecret reads a secret value from a file if the fileEnvKey env var is set,
+// otherwise falls back to the plain envKey env var. File contents are trimmed
+// of whitespace so keys stored with a trailing newline work correctly.
+// If the file path is set but the file cannot be read, returns empty string.
+func getSecret(envKey, fileEnvKey string) string {
+	if path, exists := os.LookupEnv(fileEnvKey); exists && path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return ""
+		}
+		return strings.TrimSpace(string(data))
+	}
+	return getEnv(envKey, "")
 }
