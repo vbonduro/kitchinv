@@ -218,5 +218,325 @@
     "fixture": "upstairs_pantry",
     "expected": "kirkland cookies",
     "detected": "Kirkland Signature Biscuits"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "barbeque sauce",
+    "detected": "BBQ Sauce"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "earths own oat milk",
+    "detected": "Earth's Own Oat Milk"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "earths own oat milk",
+    "detected": "Earth's Own Original Oat Milk"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "shredded cheese",
+    "detected": "Earth's Own Shredded Cheddar Style Cheese Blend"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "shredded cheese",
+    "detected": "Earth's Own Sans Lactose Cheese Product"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned soup",
+    "detected": "Simply Campbell's Chicken Noodle Soup"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned soup",
+    "detected": "Cream of mushroom soup carton"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "coconut milk",
+    "detected": "Small juice/milk boxes (unspecified)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "coconut milk",
+    "detected": "Small Juice Boxes (blue packaging)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "canned cranberries",
+    "detected": "Simply Cranberry Cocktail"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "apple sauce pack",
+    "detected": "PC 1% Pomme (Apple Juice)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "compost bags",
+    "detected": "FlexTie 125 Compostable bags"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "compost bags",
+    "detected": "Compostable bags (green box)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "french roast coffee",
+    "detected": "PC Cafe à moudre fine Torréfaction Française coffee 800g"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "french roast coffee",
+    "detected": "Le Café de la Touraine Française coffee"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "french roast coffee",
+    "detected": "Le Cafe de Puechat Torréfaction Française Coffee 800g"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "salsa",
+    "detected": "Salsa Jar"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "salsa",
+    "detected": "Salsa bottle with yellow cap"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "ranch",
+    "detected": "Hidden Valley The Original Ranch Dressing"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "plain greek yogurt",
+    "detected": "Liberté Greek 0% Yogurt"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "vanilla greek yogurt",
+    "detected": "Liberté Greek 0% Yogurt"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "vanilla greek yogurt",
+    "detected": "Liberté Greek 0% Vanilla Yogurt"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "whipped cream",
+    "detected": "Greenhouse Whipped Cream"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "oat milk",
+    "detected": "Earth's Own Oat Milk Original"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "2% milk",
+    "detected": "Natrel Lactose Free Milk"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "becel margarine",
+    "detected": "Becel Original Vegan Margarine"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "franks red hot sauce",
+    "detected": "Frank's RedHot Buffalo Wings Sauce"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "primo pizza sauce",
+    "detected": "Pizza Squeeze Sauce"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "bottle white wine",
+    "detected": "Sancerre White Wine"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "ketchup",
+    "detected": "Heinz Ketchup"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "mayonnaise",
+    "detected": "Kraft Mayonnaise"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "caesar dressing",
+    "detected": "Caesar Salad Dressing"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "protein oats",
+    "detected": "Bob's Red Mill Protein Oats Bag"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "apple jam",
+    "detected": "Homemade Strawberry Jam"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "apple jam",
+    "detected": "St. Dalfour Mirabelle Plum Jam"
+  },
+  {
+    "fixture": "fridge",
+    "expected": "windsor salt",
+    "detected": "Windsor Salt shaker"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "bread",
+    "detected": "Frozen Gluten-Free bread"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "bread",
+    "detected": "Carbonaut Gluten-Free frozen bread product"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "hotdog buns",
+    "detected": "Gluten Free Buns"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "vanilla ice cream",
+    "detected": "PC Madagascar Vanilla Ice Cream"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "popsicles",
+    "detected": "Assorted frozen ice pops"
+  },
+  {
+    "fixture": "fridge_freezer",
+    "expected": "blueberries",
+    "detected": "Marks Frozen Blueberries"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Gingerbread Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Sweet Vanilla Decaffeinato Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Double Espresso Dolce Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Forte Decaffeinato Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Half Caffeinato Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Intenso Capsules"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "nespresso pods",
+    "detected": "Nespresso Vertuo Capsules (dark box)"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "crackers",
+    "detected": "Premium Plus 35% Whole Wheat Crackers"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "crackers",
+    "detected": "Premium Plus 100% Whole Wheat Crackers"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "almond breeze",
+    "detected": "Almond Breeze Original Unsweetened Almond Milk"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "raisins",
+    "detected": "PC Blue Menu Raisins Géants Sans Pépins"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "kirkland cookies",
+    "detected": "Kirkland Signature Biscuits (qty 3)"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "chicken broth",
+    "detected": "Campbell's 80 Calorie Soup"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "bread crumbs",
+    "detected": "Aurora Plain Crumbs"
+  },
+  {
+    "fixture": "upstairs_pantry",
+    "expected": "pancake mix",
+    "detected": "PC Buttermilk Pancake Mix"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "lentil soup cans",
+    "detected": "Sprague Lentil Vegetable Soup"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "water bottle pack",
+    "detected": "Perrier Carbonated Water"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "mint hot chocolate",
+    "detected": "Chocolate extract (small brown bottle)"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "almond extract",
+    "detected": "Vanilla extract bottle"
+  },
+  {
+    "fixture": "downstairs_pantry",
+    "expected": "kirkland cookies box",
+    "detected": "Kirkland Chocolate Chip Cookies"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "iogo nano yogurt drink pack",
+    "detected": "iögo nanö Strawberry Yogurt Tubes"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "fiery ginger",
+    "detected": "Greenhouse Biologique Fiery Ginger Drink"
   }
 ]

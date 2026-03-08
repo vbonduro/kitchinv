@@ -1,0 +1,1615 @@
+{
+  "backend": "gemini",
+  "model": "gemini-2.5-flash",
+  "fixtures": [
+    {
+      "fixture": "downstairs_freezer",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "raisin bread",
+            "quantity": 1
+          },
+          {
+            "name": "pork loin",
+            "quantity": 1
+          },
+          {
+            "name": "bread",
+            "quantity": 1
+          },
+          {
+            "name": "burgers",
+            "quantity": 1
+          },
+          {
+            "name": "cosmo chicken nuggets",
+            "quantity": 1
+          },
+          {
+            "name": "frozen broccoli",
+            "quantity": 2
+          },
+          {
+            "name": "yakisoba noodles box",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Frozen item in white bag",
+            "Quantity": "1",
+            "Notes": "very top rear, left"
+          },
+          {
+            "Name": "Frozen item in white bag",
+            "Quantity": "1",
+            "Notes": "very top rear, right"
+          },
+          {
+            "Name": "Sun-Maid Raisin Cinnamon Swirl Bread",
+            "Quantity": "1",
+            "Notes": "first main shelf, left"
+          },
+          {
+            "Name": "Gluten-Free Carbonara",
+            "Quantity": "1",
+            "Notes": "first main shelf, right"
+          },
+          {
+            "Name": "Frozen Pork Shoulder",
+            "Quantity": "1",
+            "Notes": "second main shelf, left"
+          },
+          {
+            "Name": "Gluten-Free Carbonara",
+            "Quantity": "1",
+            "Notes": "second main shelf, right"
+          },
+          {
+            "Name": "Compliments Mixed Vegetables (2kg)",
+            "Quantity": "1",
+            "Notes": "third main shelf, left"
+          },
+          {
+            "Name": "Frozen Beef Steak",
+            "Quantity": "1",
+            "Notes": "third main shelf, right"
+          },
+          {
+            "Name": "Gluten-Free Carbonara",
+            "Quantity": "1",
+            "Notes": "third main shelf, far right"
+          },
+          {
+            "Name": "Nature's Touch Organic Broccoli",
+            "Quantity": "1",
+            "Notes": "fourth main shelf, left"
+          },
+          {
+            "Name": "Co-op Frites coupe",
+            "Quantity": "1",
+            "Notes": "fourth main shelf, right"
+          },
+          {
+            "Name": "Co-op Frites coupe",
+            "Quantity": "1",
+            "Notes": "fourth main shelf, behind right item"
+          },
+          {
+            "Name": "Nature's Touch Organic Broccoli",
+            "Quantity": "1",
+            "Notes": "fourth main shelf, bottom left"
+          },
+          {
+            "Name": "Yakisoba Vegetarian frozen meal",
+            "Quantity": "1",
+            "Notes": "bottom compartment, left"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Frozen item in white bag\",\n      \"quantity\": 1,\n      \"notes\": \"very top rear, left\"\n    },\n    {\n      \"name\": \"Frozen item in white bag\",\n      \"quantity\": 1,\n      \"notes\": \"very top rear, right\"\n    },\n    {\n      \"name\": \"Sun-Maid Raisin Cinnamon Swirl Bread\",\n      \"quantity\": 1,\n      \"notes\": \"first main shelf, left\"\n    },\n    {\n      \"name\": \"Gluten-Free Carbonara\",\n      \"quantity\": 1,\n      \"notes\": \"first main shelf, right\"\n    },\n    {\n      \"name\": \"Frozen Pork Shoulder\",\n      \"quantity\": 1,\n      \"notes\": \"second main shelf, left\"\n    },\n    {\n      \"name\": \"Gluten-Free Carbonara\",\n      \"quantity\": 1,\n      \"notes\": \"second main shelf, right\"\n    },\n    {\n      \"name\": \"Compliments Mixed Vegetables (2kg)\",\n      \"quantity\": 1,\n      \"notes\": \"third main shelf, left\"\n    },\n    {\n      \"name\": \"Frozen Beef Steak\",\n      \"quantity\": 1,\n      \"notes\": \"third main shelf, right\"\n    },\n    {\n      \"name\": \"Gluten-Free Carbonara\",\n      \"quantity\": 1,\n      \"notes\": \"third main shelf, far right\"\n    },\n    {\n      \"name\": \"Nature's Touch Organic Broccoli\",\n      \"quantity\": 1,\n      \"notes\": \"fourth main shelf, left\"\n    },\n    {\n      \"name\": \"Co-op Frites coupe\",\n      \"quantity\": 1,\n      \"notes\": \"fourth main shelf, right\"\n    },\n    {\n      \"name\": \"Co-op Frites coupe\",\n      \"quantity\": 1,\n      \"notes\": \"fourth main shelf, behind right item\"\n    },\n    {\n      \"name\": \"Nature's Touch Organic Broccoli\",\n      \"quantity\": 1,\n      \"notes\": \"fourth main shelf, bottom left\"\n    },\n    {\n      \"name\": \"Yakisoba Vegetarian frozen meal\",\n      \"quantity\": 1,\n      \"notes\": \"bottom compartment, left\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "fixture": "downstairs_fridge",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "alcohol free heineken",
+            "quantity": 3
+          },
+          {
+            "name": "social vodka drink",
+            "quantity": 3
+          },
+          {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          {
+            "name": "earths own oat milk",
+            "quantity": 1
+          },
+          {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          {
+            "name": "iogo nano yogurt drink pack",
+            "quantity": 1
+          },
+          {
+            "name": "barbeque sauce",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Social Vodka Soda",
+            "Quantity": "4",
+            "Notes": "top shelf left"
+          },
+          {
+            "Name": "Heineken 0.0 Non-Alcoholic Beer",
+            "Quantity": "4",
+            "Notes": "top shelf right"
+          },
+          {
+            "Name": "Greenhouse Biologique Fiery Ginger Drink",
+            "Quantity": "1",
+            "Notes": "middle shelf left"
+          },
+          {
+            "Name": "Earth's Own Sans Lactose Free Cheddar Cheese Blend",
+            "Quantity": "1",
+            "Notes": "middle shelf center"
+          },
+          {
+            "Name": "Earth's Own Sans Lactose Free Cheese",
+            "Quantity": "1",
+            "Notes": "middle shelf right"
+          },
+          {
+            "Name": "Iögo nano Strawberry Yogurt Pouches",
+            "Quantity": "1",
+            "Notes": "bottom shelf center"
+          },
+          {
+            "Name": "Smokey BBQ Sauce",
+            "Quantity": "1",
+            "Notes": "door bottom shelf"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Social Vodka Soda\",\n      \"quantity\": 4,\n      \"notes\": \"top shelf left\"\n    },\n    {\n      \"name\": \"Heineken 0.0 Non-Alcoholic Beer\",\n      \"quantity\": 4,\n      \"notes\": \"top shelf right\"\n    },\n    {\n      \"name\": \"Greenhouse Biologique Fiery Ginger Drink\",\n      \"quantity\": 1,\n      \"notes\": \"middle shelf left\"\n    },\n    {\n      \"name\": \"Earth's Own Sans Lactose Free Cheddar Cheese Blend\",\n      \"quantity\": 1,\n      \"notes\": \"middle shelf center\"\n    },\n    {\n      \"name\": \"Earth's Own Sans Lactose Free Cheese\",\n      \"quantity\": 1,\n      \"notes\": \"middle shelf right\"\n    },\n    {\n      \"name\": \"Iögo nano Strawberry Yogurt Pouches\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf center\"\n    },\n    {\n      \"name\": \"Smokey BBQ Sauce\",\n      \"quantity\": 1,\n      \"notes\": \"door bottom shelf\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "fixture": "downstairs_pantry",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "wheat bran",
+            "quantity": 1
+          },
+          {
+            "name": "honey graham",
+            "quantity": 1
+          },
+          {
+            "name": "medium freezer bags",
+            "quantity": 1
+          },
+          {
+            "name": "large freezer bags",
+            "quantity": 1
+          },
+          {
+            "name": "peanut butter",
+            "quantity": 2
+          },
+          {
+            "name": "hersheys chocolate chips",
+            "quantity": 1
+          },
+          {
+            "name": "strawberry jam",
+            "quantity": 1
+          },
+          {
+            "name": "kirkland pecans",
+            "quantity": 1
+          },
+          {
+            "name": "gravy packets",
+            "quantity": 3
+          },
+          {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          {
+            "name": "compostable bags",
+            "quantity": 1
+          },
+          {
+            "name": "paper towels",
+            "quantity": 1
+          },
+          {
+            "name": "food colouring green",
+            "quantity": 1
+          },
+          {
+            "name": "food colouring red",
+            "quantity": 1
+          },
+          {
+            "name": "food colouring blue",
+            "quantity": 1
+          },
+          {
+            "name": "almond extract",
+            "quantity": 1
+          },
+          {
+            "name": "lemon jar",
+            "quantity": 1
+          },
+          {
+            "name": "molasses",
+            "quantity": 1
+          },
+          {
+            "name": "ground cinnamon",
+            "quantity": 1
+          },
+          {
+            "name": "sugar",
+            "quantity": 1
+          },
+          {
+            "name": "lentil soup cans",
+            "quantity": 1
+          },
+          {
+            "name": "dare crackers",
+            "quantity": 1
+          },
+          {
+            "name": "pc crackers",
+            "quantity": 1
+          },
+          {
+            "name": "french roast coffee",
+            "quantity": 2
+          },
+          {
+            "name": "aioli",
+            "quantity": 1
+          },
+          {
+            "name": "canned soup",
+            "quantity": 3
+          },
+          {
+            "name": "coconut milk",
+            "quantity": 2
+          },
+          {
+            "name": "canned cranberries",
+            "quantity": 1
+          },
+          {
+            "name": "ketchup",
+            "quantity": 1
+          },
+          {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          {
+            "name": "mayonnaise",
+            "quantity": 2
+          },
+          {
+            "name": "salsa",
+            "quantity": 1
+          },
+          {
+            "name": "pizza sauce",
+            "quantity": 1
+          },
+          {
+            "name": "windsor salt",
+            "quantity": 1
+          },
+          {
+            "name": "ranch",
+            "quantity": 1
+          },
+          {
+            "name": "chicken broth",
+            "quantity": 7
+          },
+          {
+            "name": "canned chickpeas",
+            "quantity": 10
+          },
+          {
+            "name": "tomato paste box",
+            "quantity": 1
+          },
+          {
+            "name": "lasagna noodles",
+            "quantity": 1
+          },
+          {
+            "name": "alcohol free guinness",
+            "quantity": 2
+          },
+          {
+            "name": "mint hot chocolate",
+            "quantity": 1
+          },
+          {
+            "name": "cheerios box",
+            "quantity": 3
+          },
+          {
+            "name": "annies mac and cheese",
+            "quantity": 8
+          },
+          {
+            "name": "canned corn",
+            "quantity": 10
+          },
+          {
+            "name": "canned navy beans",
+            "quantity": 2
+          },
+          {
+            "name": "baking soda",
+            "quantity": 2
+          },
+          {
+            "name": "compost bags",
+            "quantity": 1
+          },
+          {
+            "name": "water bottle pack",
+            "quantity": 1
+          },
+          {
+            "name": "welches fruit snacks box",
+            "quantity": 1
+          },
+          {
+            "name": "kirkland cookies box",
+            "quantity": 1
+          },
+          {
+            "name": "apple sauce pack",
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Clear plastic food storage container",
+            "Quantity": "1",
+            "Notes": "top shelf left"
+          },
+          {
+            "Name": "Wheat Bran",
+            "Quantity": "1",
+            "Notes": "top shelf left, in clear container"
+          },
+          {
+            "Name": "Ziploc Zipper Seal Sandwich Bags",
+            "Quantity": "1",
+            "Notes": "top shelf left"
+          },
+          {
+            "Name": "White tub, unknown contents",
+            "Quantity": "1",
+            "Notes": "top shelf left"
+          },
+          {
+            "Name": "Glass jar, unknown contents",
+            "Quantity": "1",
+            "Notes": "top shelf left"
+          },
+          {
+            "Name": "Cheetos Puffs Bones",
+            "Quantity": "1",
+            "Notes": "top shelf middle"
+          },
+          {
+            "Name": "Bag, contents unclear",
+            "Quantity": "1",
+            "Notes": "top shelf middle"
+          },
+          {
+            "Name": "BONUS Mason Jar box",
+            "Quantity": "1",
+            "Notes": "top shelf middle"
+          },
+          {
+            "Name": "Ziploc Freezer Large Bags, 60 count",
+            "Quantity": "1",
+            "Notes": "top shelf right"
+          },
+          {
+            "Name": "Ziploc Freezer Large Bags, 60 count",
+            "Quantity": "1",
+            "Notes": "top shelf right, behind first box"
+          },
+          {
+            "Name": "Aluminum foil containers",
+            "Quantity": "2",
+            "Notes": "top shelf right"
+          },
+          {
+            "Name": "Made in China box (likely storage items)",
+            "Quantity": "1",
+            "Notes": "top shelf right"
+          },
+          {
+            "Name": "Fragrant Crisp Handsoap",
+            "Quantity": "1",
+            "Notes": "shelf 2 left"
+          },
+          {
+            "Name": "Stack of papers/mail",
+            "Quantity": "1",
+            "Notes": "shelf 2 left"
+          },
+          {
+            "Name": "Kraft Smooth Peanut Butter, 1kg",
+            "Quantity": "1",
+            "Notes": "shelf 2 left"
+          },
+          {
+            "Name": "Kraft Smooth Peanut Butter, 1kg",
+            "Quantity": "1",
+            "Notes": "shelf 2 left"
+          },
+          {
+            "Name": "Vanilla Extract",
+            "Quantity": "1",
+            "Notes": "shelf 2 right"
+          },
+          {
+            "Name": "Bonne Maman Cherry Jam",
+            "Quantity": "1",
+            "Notes": "shelf 2 right"
+          },
+          {
+            "Name": "PC 1% Milk",
+            "Quantity": "1",
+            "Notes": "shelf 2 right"
+          },
+          {
+            "Name": "Hershey's Chocolate Chips",
+            "Quantity": "1",
+            "Notes": "shelf 2 right, in white basket"
+          },
+          {
+            "Name": "Kirkland Pecans",
+            "Quantity": "1",
+            "Notes": "shelf 2 middle"
+          },
+          {
+            "Name": "Club House Brown Gravy Mix",
+            "Quantity": "1",
+            "Notes": "shelf 2 middle"
+          },
+          {
+            "Name": "Clear plastic cups",
+            "Quantity": "1",
+            "Notes": "shelf 2 middle, yellow stack"
+          },
+          {
+            "Name": "Christie Premium Plus Crackers",
+            "Quantity": "1",
+            "Notes": "shelf 2 right"
+          },
+          {
+            "Name": "FlexTie Compostable Bags",
+            "Quantity": "1",
+            "Notes": "shelf 2 right"
+          },
+          {
+            "Name": "Bounty Plus Paper Towels",
+            "Quantity": "1",
+            "Notes": "shelf 3 left"
+          },
+          {
+            "Name": "Sprague Lentil Soup",
+            "Quantity": "1",
+            "Notes": "shelf 3 left"
+          },
+          {
+            "Name": "Crabby's sauce bottle",
+            "Quantity": "1",
+            "Notes": "shelf 3 left"
+          },
+          {
+            "Name": "Small bottle, unknown contents, red cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small bottle, unknown contents, blue cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small bottle, unknown contents, brown cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small bottle, unknown contents, black cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small bottle, unknown contents, white cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small bottle, unknown contents, red cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Small shaker, unknown contents, silver",
+            "Quantity": "1",
+            "Notes": "shelf 3 left, in organizer"
+          },
+          {
+            "Name": "Dark bottle, unknown contents, red cap",
+            "Quantity": "1",
+            "Notes": "shelf 3 left"
+          },
+          {
+            "Name": "Simply Orange juice carton",
+            "Quantity": "1",
+            "Notes": "shelf 3 middle"
+          },
+          {
+            "Name": "Le Café de Pêchet Torréfaction Française coffee",
+            "Quantity": "1",
+            "Notes": "shelf 3 middle"
+          },
+          {
+            "Name": "Blue box, dried goods, label unreadable",
+            "Quantity": "1",
+            "Notes": "shelf 3 middle"
+          },
+          {
+            "Name": "Blue box, dried goods, label unreadable",
+            "Quantity": "1",
+            "Notes": "shelf 3 middle, behind first"
+          },
+          {
+            "Name": "Green box, unknown contents",
+            "Quantity": "1",
+            "Notes": "shelf 3 middle"
+          },
+          {
+            "Name": "Canned goods, label unreadable",
+            "Quantity": "2",
+            "Notes": "shelf 3 right, in clear container"
+          },
+          {
+            "Name": "Dunya Harvest Chickpeas cans",
+            "Quantity": "4",
+            "Notes": "shelf 3 right, in clear container"
+          },
+          {
+            "Name": "Salsa bottle, yellow cap",
+            "Quantity": "1",
+            "Notes": "shelf 4 left"
+          },
+          {
+            "Name": "Sriracha Hot Sauce bottle, red cap",
+            "Quantity": "1",
+            "Notes": "shelf 4 left"
+          },
+          {
+            "Name": "Windsor Salt bottle",
+            "Quantity": "1",
+            "Notes": "shelf 4 left"
+          },
+          {
+            "Name": "Simply Campbell's Chicken Noodle Soup cartons",
+            "Quantity": "6",
+            "Notes": "shelf 4 left"
+          },
+          {
+            "Name": "Kirkland Italian Lasagne box",
+            "Quantity": "1",
+            "Notes": "shelf 4 middle"
+          },
+          {
+            "Name": "Kirkland Tomato Sauce box",
+            "Quantity": "1",
+            "Notes": "shelf 4 middle"
+          },
+          {
+            "Name": "Dunya Harvest Chickpeas cans",
+            "Quantity": "4",
+            "Notes": "shelf 4 right, in cardboard box"
+          },
+          {
+            "Name": "Canned goods, label unreadable",
+            "Quantity": "5",
+            "Notes": "shelf 4 right, in clear container"
+          },
+          {
+            "Name": "Pasta boxes, label unreadable",
+            "Quantity": "4",
+            "Notes": "shelf 4 right, stacked"
+          },
+          {
+            "Name": "Welch's Fruit Snacks box",
+            "Quantity": "1",
+            "Notes": "floor, in blue bin"
+          },
+          {
+            "Name": "Kirkland Chocolate Chip Cookies Biscuits box",
+            "Quantity": "1",
+            "Notes": "floor, in blue bin"
+          },
+          {
+            "Name": "Evian Water bottle",
+            "Quantity": "1",
+            "Notes": "floor"
+          },
+          {
+            "Name": "Guinness cans",
+            "Quantity": "2",
+            "Notes": "floor"
+          },
+          {
+            "Name": "Cereal/cracker boxes, unreadable label",
+            "Quantity": "4",
+            "Notes": "bottom shelf left"
+          },
+          {
+            "Name": "Canned vegetables, yellow label, unreadable",
+            "Quantity": "3",
+            "Notes": "bottom shelf middle"
+          },
+          {
+            "Name": "Canned vegetables, green label, unreadable",
+            "Quantity": "3",
+            "Notes": "bottom shelf middle"
+          },
+          {
+            "Name": "Canned vegetables, green label, unreadable",
+            "Quantity": "2",
+            "Notes": "bottom shelf middle"
+          },
+          {
+            "Name": "Small orange boxes, unknown contents, in clear container",
+            "Quantity": "1",
+            "Notes": "bottom shelf middle"
+          },
+          {
+            "Name": "Juice boxes, blue and white, unreadable label",
+            "Quantity": "20",
+            "Notes": "bottom shelf right"
+          },
+          {
+            "Name": "FlexTie Compostable Bags box",
+            "Quantity": "1",
+            "Notes": "floor right"
+          },
+          {
+            "Name": "Plastic bags, in large clear bag",
+            "Quantity": "1",
+            "Notes": "floor right"
+          },
+          {
+            "Name": "Cardboard box, empty or unknown contents",
+            "Quantity": "1",
+            "Notes": "floor right"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Clear plastic food storage container\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left\"\n    },\n    {\n      \"name\": \"Wheat Bran\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left, in clear container\"\n    },\n    {\n      \"name\": \"Ziploc Zipper Seal Sandwich Bags\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left\"\n    },\n    {\n      \"name\": \"White tub, unknown contents\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left\"\n    },\n    {\n      \"name\": \"Glass jar, unknown contents\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left\"\n    },\n    {\n      \"name\": \"Cheetos Puffs Bones\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf middle\"\n    },\n    {\n      \"name\": \"Bag, contents unclear\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf middle\"\n    },\n    {\n      \"name\": \"BONUS Mason Jar box\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf middle\"\n    },\n    {\n      \"name\": \"Ziploc Freezer Large Bags, 60 count\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right\"\n    },\n    {\n      \"name\": \"Ziploc Freezer Large Bags, 60 count\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right, behind first box\"\n    },\n    {\n      \"name\": \"Aluminum foil containers\",\n      \"quantity\": 2,\n      \"notes\": \"top shelf right\"\n    },\n    {\n      \"name\": \"Made in China box (likely storage items)\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right\"\n    },\n    {\n      \"name\": \"Fragrant Crisp Handsoap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 left\"\n    },\n    {\n      \"name\": \"Stack of papers/mail\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 left\"\n    },\n    {\n      \"name\": \"Kraft Smooth Peanut Butter, 1kg\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 left\"\n    },\n    {\n      \"name\": \"Kraft Smooth Peanut Butter, 1kg\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 left\"\n    },\n    {\n      \"name\": \"Vanilla Extract\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right\"\n    },\n    {\n      \"name\": \"Bonne Maman Cherry Jam\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right\"\n    },\n    {\n      \"name\": \"PC 1% Milk\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right\"\n    },\n    {\n      \"name\": \"Hershey's Chocolate Chips\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right, in white basket\"\n    },\n    {\n      \"name\": \"Kirkland Pecans\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 middle\"\n    },\n    {\n      \"name\": \"Club House Brown Gravy Mix\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 middle\"\n    },\n    {\n      \"name\": \"Clear plastic cups\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 middle, yellow stack\"\n    },\n    {\n      \"name\": \"Christie Premium Plus Crackers\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right\"\n    },\n    {\n      \"name\": \"FlexTie Compostable Bags\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 2 right\"\n    },\n    {\n      \"name\": \"Bounty Plus Paper Towels\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left\"\n    },\n    {\n      \"name\": \"Sprague Lentil Soup\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left\"\n    },\n    {\n      \"name\": \"Crabby's sauce bottle\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, red cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, blue cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, brown cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, black cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, white cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small bottle, unknown contents, red cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Small shaker, unknown contents, silver\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left, in organizer\"\n    },\n    {\n      \"name\": \"Dark bottle, unknown contents, red cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 left\"\n    },\n    {\n      \"name\": \"Simply Orange juice carton\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 middle\"\n    },\n    {\n      \"name\": \"Le Café de Pêchet Torréfaction Française coffee\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 middle\"\n    },\n    {\n      \"name\": \"Blue box, dried goods, label unreadable\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 middle\"\n    },\n    {\n      \"name\": \"Blue box, dried goods, label unreadable\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 middle, behind first\"\n    },\n    {\n      \"name\": \"Green box, unknown contents\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 3 middle\"\n    },\n    {\n      \"name\": \"Canned goods, label unreadable\",\n      \"quantity\": 2,\n      \"notes\": \"shelf 3 right, in clear container\"\n    },\n    {\n      \"name\": \"Dunya Harvest Chickpeas cans\",\n      \"quantity\": 4,\n      \"notes\": \"shelf 3 right, in clear container\"\n    },\n    {\n      \"name\": \"Salsa bottle, yellow cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 4 left\"\n    },\n    {\n      \"name\": \"Sriracha Hot Sauce bottle, red cap\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 4 left\"\n    },\n    {\n      \"name\": \"Windsor Salt bottle\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 4 left\"\n    },\n    {\n      \"name\": \"Simply Campbell's Chicken Noodle Soup cartons\",\n      \"quantity\": 6,\n      \"notes\": \"shelf 4 left\"\n    },\n    {\n      \"name\": \"Kirkland Italian Lasagne box\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 4 middle\"\n    },\n    {\n      \"name\": \"Kirkland Tomato Sauce box\",\n      \"quantity\": 1,\n      \"notes\": \"shelf 4 middle\"\n    },\n    {\n      \"name\": \"Dunya Harvest Chickpeas cans\",\n      \"quantity\": 4,\n      \"notes\": \"shelf 4 right, in cardboard box\"\n    },\n    {\n      \"name\": \"Canned goods, label unreadable\",\n      \"quantity\": 5,\n      \"notes\": \"shelf 4 right, in clear container\"\n    },\n    {\n      \"name\": \"Pasta boxes, label unreadable\",\n      \"quantity\": 4,\n      \"notes\": \"shelf 4 right, stacked\"\n    },\n    {\n      \"name\": \"Welch's Fruit Snacks box\",\n      \"quantity\": 1,\n      \"notes\": \"floor, in blue bin\"\n    },\n    {\n      \"name\": \"Kirkland Chocolate Chip Cookies Biscuits box\",\n      \"quantity\": 1,\n      \"notes\": \"floor, in blue bin\"\n    },\n    {\n      \"name\": \"Evian Water bottle\",\n      \"quantity\": 1,\n      \"notes\": \"floor\"\n    },\n    {\n      \"name\": \"Guinness cans\",\n      \"quantity\": 2,\n      \"notes\": \"floor\"\n    },\n    {\n      \"name\": \"Cereal/cracker boxes, unreadable label\",\n      \"quantity\": 4,\n      \"notes\": \"bottom shelf left\"\n    },\n    {\n      \"name\": \"Canned vegetables, yellow label, unreadable\",\n      \"quantity\": 3,\n      \"notes\": \"bottom shelf middle\"\n    },\n    {\n      \"name\": \"Canned vegetables, green label, unreadable\",\n      \"quantity\": 3,\n      \"notes\": \"bottom shelf middle\"\n    },\n    {\n      \"name\": \"Canned vegetables, green label, unreadable\",\n      \"quantity\": 2,\n      \"notes\": \"bottom shelf middle\"\n    },\n    {\n      \"name\": \"Small orange boxes, unknown contents, in clear container\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf middle\"\n    },\n    {\n      \"name\": \"Juice boxes, blue and white, unreadable label\",\n      \"quantity\": 20,\n      \"notes\": \"bottom shelf right\"\n    },\n    {\n      \"name\": \"FlexTie Compostable Bags box\",\n      \"quantity\": 1,\n      \"notes\": \"floor right\"\n    },\n    {\n      \"name\": \"Plastic bags, in large clear bag\",\n      \"quantity\": 1,\n      \"notes\": \"floor right\"\n    },\n    {\n      \"name\": \"Cardboard box, empty or unknown contents\",\n      \"quantity\": 1,\n      \"notes\": \"floor right\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "fixture": "fridge",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "soy sauce",
+            "quantity": 1
+          },
+          {
+            "name": "ketchup",
+            "quantity": 1
+          },
+          {
+            "name": "salad dressing",
+            "quantity": 1
+          },
+          {
+            "name": "pickle jar",
+            "quantity": 1
+          },
+          {
+            "name": "maple syrup",
+            "quantity": 2
+          },
+          {
+            "name": "ranch",
+            "quantity": 1
+          },
+          {
+            "name": "salsa",
+            "quantity": 1
+          },
+          {
+            "name": "sriracha",
+            "quantity": 1
+          },
+          {
+            "name": "vanilla greek yogurt",
+            "quantity": 1
+          },
+          {
+            "name": "plain greek yogurt",
+            "quantity": 1
+          },
+          {
+            "name": "whipped cream",
+            "quantity": 1
+          },
+          {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          {
+            "name": "oat milk",
+            "quantity": 1
+          },
+          {
+            "name": "2% milk",
+            "quantity": 1
+          },
+          {
+            "name": "eggs",
+            "quantity": 12
+          },
+          {
+            "name": "strawberries",
+            "quantity": 2
+          },
+          {
+            "name": "lettuce",
+            "quantity": 2
+          },
+          {
+            "name": "becel margarine",
+            "quantity": 1
+          },
+          {
+            "name": "cherry tomatoes",
+            "quantity": 1
+          },
+          {
+            "name": "onions",
+            "quantity": 4
+          },
+          {
+            "name": "iogo nano",
+            "quantity": 12
+          },
+          {
+            "name": "broccoli in dish",
+            "quantity": 6
+          },
+          {
+            "name": "chopped vegetables",
+            "quantity": 1
+          },
+          {
+            "name": "tim hortons box",
+            "quantity": 1
+          },
+          {
+            "name": "sweet potato",
+            "quantity": 1
+          },
+          {
+            "name": "cucumber",
+            "quantity": 1
+          },
+          {
+            "name": "baby carrots",
+            "quantity": 1
+          },
+          {
+            "name": "lime",
+            "quantity": 2
+          },
+          {
+            "name": "sour cream",
+            "quantity": 1
+          },
+          {
+            "name": "parmesan cheese",
+            "quantity": 1
+          },
+          {
+            "name": "tofu",
+            "quantity": 1
+          },
+          {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          {
+            "name": "peanut butter",
+            "quantity": 1
+          },
+          {
+            "name": "strawberry jam",
+            "quantity": 1
+          },
+          {
+            "name": "apple jam",
+            "quantity": 1
+          },
+          {
+            "name": "mayonnaise",
+            "quantity": 1
+          },
+          {
+            "name": "caesar dressing",
+            "quantity": 1
+          },
+          {
+            "name": "protein oats",
+            "quantity": 1
+          },
+          {
+            "name": "chipotle aioli",
+            "quantity": 1
+          },
+          {
+            "name": "franks red hot sauce",
+            "quantity": 1
+          },
+          {
+            "name": "primo pizza sauce",
+            "quantity": 1
+          },
+          {
+            "name": "bottle white wine",
+            "quantity": 1
+          },
+          {
+            "name": "tamari",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Amber Bottle with Black Cap",
+            "Quantity": "1",
+            "Notes": "left door, top shelf"
+          },
+          {
+            "Name": "Unidentifiable Yellow Lid Container",
+            "Quantity": "1",
+            "Notes": "left door, top shelf"
+          },
+          {
+            "Name": "Ketchup Bottle",
+            "Quantity": "1",
+            "Notes": "left door, second shelf"
+          },
+          {
+            "Name": "Salad Dressing Bottle (empty)",
+            "Quantity": "1",
+            "Notes": "left door, second shelf"
+          },
+          {
+            "Name": "Pickled Yellow Peppers",
+            "Quantity": "1",
+            "Notes": "left door, second shelf"
+          },
+          {
+            "Name": "Hidden Valley The Original Ranch Dressing",
+            "Quantity": "1",
+            "Notes": "left door, third shelf"
+          },
+          {
+            "Name": "Jar with Yellow Label",
+            "Quantity": "1",
+            "Notes": "left door, third shelf"
+          },
+          {
+            "Name": "White Sauce Bottle with Green Cap",
+            "Quantity": "1",
+            "Notes": "left door, bottom shelf"
+          },
+          {
+            "Name": "Jar with Brown Contents and Yellow Lid",
+            "Quantity": "1",
+            "Notes": "left door, bottom shelf"
+          },
+          {
+            "Name": "Liberté Greek Yogurt 0% Vanilla",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, left"
+          },
+          {
+            "Name": "Dairy Whipped Topping Spray",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, center-left"
+          },
+          {
+            "Name": "Liberté Greek Yogurt 0%",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, center"
+          },
+          {
+            "Name": "Earth's Own Oat Avoine Originale",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, center"
+          },
+          {
+            "Name": "Natrel Fine-Filtered Lactose-Free Milk",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, center-right"
+          },
+          {
+            "Name": "Unidentifiable Tall Clear Bottle",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, behind Natrel milk"
+          },
+          {
+            "Name": "Bob's Red Mill Protein Oats",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, right"
+          },
+          {
+            "Name": "Bagged Greens",
+            "Quantity": "1",
+            "Notes": "main compartment, top shelf, right"
+          },
+          {
+            "Name": "Eggs",
+            "Quantity": "6",
+            "Notes": "main compartment, second shelf, left, in clear container"
+          },
+          {
+            "Name": "Strawberries",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, left, in first clear container"
+          },
+          {
+            "Name": "Strawberries",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, left, in second clear container"
+          },
+          {
+            "Name": "Becel Végétale Spread",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, center"
+          },
+          {
+            "Name": "Cherry Tomatoes",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, center, in clear container"
+          },
+          {
+            "Name": "Green Grapes",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, right, in clear container"
+          },
+          {
+            "Name": "Blue Reusable Lunch Bag",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, right"
+          },
+          {
+            "Name": "Small Dip/Sauce Container",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, right"
+          },
+          {
+            "Name": "White Tub of Dairy Product",
+            "Quantity": "1",
+            "Notes": "main compartment, second shelf, right"
+          },
+          {
+            "Name": "P'tit Dino Yogurt Drinks",
+            "Quantity": "4",
+            "Notes": "main compartment, third shelf, left, in plastic holder"
+          },
+          {
+            "Name": "Chopped Vegetables (Peppers, Onion)",
+            "Quantity": "1",
+            "Notes": "main compartment, third shelf, left, in glass container"
+          },
+          {
+            "Name": "Tim Hortons Box",
+            "Quantity": "1",
+            "Notes": "main compartment, third shelf, center"
+          },
+          {
+            "Name": "Chopped Vegetables (Peppers, Onion)",
+            "Quantity": "1",
+            "Notes": "main compartment, third shelf, right, in glass container"
+          },
+          {
+            "Name": "Small Green Storage Container",
+            "Quantity": "1",
+            "Notes": "main compartment, third shelf, right"
+          },
+          {
+            "Name": "Carrots",
+            "Quantity": "1",
+            "Notes": "main compartment, top crisper drawer"
+          },
+          {
+            "Name": "Lime",
+            "Quantity": "1",
+            "Notes": "main compartment, top crisper drawer"
+          },
+          {
+            "Name": "Bag with Unknown Contents",
+            "Quantity": "1",
+            "Notes": "main compartment, top crisper drawer"
+          },
+          {
+            "Name": "Sweet Potato",
+            "Quantity": "1",
+            "Notes": "main compartment, top crisper drawer"
+          },
+          {
+            "Name": "Cucumber",
+            "Quantity": "1",
+            "Notes": "main compartment, top crisper drawer"
+          },
+          {
+            "Name": "Packaged Cheese",
+            "Quantity": "1",
+            "Notes": "main compartment, bottom crisper drawer, left"
+          },
+          {
+            "Name": "Packaged Cheese",
+            "Quantity": "1",
+            "Notes": "main compartment, bottom crisper drawer, center"
+          },
+          {
+            "Name": "Small Unidentifiable Package",
+            "Quantity": "1",
+            "Notes": "main compartment, bottom crisper drawer, right"
+          },
+          {
+            "Name": "Kraft Smooth Peanut Butter",
+            "Quantity": "1",
+            "Notes": "right door, top shelf"
+          },
+          {
+            "Name": "Strawberry Jam",
+            "Quantity": "1",
+            "Notes": "right door, top shelf"
+          },
+          {
+            "Name": "St Dalfour Wild Blueberry Fruit Spread",
+            "Quantity": "1",
+            "Notes": "right door, top shelf"
+          },
+          {
+            "Name": "Small Clear Jar",
+            "Quantity": "1",
+            "Notes": "right door, top shelf"
+          },
+          {
+            "Name": "Small Green Jar",
+            "Quantity": "1",
+            "Notes": "right door, second shelf"
+          },
+          {
+            "Name": "White Jar with Blue Lid",
+            "Quantity": "1",
+            "Notes": "right door, second shelf"
+          },
+          {
+            "Name": "Orange Sauce Bottle",
+            "Quantity": "1",
+            "Notes": "right door, second shelf"
+          },
+          {
+            "Name": "Sancerre 2019 Red Wine",
+            "Quantity": "1",
+            "Notes": "right door, third shelf"
+          },
+          {
+            "Name": "Frank's Red Hot Original Sauce",
+            "Quantity": "1",
+            "Notes": "right door, third shelf"
+          },
+          {
+            "Name": "Yellow Sauce Bottle",
+            "Quantity": "1",
+            "Notes": "right door, third shelf"
+          },
+          {
+            "Name": "Primo Pizza Squeeze Sauce",
+            "Quantity": "1",
+            "Notes": "right door, bottom shelf"
+          },
+          {
+            "Name": "Brown Sauce Bottle",
+            "Quantity": "1",
+            "Notes": "right door, bottom shelf"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Amber Bottle with Black Cap\",\n      \"quantity\": 1,\n      \"notes\": \"left door, top shelf\"\n    },\n    {\n      \"name\": \"Unidentifiable Yellow Lid Container\",\n      \"quantity\": 1,\n      \"notes\": \"left door, top shelf\"\n    },\n    {\n      \"name\": \"Ketchup Bottle\",\n      \"quantity\": 1,\n      \"notes\": \"left door, second shelf\"\n    },\n    {\n      \"name\": \"Salad Dressing Bottle (empty)\",\n      \"quantity\": 1,\n      \"notes\": \"left door, second shelf\"\n    },\n    {\n      \"name\": \"Pickled Yellow Peppers\",\n      \"quantity\": 1,\n      \"notes\": \"left door, second shelf\"\n    },\n    {\n      \"name\": \"Hidden Valley The Original Ranch Dressing\",\n      \"quantity\": 1,\n      \"notes\": \"left door, third shelf\"\n    },\n    {\n      \"name\": \"Jar with Yellow Label\",\n      \"quantity\": 1,\n      \"notes\": \"left door, third shelf\"\n    },\n    {\n      \"name\": \"White Sauce Bottle with Green Cap\",\n      \"quantity\": 1,\n      \"notes\": \"left door, bottom shelf\"\n    },\n    {\n      \"name\": \"Jar with Brown Contents and Yellow Lid\",\n      \"quantity\": 1,\n      \"notes\": \"left door, bottom shelf\"\n    },\n    {\n      \"name\": \"Liberté Greek Yogurt 0% Vanilla\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, left\"\n    },\n    {\n      \"name\": \"Dairy Whipped Topping Spray\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, center-left\"\n    },\n    {\n      \"name\": \"Liberté Greek Yogurt 0%\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, center\"\n    },\n    {\n      \"name\": \"Earth's Own Oat Avoine Originale\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, center\"\n    },\n    {\n      \"name\": \"Natrel Fine-Filtered Lactose-Free Milk\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, center-right\"\n    },\n    {\n      \"name\": \"Unidentifiable Tall Clear Bottle\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, behind Natrel milk\"\n    },\n    {\n      \"name\": \"Bob's Red Mill Protein Oats\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, right\"\n    },\n    {\n      \"name\": \"Bagged Greens\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top shelf, right\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 6,\n      \"notes\": \"main compartment, second shelf, left, in clear container\"\n    },\n    {\n      \"name\": \"Strawberries\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, left, in first clear container\"\n    },\n    {\n      \"name\": \"Strawberries\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, left, in second clear container\"\n    },\n    {\n      \"name\": \"Becel Végétale Spread\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, center\"\n    },\n    {\n      \"name\": \"Cherry Tomatoes\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, center, in clear container\"\n    },\n    {\n      \"name\": \"Green Grapes\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, right, in clear container\"\n    },\n    {\n      \"name\": \"Blue Reusable Lunch Bag\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, right\"\n    },\n    {\n      \"name\": \"Small Dip/Sauce Container\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, right\"\n    },\n    {\n      \"name\": \"White Tub of Dairy Product\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, second shelf, right\"\n    },\n    {\n      \"name\": \"P'tit Dino Yogurt Drinks\",\n      \"quantity\": 4,\n      \"notes\": \"main compartment, third shelf, left, in plastic holder\"\n    },\n    {\n      \"name\": \"Chopped Vegetables (Peppers, Onion)\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, third shelf, left, in glass container\"\n    },\n    {\n      \"name\": \"Tim Hortons Box\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, third shelf, center\"\n    },\n    {\n      \"name\": \"Chopped Vegetables (Peppers, Onion)\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, third shelf, right, in glass container\"\n    },\n    {\n      \"name\": \"Small Green Storage Container\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, third shelf, right\"\n    },\n    {\n      \"name\": \"Carrots\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top crisper drawer\"\n    },\n    {\n      \"name\": \"Lime\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top crisper drawer\"\n    },\n    {\n      \"name\": \"Bag with Unknown Contents\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top crisper drawer\"\n    },\n    {\n      \"name\": \"Sweet Potato\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top crisper drawer\"\n    },\n    {\n      \"name\": \"Cucumber\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, top crisper drawer\"\n    },\n    {\n      \"name\": \"Packaged Cheese\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, bottom crisper drawer, left\"\n    },\n    {\n      \"name\": \"Packaged Cheese\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, bottom crisper drawer, center\"\n    },\n    {\n      \"name\": \"Small Unidentifiable Package\",\n      \"quantity\": 1,\n      \"notes\": \"main compartment, bottom crisper drawer, right\"\n    },\n    {\n      \"name\": \"Kraft Smooth Peanut Butter\",\n      \"quantity\": 1,\n      \"notes\": \"right door, top shelf\"\n    },\n    {\n      \"name\": \"Strawberry Jam\",\n      \"quantity\": 1,\n      \"notes\": \"right door, top shelf\"\n    },\n    {\n      \"name\": \"St Dalfour Wild Blueberry Fruit Spread\",\n      \"quantity\": 1,\n      \"notes\": \"right door, top shelf\"\n    },\n    {\n      \"name\": \"Small Clear Jar\",\n      \"quantity\": 1,\n      \"notes\": \"right door, top shelf\"\n    },\n    {\n      \"name\": \"Small Green Jar\",\n      \"quantity\": 1,\n      \"notes\": \"right door, second shelf\"\n    },\n    {\n      \"name\": \"White Jar with Blue Lid\",\n      \"quantity\": 1,\n      \"notes\": \"right door, second shelf\"\n    },\n    {\n      \"name\": \"Orange Sauce Bottle\",\n      \"quantity\": 1,\n      \"notes\": \"right door, second shelf\"\n    },\n    {\n      \"name\": \"Sancerre 2019 Red Wine\",\n      \"quantity\": 1,\n      \"notes\": \"right door, third shelf\"\n    },\n    {\n      \"name\": \"Frank's Red Hot Original Sauce\",\n      \"quantity\": 1,\n      \"notes\": \"right door, third shelf\"\n    },\n    {\n      \"name\": \"Yellow Sauce Bottle\",\n      \"quantity\": 1,\n      \"notes\": \"right door, third shelf\"\n    },\n    {\n      \"name\": \"Primo Pizza Squeeze Sauce\",\n      \"quantity\": 1,\n      \"notes\": \"right door, bottom shelf\"\n    },\n    {\n      \"name\": \"Brown Sauce Bottle\",\n      \"quantity\": 1,\n      \"notes\": \"right door, bottom shelf\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "fixture": "fridge_freezer",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "popsicles",
+            "quantity": 20
+          },
+          {
+            "name": "bread",
+            "quantity": 1
+          },
+          {
+            "name": "vanilla ice cream",
+            "quantity": 1
+          },
+          {
+            "name": "butterscotch ice cream",
+            "quantity": 1
+          },
+          {
+            "name": "hotdog buns",
+            "quantity": 1
+          },
+          {
+            "name": "blueberries",
+            "quantity": 1
+          },
+          {
+            "name": "steamed dumplings",
+            "quantity": 1
+          },
+          {
+            "name": "frozen vegetables",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Frozen Juice Tubes (Assorted Flavors)",
+            "Quantity": "20",
+            "Notes": "top drawer, left bin"
+          },
+          {
+            "Name": "Gluten-Free Frozen Item",
+            "Quantity": "1",
+            "Notes": "top drawer, left bin, in a blue bag"
+          },
+          {
+            "Name": "MAX Blueberries",
+            "Quantity": "1",
+            "Notes": "top drawer, right bin, upper left"
+          },
+          {
+            "Name": "Frozen Dinner Rolls/Buns",
+            "Quantity": "1",
+            "Notes": "top drawer, right bin, in a large Ziploc freezer bag"
+          },
+          {
+            "Name": "President's Choice Vanilla Madagascar Ice Cream",
+            "Quantity": "1",
+            "Notes": "top drawer, right bin, front center"
+          },
+          {
+            "Name": "Novelty Ice Cream Cones/Candies (Baseball Theme)",
+            "Quantity": "1",
+            "Notes": "top drawer, right bin, front right, in a clear plastic bag"
+          },
+          {
+            "Name": "Frozen Mixed Vegetables",
+            "Quantity": "1",
+            "Notes": "bottom drawer, left side, in a black bag"
+          },
+          {
+            "Name": "Steamed Pork \u0026 Vegetable Dumplings",
+            "Quantity": "1",
+            "Notes": "bottom drawer, right side, in a box"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Frozen Juice Tubes (Assorted Flavors)\",\n      \"quantity\": 20,\n      \"notes\": \"top drawer, left bin\"\n    },\n    {\n      \"name\": \"Gluten-Free Frozen Item\",\n      \"quantity\": 1,\n      \"notes\": \"top drawer, left bin, in a blue bag\"\n    },\n    {\n      \"name\": \"MAX Blueberries\",\n      \"quantity\": 1,\n      \"notes\": \"top drawer, right bin, upper left\"\n    },\n    {\n      \"name\": \"Frozen Dinner Rolls/Buns\",\n      \"quantity\": 1,\n      \"notes\": \"top drawer, right bin, in a large Ziploc freezer bag\"\n    },\n    {\n      \"name\": \"President's Choice Vanilla Madagascar Ice Cream\",\n      \"quantity\": 1,\n      \"notes\": \"top drawer, right bin, front center\"\n    },\n    {\n      \"name\": \"Novelty Ice Cream Cones/Candies (Baseball Theme)\",\n      \"quantity\": 1,\n      \"notes\": \"top drawer, right bin, front right, in a clear plastic bag\"\n    },\n    {\n      \"name\": \"Frozen Mixed Vegetables\",\n      \"quantity\": 1,\n      \"notes\": \"bottom drawer, left side, in a black bag\"\n    },\n    {\n      \"name\": \"Steamed Pork \u0026 Vegetable Dumplings\",\n      \"quantity\": 1,\n      \"notes\": \"bottom drawer, right side, in a box\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "fixture": "upstairs_pantry",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "brown sugar",
+            "quantity": 1
+          },
+          {
+            "name": "k cookies",
+            "quantity": 1
+          },
+          {
+            "name": "pancake mix",
+            "quantity": 1
+          },
+          {
+            "name": "nespresso pods",
+            "quantity": 8
+          },
+          {
+            "name": "fancy molasses",
+            "quantity": 1
+          },
+          {
+            "name": "hersheys cocoa",
+            "quantity": 1
+          },
+          {
+            "name": "chicken broth",
+            "quantity": 2
+          },
+          {
+            "name": "crackers",
+            "quantity": 1
+          },
+          {
+            "name": "dates",
+            "quantity": 1
+          },
+          {
+            "name": "bread crumbs",
+            "quantity": 1
+          },
+          {
+            "name": "almond breeze",
+            "quantity": 1
+          },
+          {
+            "name": "pepitas",
+            "quantity": 1
+          },
+          {
+            "name": "cashews",
+            "quantity": 1
+          },
+          {
+            "name": "icing sugar",
+            "quantity": 1
+          },
+          {
+            "name": "dried cranberries",
+            "quantity": 1
+          },
+          {
+            "name": "cocoa powder",
+            "quantity": 1
+          },
+          {
+            "name": "raisins",
+            "quantity": 1
+          },
+          {
+            "name": "baking powder",
+            "quantity": 1
+          },
+          {
+            "name": "all bran buds",
+            "quantity": 1
+          },
+          {
+            "name": "cheerios",
+            "quantity": 1
+          },
+          {
+            "name": "cinnamon cereal",
+            "quantity": 1
+          },
+          {
+            "name": "rice",
+            "quantity": 1
+          },
+          {
+            "name": "icing sugar",
+            "quantity": 1
+          },
+          {
+            "name": "white flour",
+            "quantity": 1
+          },
+          {
+            "name": "sugar",
+            "quantity": 1
+          },
+          {
+            "name": "baking soda",
+            "quantity": 1
+          },
+          {
+            "name": "kirkland cookies",
+            "quantity": 7
+          },
+          {
+            "name": "apple sauce",
+            "quantity": 2
+          },
+          {
+            "name": "chocolate chip bar",
+            "quantity": 4
+          },
+          {
+            "name": "tostitos",
+            "quantity": 1
+          },
+          {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          {
+            "name": "snack factory pretzel crisps",
+            "quantity": 2
+          },
+          {
+            "name": "popcorn",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Yellow snack bags",
+            "Quantity": "1",
+            "Notes": "top shelf left, in black basket"
+          },
+          {
+            "Name": "KitchWise box",
+            "Quantity": "1",
+            "Notes": "top shelf middle"
+          },
+          {
+            "Name": "Nespresso Brown Sugar",
+            "Quantity": "1",
+            "Notes": "top shelf middle"
+          },
+          {
+            "Name": "Little Bellies Organic Baby Food (7+ fruity textures)",
+            "Quantity": "1",
+            "Notes": "top shelf right"
+          },
+          {
+            "Name": "PC Buttermilk Pancake Mix",
+            "Quantity": "1",
+            "Notes": "top shelf right, in clear container"
+          },
+          {
+            "Name": "Dried beans or peas",
+            "Quantity": "1",
+            "Notes": "top shelf right, in tied bag"
+          },
+          {
+            "Name": "Nespresso Vertuo Sweet Vanilla Decaffeinato capsules",
+            "Quantity": "1",
+            "Notes": "second shelf left"
+          },
+          {
+            "Name": "Nespresso Vertuo Gingerbread capsules",
+            "Quantity": "1",
+            "Notes": "second shelf left"
+          },
+          {
+            "Name": "Nespresso Vertuo Double Espresso Dolce capsules",
+            "Quantity": "1",
+            "Notes": "second shelf left"
+          },
+          {
+            "Name": "Nespresso Vertuo Half Caffeinato capsules",
+            "Quantity": "1",
+            "Notes": "second shelf middle, open box"
+          },
+          {
+            "Name": "Nespresso Vertuo Intenso capsules",
+            "Quantity": "1",
+            "Notes": "second shelf middle, open box"
+          },
+          {
+            "Name": "Nespresso Vertuo Fortado Decaffeinato capsules",
+            "Quantity": "1",
+            "Notes": "second shelf middle"
+          },
+          {
+            "Name": "Nespresso Vertuo capsules (black box, flavor not specified)",
+            "Quantity": "2",
+            "Notes": "second shelf left and middle"
+          },
+          {
+            "Name": "Hershey's Cocoa",
+            "Quantity": "1",
+            "Notes": "second shelf middle"
+          },
+          {
+            "Name": "Fancy Molasses",
+            "Quantity": "1",
+            "Notes": "second shelf middle"
+          },
+          {
+            "Name": "Campbell's Carrot Ginger Soup",
+            "Quantity": "1",
+            "Notes": "second shelf middle"
+          },
+          {
+            "Name": "Little Bellies Organic Baby Food (purple box)",
+            "Quantity": "1",
+            "Notes": "second shelf middle"
+          },
+          {
+            "Name": "Aurora Plain Breadcrumbs",
+            "Quantity": "1",
+            "Notes": "second shelf right"
+          },
+          {
+            "Name": "Blue Diamond Almond Breeze Unsweetened Original",
+            "Quantity": "1",
+            "Notes": "second shelf right"
+          },
+          {
+            "Name": "Minute Rice",
+            "Quantity": "1",
+            "Notes": "second shelf right, in clear container"
+          },
+          {
+            "Name": "Pepitas",
+            "Quantity": "1",
+            "Notes": "third shelf left, in clear container"
+          },
+          {
+            "Name": "Cashews",
+            "Quantity": "1",
+            "Notes": "third shelf left, in clear container"
+          },
+          {
+            "Name": "Dried Cranberries",
+            "Quantity": "1",
+            "Notes": "third shelf left, in clear container"
+          },
+          {
+            "Name": "Cocoa Powder",
+            "Quantity": "1",
+            "Notes": "third shelf middle, in clear container"
+          },
+          {
+            "Name": "PC Blue Menu Raisins (Giant Seedless)",
+            "Quantity": "1",
+            "Notes": "third shelf middle, in can"
+          },
+          {
+            "Name": "Small white ingredient container with blue lid",
+            "Quantity": "1",
+            "Notes": "third shelf middle, on top of raisin can"
+          },
+          {
+            "Name": "Baking Soda",
+            "Quantity": "1",
+            "Notes": "third shelf middle, in clear container"
+          },
+          {
+            "Name": "O-shaped Cereal",
+            "Quantity": "1",
+            "Notes": "third shelf right, in clear container"
+          },
+          {
+            "Name": "Flaked Cereal",
+            "Quantity": "1",
+            "Notes": "third shelf right, in clear container"
+          },
+          {
+            "Name": "Minute Rice",
+            "Quantity": "1",
+            "Notes": "third shelf right, in clear container"
+          },
+          {
+            "Name": "Green compostable bags",
+            "Quantity": "1",
+            "Notes": "bottom shelf left, in black basket"
+          },
+          {
+            "Name": "White Flour",
+            "Quantity": "1",
+            "Notes": "bottom shelf left, in clear container"
+          },
+          {
+            "Name": "Sugar",
+            "Quantity": "1",
+            "Notes": "bottom shelf middle, in clear container"
+          },
+          {
+            "Name": "Kirkland Signature Biscuits",
+            "Quantity": "3",
+            "Notes": "bottom shelf middle, in blue bags"
+          },
+          {
+            "Name": "Premium Plus Crackers",
+            "Quantity": "1",
+            "Notes": "bottom shelf middle, in box"
+          },
+          {
+            "Name": "Popcorn",
+            "Quantity": "1",
+            "Notes": "bottom shelf middle, in clear bag"
+          },
+          {
+            "Name": "Old Dutch Potato Chips",
+            "Quantity": "1",
+            "Notes": "bottom shelf middle, in bag"
+          },
+          {
+            "Name": "Reynolds Kitchens Staybrite Wax Paper",
+            "Quantity": "1",
+            "Notes": "bottom shelf right, in box"
+          },
+          {
+            "Name": "Snack Factory Pretzel Crisps",
+            "Quantity": "1",
+            "Notes": "bottom shelf right, in blue bag"
+          },
+          {
+            "Name": "Granola bars",
+            "Quantity": "2",
+            "Notes": "bottom shelf right, purple packaging"
+          },
+          {
+            "Name": "Ziploc Freezer Bags",
+            "Quantity": "1",
+            "Notes": "bottom shelf right, in box"
+          },
+          {
+            "Name": "Unidentifiable snack bag",
+            "Quantity": "1",
+            "Notes": "bottom shelf right, in black basket"
+          }
+        ],
+        "RawResponse": "{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Yellow snack bags\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf left, in black basket\"\n    },\n    {\n      \"name\": \"KitchWise box\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf middle\"\n    },\n    {\n      \"name\": \"Nespresso Brown Sugar\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf middle\"\n    },\n    {\n      \"name\": \"Little Bellies Organic Baby Food (7+ fruity textures)\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right\"\n    },\n    {\n      \"name\": \"PC Buttermilk Pancake Mix\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right, in clear container\"\n    },\n    {\n      \"name\": \"Dried beans or peas\",\n      \"quantity\": 1,\n      \"notes\": \"top shelf right, in tied bag\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Sweet Vanilla Decaffeinato capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf left\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Gingerbread capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf left\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Double Espresso Dolce capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf left\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Half Caffeinato capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle, open box\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Intenso capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle, open box\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo Fortado Decaffeinato capsules\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle\"\n    },\n    {\n      \"name\": \"Nespresso Vertuo capsules (black box, flavor not specified)\",\n      \"quantity\": 2,\n      \"notes\": \"second shelf left and middle\"\n    },\n    {\n      \"name\": \"Hershey's Cocoa\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle\"\n    },\n    {\n      \"name\": \"Fancy Molasses\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle\"\n    },\n    {\n      \"name\": \"Campbell's Carrot Ginger Soup\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle\"\n    },\n    {\n      \"name\": \"Little Bellies Organic Baby Food (purple box)\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf middle\"\n    },\n    {\n      \"name\": \"Aurora Plain Breadcrumbs\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf right\"\n    },\n    {\n      \"name\": \"Blue Diamond Almond Breeze Unsweetened Original\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf right\"\n    },\n    {\n      \"name\": \"Minute Rice\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf right, in clear container\"\n    },\n    {\n      \"name\": \"Pepitas\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf left, in clear container\"\n    },\n    {\n      \"name\": \"Cashews\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf left, in clear container\"\n    },\n    {\n      \"name\": \"Dried Cranberries\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf left, in clear container\"\n    },\n    {\n      \"name\": \"Cocoa Powder\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf middle, in clear container\"\n    },\n    {\n      \"name\": \"PC Blue Menu Raisins (Giant Seedless)\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf middle, in can\"\n    },\n    {\n      \"name\": \"Small white ingredient container with blue lid\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf middle, on top of raisin can\"\n    },\n    {\n      \"name\": \"Baking Soda\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf middle, in clear container\"\n    },\n    {\n      \"name\": \"O-shaped Cereal\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf right, in clear container\"\n    },\n    {\n      \"name\": \"Flaked Cereal\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf right, in clear container\"\n    },\n    {\n      \"name\": \"Minute Rice\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf right, in clear container\"\n    },\n    {\n      \"name\": \"Green compostable bags\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf left, in black basket\"\n    },\n    {\n      \"name\": \"White Flour\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf left, in clear container\"\n    },\n    {\n      \"name\": \"Sugar\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf middle, in clear container\"\n    },\n    {\n      \"name\": \"Kirkland Signature Biscuits\",\n      \"quantity\": 3,\n      \"notes\": \"bottom shelf middle, in blue bags\"\n    },\n    {\n      \"name\": \"Premium Plus Crackers\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf middle, in box\"\n    },\n    {\n      \"name\": \"Popcorn\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf middle, in clear bag\"\n    },\n    {\n      \"name\": \"Old Dutch Potato Chips\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf middle, in bag\"\n    },\n    {\n      \"name\": \"Reynolds Kitchens Staybrite Wax Paper\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf right, in box\"\n    },\n    {\n      \"name\": \"Snack Factory Pretzel Crisps\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf right, in blue bag\"\n    },\n    {\n      \"name\": \"Granola bars\",\n      \"quantity\": 2,\n      \"notes\": \"bottom shelf right, purple packaging\"\n    },\n    {\n      \"name\": \"Ziploc Freezer Bags\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf right, in box\"\n    },\n    {\n      \"name\": \"Unidentifiable snack bag\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf right, in black basket\"\n    }\n  ]\n}"
+      }
+    }
+  ]
+}

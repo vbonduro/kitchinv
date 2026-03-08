@@ -80,7 +80,7 @@ func (a *GeminiAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 
 	body := request{
 		SystemInstruction: &content{
-			Parts: []part{{Text: vision.ClaudeSystemPrompt}},
+			Parts: []part{{Text: vision.GeminiSystemPrompt}},
 		},
 		Contents: []content{{
 			Parts: []part{
@@ -90,7 +90,7 @@ func (a *GeminiAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 						Data:     base64.StdEncoding.EncodeToString(imageData),
 					},
 				},
-				{Text: vision.ClaudeUserPrompt},
+				{Text: vision.GeminiUserPrompt},
 			},
 		}},
 		GenerationConfig: genConfig{
@@ -154,7 +154,7 @@ func (a *GeminiAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 func (a *GeminiAnalyzer) AnalyzeWithFileURI(ctx context.Context, fileURI, mimeType string) (*vision.AnalysisResult, error) {
 	body := request{
 		SystemInstruction: &content{
-			Parts: []part{{Text: vision.ClaudeSystemPrompt}},
+			Parts: []part{{Text: vision.GeminiSystemPrompt}},
 		},
 		Contents: []content{{
 			Parts: []part{
@@ -164,7 +164,7 @@ func (a *GeminiAnalyzer) AnalyzeWithFileURI(ctx context.Context, fileURI, mimeTy
 						FileURI:  fileURI,
 					},
 				},
-				{Text: vision.ClaudeUserPrompt},
+				{Text: vision.GeminiUserPrompt},
 			},
 		}},
 		GenerationConfig: genConfig{

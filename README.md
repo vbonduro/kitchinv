@@ -118,6 +118,8 @@ The Gemini model defaults to `gemini-2.5-flash`. Override with `GEMINI_MODEL=gem
 
 Get an API key at [aistudio.google.com](https://aistudio.google.com/).
 
+> **Note:** The vision prompt is tuned specifically for `gemini-2.5-flash`. Using a different model may reduce item detection accuracy. See [docs/vision-model-benchmark.md](docs/vision-model-benchmark.md) for the full benchmark results and model comparison.
+
 ---
 
 ## Local development

@@ -114,6 +114,29 @@ Several recurring scorer misses affect all models equally and are fixable:
 - [Claude models Run A](../benchmarks/runs/claude-models-20260307-report.md) — original truncated run (max_tokens=1024), documents the truncation issue
 - [Claude models Run B](../benchmarks/runs/claude-models-20260307b-report.md) — full run after max_tokens fix (4096), all 6 fixtures complete
 
+## Prompt Improvement Work (post-initial benchmark)
+
+After the initial benchmark, two improvement branches were pursued to push gemini-2.5-flash accuracy higher.
+
+### Gemini-tuned prompt + expanded overrides
+
+Replaced the reused Claude prompts with a Gemini-specific prompt targeting known miss patterns:
+- Shelf-by-shelf scanning instruction
+- No-grouping rule with concrete example (food colouring colours)
+- Non-food items called out (freezer bags, compostable bags, paper towels)
+- Condiment bottles listed by name (sriracha, tamari, soy sauce, maple syrup, aioli, ranch, salsa, BBQ sauce)
+- Freezer inference rule — infer contents from packaging shape, not "bag with unknown contents"
+
+Overrides expanded from 44 → 108 entries. Result across 5 runs: **59–65%, avg ~62%** (up from ~54% baseline). The 65% target was hit on the best run but not consistently — remaining misses are genuine model failures on occluded/small items in dense photos.
+
+### Two-pass self-review (investigated, not shipped)
+
+Tested a strategy where the model's first-pass JSON output is fed back to it in a multi-turn conversation alongside the original image, asking it to find anything missed or misidentified. A targeted review prompt asked specifically about door-shelf condiments, obscured items, and vague names.
+
+Results across 3 runs: **60%, 70%, 62%, avg ~64%** — marginally better than single-pass on average but with higher variance. The `downstairs_freezer` fixture swung between 29% and 71% across runs, making it unreliable. The cost is 2× API calls and latency per photo. Not shipped.
+
+The 70% run demonstrates the ceiling is real — the model *can* find more items on a second look — but inconsistency makes it unsuitable for production without a more robust merging strategy.
+
 ## Conclusion and Recommendation
 
 **Use gemini-2.5-flash as the production vision backend.**
