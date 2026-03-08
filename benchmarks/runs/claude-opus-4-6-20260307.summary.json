@@ -1,0 +1,342 @@
+{
+  "model": "claude-opus-4-6",
+  "backend": "claude",
+  "fixtures": 3,
+  "results": [
+    {
+      "fixture": "downstairs_freezer",
+      "expected": 7,
+      "detected": 14,
+      "item_matches": 3,
+      "quantity_matches": 1,
+      "item_accuracy": 0.42857142857142855,
+      "quantity_accuracy": 0.3333333333333333,
+      "items": [
+        {
+          "expected": {
+            "name": "raisin bread",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "pork loin",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "bread",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Frost-covered wrapped items (possibly bread or meat)",
+            "Quantity": "3",
+            "Notes": "top shelf"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "burgers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "cosmo chicken nuggets",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "frozen broccoli",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Frozen broccoli/kale (green vegetable bag)",
+            "Quantity": "1",
+            "Notes": "fifth shelf from top, left side"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "yakisoba noodles box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Yakisoba noodle kit",
+            "Quantity": "1",
+            "Notes": "bottom shelf, left side"
+          },
+          "quantity_match": true
+        }
+      ],
+      "extra": [
+        {
+          "name": "Frozen meat (red package, possibly Rasa brand)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen meat (red/pink package with barcode visible)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen item in blue packaging",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen poultry (white bag, Canada A label)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen meat (small pink/clear package)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen item in green packaging",
+          "quantity": "1"
+        },
+        {
+          "name": "Cookies Pouch (yellow/cream package)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen ground meat",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen item in purple packaging",
+          "quantity": "1"
+        },
+        {
+          "name": "Red Pepper (frozen vegetable bag)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen meal/pizza box",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "downstairs_fridge",
+      "expected": 7,
+      "detected": 8,
+      "item_matches": 4,
+      "quantity_matches": 1,
+      "item_accuracy": 0.5714285714285714,
+      "quantity_accuracy": 0.25,
+      "items": [
+        {
+          "expected": {
+            "name": "alcohol free heineken",
+            "quantity": 3
+          },
+          "detected": {
+            "Name": "Heineken 0.0 Non-Alcoholic Beer",
+            "Quantity": "4",
+            "Notes": "top shelf, center and right"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "social vodka drink",
+            "quantity": 3
+          },
+          "detected": {
+            "Name": "Vodka Soda Canned Cocktail",
+            "Quantity": "2",
+            "Notes": "top shelf, far left"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Greenhouse Biologique Fiery Ginger Juice",
+            "Quantity": "1",
+            "Notes": "middle shelf, left side"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "earths own oat milk",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "iogo nano yogurt drink pack",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "iögo nano Drinkable Yogurt",
+            "Quantity": "2",
+            "Notes": "bottom shelf, stacked packs of small bottles"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "barbeque sauce",
+            "quantity": 1
+          },
+          "quantity_match": false
+        }
+      ],
+      "extra": [
+        {
+          "name": "White Claw Hard Seltzer",
+          "quantity": "2"
+        },
+        {
+          "name": "Earth's Own Plant-Based Product",
+          "quantity": "1"
+        },
+        {
+          "name": "Lactose Free Cheddar Cheese",
+          "quantity": "1"
+        },
+        {
+          "name": "Beer Bottle (brown)",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "fridge_freezer",
+      "expected": 8,
+      "detected": 10,
+      "item_matches": 5,
+      "quantity_matches": 4,
+      "item_accuracy": 0.625,
+      "quantity_accuracy": 0.8,
+      "items": [
+        {
+          "expected": {
+            "name": "popsicles",
+            "quantity": 20
+          },
+          "detected": {
+            "Name": "Frozen Fruit Popsicles/Ice Pops (assorted colors)",
+            "Quantity": "10",
+            "Notes": "upper left drawer, individually wrapped in plastic"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "bread",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Frozen wrapped items (possibly bread or pastry)",
+            "Quantity": "1",
+            "Notes": "upper right drawer, plastic bag far right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "vanilla ice cream",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Chapman's Madagascar Vanilla Ice Cream",
+            "Quantity": "1",
+            "Notes": "upper right drawer, center, black round container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "butterscotch ice cream",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "hotdog buns",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "blueberries",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "steamed dumplings",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Pork \u0026 Vegetable Steamed Dumplings",
+            "Quantity": "1",
+            "Notes": "bottom drawer, right side, large box"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "frozen vegetables",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Frozen Stir-Fry Vegetables",
+            "Quantity": "1",
+            "Notes": "bottom drawer, left side, black bag with mixed vegetables visible"
+          },
+          "quantity_match": true
+        }
+      ],
+      "extra": [
+        {
+          "name": "Chapman's Butter Tarts",
+          "quantity": "1"
+        },
+        {
+          "name": "Mrs. Dash or similar branded frozen item (red/white bag with logo)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen items in Ziploc bags",
+          "quantity": "3"
+        },
+        {
+          "name": "Newspaper-wrapped frozen item (possibly fish - marked Canada A)",
+          "quantity": "1"
+        },
+        {
+          "name": "Frozen item marked Canada A",
+          "quantity": "1"
+        }
+      ]
+    }
+  ],
+  "avg_item_accuracy": 0.5416666666666666,
+  "avg_quantity_accuracy": 0.4611111111111111
+}

@@ -111,6 +111,16 @@
   },
   {
     "fixture": "fridge",
+    "expected": "lettuce",
+    "detected": "Crunchy Greens Salad Mix"
+  },
+  {
+    "fixture": "downstairs_fridge",
+    "expected": "barbeque sauce",
+    "detected": "Sauce Bottle"
+  },
+  {
+    "fixture": "fridge",
     "expected": "salad dressing",
     "detected": "Unknown Dressing in Clear Bottle"
   },

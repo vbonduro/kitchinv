@@ -1,0 +1,293 @@
+{
+  "backend": "claude",
+  "model": "claude-opus-4-6",
+  "fixtures": [
+    {
+      "fixture": "downstairs_freezer",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "raisin bread",
+            "quantity": 1
+          },
+          {
+            "name": "pork loin",
+            "quantity": 1
+          },
+          {
+            "name": "bread",
+            "quantity": 1
+          },
+          {
+            "name": "burgers",
+            "quantity": 1
+          },
+          {
+            "name": "cosmo chicken nuggets",
+            "quantity": 1
+          },
+          {
+            "name": "frozen broccoli",
+            "quantity": 2
+          },
+          {
+            "name": "yakisoba noodles box",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Frozen meat (red package, possibly Rasa brand)",
+            "Quantity": "1",
+            "Notes": "second shelf from top, left side"
+          },
+          {
+            "Name": "Frozen meat (red/pink package with barcode visible)",
+            "Quantity": "1",
+            "Notes": "second shelf from top, center-left"
+          },
+          {
+            "Name": "Frozen item in blue packaging",
+            "Quantity": "1",
+            "Notes": "second shelf from top, right side"
+          },
+          {
+            "Name": "Frozen poultry (white bag, Canada A label)",
+            "Quantity": "1",
+            "Notes": "third shelf from top, left side"
+          },
+          {
+            "Name": "Frozen meat (small pink/clear package)",
+            "Quantity": "1",
+            "Notes": "third shelf from top, center"
+          },
+          {
+            "Name": "Frozen item in green packaging",
+            "Quantity": "1",
+            "Notes": "third shelf from top, left edge"
+          },
+          {
+            "Name": "Cookies Pouch (yellow/cream package)",
+            "Quantity": "1",
+            "Notes": "fourth shelf from top, left-center"
+          },
+          {
+            "Name": "Frozen ground meat",
+            "Quantity": "1",
+            "Notes": "fourth shelf from top, center"
+          },
+          {
+            "Name": "Frozen item in purple packaging",
+            "Quantity": "1",
+            "Notes": "fourth shelf from top, center-right"
+          },
+          {
+            "Name": "Frozen broccoli/kale (green vegetable bag)",
+            "Quantity": "1",
+            "Notes": "fifth shelf from top, left side"
+          },
+          {
+            "Name": "Red Pepper (frozen vegetable bag)",
+            "Quantity": "1",
+            "Notes": "fifth shelf from top, right side"
+          },
+          {
+            "Name": "Yakisoba noodle kit",
+            "Quantity": "1",
+            "Notes": "bottom shelf, left side"
+          },
+          {
+            "Name": "Frozen meal/pizza box",
+            "Quantity": "1",
+            "Notes": "bottom shelf, right side"
+          },
+          {
+            "Name": "Frost-covered wrapped items (possibly bread or meat)",
+            "Quantity": "3",
+            "Notes": "top shelf"
+          }
+        ],
+        "RawResponse": "```json\n{\n  \"status\": \"ok\",\n  \"items\": [\n    {\n      \"name\": \"Frozen meat (red package, possibly Rasa brand)\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf from top, left side\"\n    },\n    {\n      \"name\": \"Frozen meat (red/pink package with barcode visible)\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf from top, center-left\"\n    },\n    {\n      \"name\": \"Frozen item in blue packaging\",\n      \"quantity\": 1,\n      \"notes\": \"second shelf from top, right side\"\n    },\n    {\n      \"name\": \"Frozen poultry (white bag, Canada A label)\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf from top, left side\"\n    },\n    {\n      \"name\": \"Frozen meat (small pink/clear package)\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf from top, center\"\n    },\n    {\n      \"name\": \"Frozen item in green packaging\",\n      \"quantity\": 1,\n      \"notes\": \"third shelf from top, left edge\"\n    },\n    {\n      \"name\": \"Cookies Pouch (yellow/cream package)\",\n      \"quantity\": 1,\n      \"notes\": \"fourth shelf from top, left-center\"\n    },\n    {\n      \"name\": \"Frozen ground meat\",\n      \"quantity\": 1,\n      \"notes\": \"fourth shelf from top, center\"\n    },\n    {\n      \"name\": \"Frozen item in purple packaging\",\n      \"quantity\": 1,\n      \"notes\": \"fourth shelf from top, center-right\"\n    },\n    {\n      \"name\": \"Frozen broccoli/kale (green vegetable bag)\",\n      \"quantity\": 1,\n      \"notes\": \"fifth shelf from top, left side\"\n    },\n    {\n      \"name\": \"Red Pepper (frozen vegetable bag)\",\n      \"quantity\": 1,\n      \"notes\": \"fifth shelf from top, right side\"\n    },\n    {\n      \"name\": \"Yakisoba noodle kit\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf, left side\"\n    },\n    {\n      \"name\": \"Frozen meal/pizza box\",\n      \"quantity\": 1,\n      \"notes\": \"bottom shelf, right side\"\n    },\n    {\n      \"name\": \"Frost-covered wrapped items (possibly bread or meat)\",\n      \"quantity\": 3,\n      \"notes\": \"top shelf\"\n    }\n  ]\n}\n```"
+      }
+    },
+    {
+      "fixture": "downstairs_fridge",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "alcohol free heineken",
+            "quantity": 3
+          },
+          {
+            "name": "social vodka drink",
+            "quantity": 3
+          },
+          {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          {
+            "name": "earths own oat milk",
+            "quantity": 1
+          },
+          {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          {
+            "name": "iogo nano yogurt drink pack",
+            "quantity": 1
+          },
+          {
+            "name": "barbeque sauce",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Heineken 0.0 Non-Alcoholic Beer",
+            "Quantity": "4",
+            "Notes": "top shelf, center and right"
+          },
+          {
+            "Name": "White Claw Hard Seltzer",
+            "Quantity": "2",
+            "Notes": "top shelf, left side"
+          },
+          {
+            "Name": "Vodka Soda Canned Cocktail",
+            "Quantity": "2",
+            "Notes": "top shelf, far left"
+          },
+          {
+            "Name": "Greenhouse Biologique Fiery Ginger Juice",
+            "Quantity": "1",
+            "Notes": "middle shelf, left side"
+          },
+          {
+            "Name": "Earth's Own Plant-Based Product",
+            "Quantity": "1",
+            "Notes": "middle shelf, center"
+          },
+          {
+            "Name": "Lactose Free Cheddar Cheese",
+            "Quantity": "1",
+            "Notes": "middle shelf, right side"
+          },
+          {
+            "Name": "iögo nano Drinkable Yogurt",
+            "Quantity": "2",
+            "Notes": "bottom shelf, stacked packs of small bottles"
+          },
+          {
+            "Name": "Beer Bottle (brown)",
+            "Quantity": "1",
+            "Notes": "door shelf, bottom"
+          }
+        ],
+        "RawResponse": "{\"status\":\"ok\",\"items\":[{\"name\":\"Heineken 0.0 Non-Alcoholic Beer\",\"quantity\":4,\"notes\":\"top shelf, center and right\"},{\"name\":\"White Claw Hard Seltzer\",\"quantity\":2,\"notes\":\"top shelf, left side\"},{\"name\":\"Vodka Soda Canned Cocktail\",\"quantity\":2,\"notes\":\"top shelf, far left\"},{\"name\":\"Greenhouse Biologique Fiery Ginger Juice\",\"quantity\":1,\"notes\":\"middle shelf, left side\"},{\"name\":\"Earth's Own Plant-Based Product\",\"quantity\":1,\"notes\":\"middle shelf, center\"},{\"name\":\"Lactose Free Cheddar Cheese\",\"quantity\":1,\"notes\":\"middle shelf, right side\"},{\"name\":\"iögo nano Drinkable Yogurt\",\"quantity\":2,\"notes\":\"bottom shelf, stacked packs of small bottles\"},{\"name\":\"Beer Bottle (brown)\",\"quantity\":1,\"notes\":\"door shelf, bottom\"}]}"
+      }
+    },
+    {
+      "fixture": "fridge_freezer",
+      "ground_truth": {
+        "items": [
+          {
+            "name": "popsicles",
+            "quantity": 20
+          },
+          {
+            "name": "bread",
+            "quantity": 1
+          },
+          {
+            "name": "vanilla ice cream",
+            "quantity": 1
+          },
+          {
+            "name": "butterscotch ice cream",
+            "quantity": 1
+          },
+          {
+            "name": "hotdog buns",
+            "quantity": 1
+          },
+          {
+            "name": "blueberries",
+            "quantity": 1
+          },
+          {
+            "name": "steamed dumplings",
+            "quantity": 1
+          },
+          {
+            "name": "frozen vegetables",
+            "quantity": 1
+          }
+        ]
+      },
+      "result": {
+        "Status": "ok",
+        "Items": [
+          {
+            "Name": "Frozen Fruit Popsicles/Ice Pops (assorted colors)",
+            "Quantity": "10",
+            "Notes": "upper left drawer, individually wrapped in plastic"
+          },
+          {
+            "Name": "Chapman's Madagascar Vanilla Ice Cream",
+            "Quantity": "1",
+            "Notes": "upper right drawer, center, black round container"
+          },
+          {
+            "Name": "Chapman's Butter Tarts",
+            "Quantity": "1",
+            "Notes": "upper right drawer, behind ice cream container"
+          },
+          {
+            "Name": "Mrs. Dash or similar branded frozen item (red/white bag with logo)",
+            "Quantity": "1",
+            "Notes": "upper right drawer, top center"
+          },
+          {
+            "Name": "Frozen items in Ziploc bags",
+            "Quantity": "3",
+            "Notes": "upper right drawer, blue-zippered bags"
+          },
+          {
+            "Name": "Frozen wrapped items (possibly bread or pastry)",
+            "Quantity": "1",
+            "Notes": "upper right drawer, plastic bag far right"
+          },
+          {
+            "Name": "Pork \u0026 Vegetable Steamed Dumplings",
+            "Quantity": "1",
+            "Notes": "bottom drawer, right side, large box"
+          },
+          {
+            "Name": "Frozen Stir-Fry Vegetables",
+            "Quantity": "1",
+            "Notes": "bottom drawer, left side, black bag with mixed vegetables visible"
+          },
+          {
+            "Name": "Newspaper-wrapped frozen item (possibly fish - marked Canada A)",
+            "Quantity": "1",
+            "Notes": "upper left drawer, back, wrapped in newspaper"
+          },
+          {
+            "Name": "Frozen item marked Canada A",
+            "Quantity": "1",
+            "Notes": "bottom drawer, far left corner"
+          }
+        ],
+        "RawResponse": "{\"status\":\"ok\",\"items\":[{\"name\":\"Frozen Fruit Popsicles/Ice Pops (assorted colors)\",\"quantity\":10,\"notes\":\"upper left drawer, individually wrapped in plastic\"},{\"name\":\"Chapman's Madagascar Vanilla Ice Cream\",\"quantity\":1,\"notes\":\"upper right drawer, center, black round container\"},{\"name\":\"Chapman's Butter Tarts\",\"quantity\":1,\"notes\":\"upper right drawer, behind ice cream container\"},{\"name\":\"Mrs. Dash or similar branded frozen item (red/white bag with logo)\",\"quantity\":1,\"notes\":\"upper right drawer, top center\"},{\"name\":\"Frozen items in Ziploc bags\",\"quantity\":3,\"notes\":\"upper right drawer, blue-zippered bags\"},{\"name\":\"Frozen wrapped items (possibly bread or pastry)\",\"quantity\":1,\"notes\":\"upper right drawer, plastic bag far right\"},{\"name\":\"Pork \u0026 Vegetable Steamed Dumplings\",\"quantity\":1,\"notes\":\"bottom drawer, right side, large box\"},{\"name\":\"Frozen Stir-Fry Vegetables\",\"quantity\":1,\"notes\":\"bottom drawer, left side, black bag with mixed vegetables visible\"},{\"name\":\"Newspaper-wrapped frozen item (possibly fish - marked Canada A)\",\"quantity\":1,\"notes\":\"upper left drawer, back, wrapped in newspaper\"},{\"name\":\"Frozen item marked Canada A\",\"quantity\":1,\"notes\":\"bottom drawer, far left corner\"}]}"
+      }
+    }
+  ]
+}

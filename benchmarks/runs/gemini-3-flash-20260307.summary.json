@@ -1,0 +1,1696 @@
+{
+  "model": "gemini-3-flash-preview",
+  "backend": "gemini",
+  "fixtures": 6,
+  "results": [
+    {
+      "fixture": "downstairs_freezer",
+      "expected": 7,
+      "detected": 9,
+      "item_matches": 3,
+      "quantity_matches": 2,
+      "item_accuracy": 0.42857142857142855,
+      "quantity_accuracy": 0.6666666666666666,
+      "items": [
+        {
+          "expected": {
+            "name": "raisin bread",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Sun-Maid Cinnamon Swirl Raisin Bread",
+            "Quantity": "1",
+            "Notes": "top shelf left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "pork loin",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "bread",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "burgers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "cosmo chicken nuggets",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "frozen broccoli",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Frozen Broccoli Florets",
+            "Quantity": "1",
+            "Notes": "third shelf left"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "yakisoba noodles box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Ajinomoto Yakisoba with Vegetables",
+            "Quantity": "1",
+            "Notes": "bottom shelf"
+          },
+          "quantity_match": true
+        }
+      ],
+      "extra": [
+        {
+          "name": "Raw Beef Roast",
+          "quantity": "1"
+        },
+        {
+          "name": "Blue Frozen Food Bag",
+          "quantity": "1"
+        },
+        {
+          "name": "Large White Frozen Food Bag",
+          "quantity": "1"
+        },
+        {
+          "name": "Purple Frozen Food Bag",
+          "quantity": "1"
+        },
+        {
+          "name": "Nature's Touch Broccoli Florets",
+          "quantity": "1"
+        },
+        {
+          "name": "White Frozen Food Bag",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "downstairs_fridge",
+      "expected": 7,
+      "detected": 10,
+      "item_matches": 6,
+      "quantity_matches": 3,
+      "item_accuracy": 0.8571428571428571,
+      "quantity_accuracy": 0.5,
+      "items": [
+        {
+          "expected": {
+            "name": "alcohol free heineken",
+            "quantity": 3
+          },
+          "detected": {
+            "Name": "Heineken 0.0 Alcohol Free Beer",
+            "Quantity": "3",
+            "Notes": "top shelf right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "social vodka drink",
+            "quantity": 3
+          },
+          "detected": {
+            "Name": "Social Lite Vodka Soda",
+            "Quantity": "2",
+            "Notes": "top shelf left"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Greenhouse Biologique Fiery Ginger Juice",
+            "Quantity": "1",
+            "Notes": "middle shelf left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "earths own oat milk",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Earth's Own Oat Milk",
+            "Quantity": "1",
+            "Notes": "middle shelf center"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Lactose-Free Shredded Cheddar Cheese",
+            "Quantity": "1",
+            "Notes": "middle shelf right"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "iogo nano yogurt drink pack",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "iögo Nano Drinkable Yogurt",
+            "Quantity": "12",
+            "Notes": "bottom shelf"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "barbeque sauce",
+            "quantity": 1
+          },
+          "quantity_match": false
+        }
+      ],
+      "extra": [
+        {
+          "name": "Silk Almond Milk",
+          "quantity": "1"
+        },
+        {
+          "name": "Greenhouse Biologique Fiery Ginger Shot",
+          "quantity": "1"
+        },
+        {
+          "name": "Unidentified Canned Beverage",
+          "quantity": "3"
+        },
+        {
+          "name": "Unidentified Brown Glass Bottle",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "downstairs_pantry",
+      "expected": 51,
+      "detected": 29,
+      "item_matches": 19,
+      "quantity_matches": 13,
+      "item_accuracy": 0.37254901960784315,
+      "quantity_accuracy": 0.6842105263157895,
+      "items": [
+        {
+          "expected": {
+            "name": "wheat bran",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Wheat Bran",
+            "Quantity": "1",
+            "Notes": "top shelf, middle-left in glass jar"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "honey graham",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "medium freezer bags",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "large freezer bags",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "peanut butter",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Kraft Smooth Peanut Butter",
+            "Quantity": "1",
+            "Notes": "second shelf, far left"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "hersheys chocolate chips",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Hershey's Chipits Milk Chocolate Chips",
+            "Quantity": "1",
+            "Notes": "second shelf, back left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "strawberry jam",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Bonne Maman Raspberry Jam",
+            "Quantity": "1",
+            "Notes": "second shelf, middle-left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "kirkland pecans",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Kirkland Signature Halves and Pieces Pecans",
+            "Quantity": "1",
+            "Notes": "second shelf, middle"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "gravy packets",
+            "quantity": 3
+          },
+          "detected": {
+            "Name": "Club House Brown Gravy Mix",
+            "Quantity": "1",
+            "Notes": "second shelf, middle-right"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Premium Plus Crackers",
+            "Quantity": "1",
+            "Notes": "second shelf, right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "compostable bags",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "paper towels",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "food colouring green",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Club House Food Colouring",
+            "Quantity": "1",
+            "Notes": "third shelf, left in a clear bin"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "food colouring red",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "food colouring blue",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "almond extract",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "lemon jar",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "molasses",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "ground cinnamon",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Club House Ground Cinnamon",
+            "Quantity": "1",
+            "Notes": "third shelf, middle-left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "sugar",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "lentil soup cans",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "PC Organics Hearty Lentil Soup",
+            "Quantity": "1",
+            "Notes": "third shelf, middle"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "dare crackers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "pc crackers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "french roast coffee",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "PC Fine Grind French Roast Coffee",
+            "Quantity": "1",
+            "Notes": "third shelf, middle"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "aioli",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "canned soup",
+            "quantity": 3
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "coconut milk",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "canned cranberries",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "ketchup",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "mayonnaise",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "salsa",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Tostitos Medium Salsa",
+            "Quantity": "1",
+            "Notes": "fourth shelf, middle"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "pizza sauce",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "windsor salt",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Windsor Table Salt",
+            "Quantity": "1",
+            "Notes": "fourth shelf, middle-back"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "ranch",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "chicken broth",
+            "quantity": 7
+          },
+          "detected": {
+            "Name": "Simply Campbell's No Salt Added Chicken Broth",
+            "Quantity": "2",
+            "Notes": "fourth shelf, middle"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "canned chickpeas",
+            "quantity": 10
+          },
+          "detected": {
+            "Name": "Dunya Chickpeas",
+            "Quantity": "2",
+            "Notes": "fourth shelf, middle-right"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "tomato paste box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "PC Tomato Paste",
+            "Quantity": "1",
+            "Notes": "second shelf, middle"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "lasagna noodles",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "alcohol free guinness",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "mint hot chocolate",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "cheerios box",
+            "quantity": 3
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "annies mac and cheese",
+            "quantity": 8
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "canned corn",
+            "quantity": 10
+          },
+          "detected": {
+            "Name": "Dunya Whole Kernel Corn",
+            "Quantity": "4",
+            "Notes": "fifth shelf, middle"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "canned navy beans",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "baking soda",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "compost bags",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "water bottle pack",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "welches fruit snacks box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Welch's Fruit Snacks",
+            "Quantity": "1",
+            "Notes": "inside blue bin on floor"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "kirkland cookies box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Kirkland Signature Chocolate Chip Cookies Biscuits",
+            "Quantity": "1",
+            "Notes": "inside blue bin on floor"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "apple sauce pack",
+            "quantity": 3
+          },
+          "quantity_match": false
+        }
+      ],
+      "extra": [
+        {
+          "name": "Kraft Smooth Peanut Butter",
+          "quantity": "1"
+        },
+        {
+          "name": "Five Roses Flour",
+          "quantity": "1"
+        },
+        {
+          "name": "Club House Pure Vanilla Extract",
+          "quantity": "1"
+        },
+        {
+          "name": "Aylmer Tomato Paste",
+          "quantity": "2"
+        },
+        {
+          "name": "Campbell's Tomato Soup",
+          "quantity": "1"
+        },
+        {
+          "name": "Renee's Dressing",
+          "quantity": "1"
+        },
+        {
+          "name": "Kirkland Signature Tomato Basil Pasta Sauce",
+          "quantity": "1"
+        },
+        {
+          "name": "Barilla Pasta",
+          "quantity": "2"
+        },
+        {
+          "name": "Italpasta Pasta",
+          "quantity": "1"
+        },
+        {
+          "name": "PC Blue Menu Beverage boxes",
+          "quantity": "12"
+        }
+      ]
+    },
+    {
+      "fixture": "fridge",
+      "expected": 43,
+      "detected": 35,
+      "item_matches": 25,
+      "quantity_matches": 21,
+      "item_accuracy": 0.5813953488372093,
+      "quantity_accuracy": 0.84,
+      "items": [
+        {
+          "expected": {
+            "name": "soy sauce",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Soy Sauce Bottle",
+            "Quantity": "1",
+            "Notes": "right door bottom shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "ketchup",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Ketchup Bottle",
+            "Quantity": "1",
+            "Notes": "left door middle shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "salad dressing",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Packaged Salad Greens",
+            "Quantity": "2",
+            "Notes": "second shelf main back"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "pickle jar",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Jar of Pickles",
+            "Quantity": "1",
+            "Notes": "left door middle shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "maple syrup",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Dark Syrup Bottle",
+            "Quantity": "1",
+            "Notes": "left door top shelf"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "ranch",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Hidden Valley Ranch Dressing",
+            "Quantity": "1",
+            "Notes": "left door bottom shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "salsa",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "sriracha",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "vanilla greek yogurt",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Liberté Greek Lactose Free Yogurt",
+            "Quantity": "1",
+            "Notes": "top shelf main left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "plain greek yogurt",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Liberté Greek Crunch Yogurt",
+            "Quantity": "1",
+            "Notes": "top shelf main center"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "whipped cream",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Whipped Cream",
+            "Quantity": "1",
+            "Notes": "top shelf main center-left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "fiery ginger",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "oat milk",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Earth's Own Avoine Originale Oat Milk",
+            "Quantity": "1",
+            "Notes": "top shelf main center-right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "2% milk",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Natrel Lactose Free Milk",
+            "Quantity": "1",
+            "Notes": "top shelf main right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "eggs",
+            "quantity": 12
+          },
+          "detected": {
+            "Name": "Eggs",
+            "Quantity": "6",
+            "Notes": "second shelf main left in plastic carton"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "strawberries",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Strawberries",
+            "Quantity": "2",
+            "Notes": "second shelf main center in plastic containers"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "lettuce",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "becel margarine",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Becel Végétale Margarine",
+            "Quantity": "1",
+            "Notes": "second shelf main center"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "cherry tomatoes",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "onions",
+            "quantity": 4
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "iogo nano",
+            "quantity": 12
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "broccoli in dish",
+            "quantity": 6
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "chopped vegetables",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Diced vegetables",
+            "Quantity": "1",
+            "Notes": "third shelf main below Tim Hortons box"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "tim hortons box",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Tim Hortons Box",
+            "Quantity": "1",
+            "Notes": "third shelf main right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "sweet potato",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "cucumber",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "baby carrots",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Carrots",
+            "Quantity": "1",
+            "Notes": "right crisper drawer in bag"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "lime",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Lime",
+            "Quantity": "1",
+            "Notes": "right crisper drawer"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "sour cream",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "parmesan cheese",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "tofu",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "shredded cheese",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "peanut butter",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Kraft Peanut Butter",
+            "Quantity": "1",
+            "Notes": "right door top shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "strawberry jam",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Bonne Maman Strawberry Jam",
+            "Quantity": "1",
+            "Notes": "right door top shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "apple jam",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "St. Dalfour Jam",
+            "Quantity": "1",
+            "Notes": "right door top shelf far right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "mayonnaise",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Mayonnaise Jar",
+            "Quantity": "1",
+            "Notes": "right door middle shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "caesar dressing",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Salad Dressing Bottle",
+            "Quantity": "1",
+            "Notes": "left door middle shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "protein oats",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Bob's Red Mill Protein Oats",
+            "Quantity": "1",
+            "Notes": "right door middle shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "chipotle aioli",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "franks red hot sauce",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "primo pizza sauce",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "bottle white wine",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Bottle of White Wine",
+            "Quantity": "1",
+            "Notes": "right door bottom shelf"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "tamari",
+            "quantity": 1
+          },
+          "quantity_match": false
+        }
+      ],
+      "extra": [
+        {
+          "name": "Raspberries",
+          "quantity": "1"
+        },
+        {
+          "name": "Condiment Packets",
+          "quantity": "4"
+        },
+        {
+          "name": "Tupperware with leftovers",
+          "quantity": "1"
+        },
+        {
+          "name": "Potatoes",
+          "quantity": "2"
+        },
+        {
+          "name": "Deli Meat",
+          "quantity": "2"
+        },
+        {
+          "name": "Small Jar",
+          "quantity": "1"
+        },
+        {
+          "name": "Jar of Pasta Sauce",
+          "quantity": "1"
+        },
+        {
+          "name": "César Légère Dressing",
+          "quantity": "1"
+        },
+        {
+          "name": "French's Mustard",
+          "quantity": "1"
+        },
+        {
+          "name": "Hot Sauce Bottle",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "fridge_freezer",
+      "expected": 8,
+      "detected": 9,
+      "item_matches": 5,
+      "quantity_matches": 5,
+      "item_accuracy": 0.625,
+      "quantity_accuracy": 1,
+      "items": [
+        {
+          "expected": {
+            "name": "popsicles",
+            "quantity": 20
+          },
+          "detected": {
+            "Name": "Assorted Ice Pops",
+            "Quantity": "20",
+            "Notes": "top drawer left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "bread",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "vanilla ice cream",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "President's Choice Madagascar Vanilla Ice Cream",
+            "Quantity": "1",
+            "Notes": "top drawer right, front left"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "butterscotch ice cream",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "hotdog buns",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "blueberries",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Wyman's Fresh Frozen Wild Blueberries",
+            "Quantity": "1",
+            "Notes": "top drawer right, back"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "steamed dumplings",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Pork \u0026 Vegetable Steamed Dumplings",
+            "Quantity": "1",
+            "Notes": "bottom drawer right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "frozen vegetables",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Frozen Mixed Vegetables",
+            "Quantity": "1",
+            "Notes": "bottom drawer left"
+          },
+          "quantity_match": true
+        }
+      ],
+      "extra": [
+        {
+          "name": "Chapman's Super Premium Plus Ice Cream",
+          "quantity": "1"
+        },
+        {
+          "name": "Blue Bag of Frozen Food (Gluten Free)",
+          "quantity": "1"
+        },
+        {
+          "name": "Large Ziploc Bag of Frozen Food",
+          "quantity": "1"
+        },
+        {
+          "name": "Bag of Individual Frozen Treats",
+          "quantity": "1"
+        }
+      ]
+    },
+    {
+      "fixture": "upstairs_pantry",
+      "expected": 33,
+      "detected": 30,
+      "item_matches": 20,
+      "quantity_matches": 18,
+      "item_accuracy": 0.6060606060606061,
+      "quantity_accuracy": 0.9,
+      "items": [
+        {
+          "expected": {
+            "name": "brown sugar",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Nespresso Sucre Brun Brown Sugar",
+            "Quantity": "1",
+            "Notes": "top shelf center"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "k cookies",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Kirkland Signature European Cookies",
+            "Quantity": "2",
+            "Notes": "bottom shelf center-left in blue bags"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "pancake mix",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "President's Choice Buttermilk Pancake Mix",
+            "Quantity": "1",
+            "Notes": "top shelf right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "nespresso pods",
+            "quantity": 8
+          },
+          "detected": {
+            "Name": "Nespresso Vertuo Sweet Vanilla Coffee Pods",
+            "Quantity": "1",
+            "Notes": "second shelf far left"
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "fancy molasses",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "hersheys cocoa",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Hershey's Cocoa Powder",
+            "Quantity": "1",
+            "Notes": "second shelf center"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "chicken broth",
+            "quantity": 2
+          },
+          "detected": {
+            "Name": "Campbell's Chicken Broth Cartons",
+            "Quantity": "2",
+            "Notes": "second shelf center-right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "crackers",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Premium Plus Saltine Crackers",
+            "Quantity": "1",
+            "Notes": "bottom shelf right box"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "dates",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "bread crumbs",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Aurora Plain Bread Crumbs",
+            "Quantity": "1",
+            "Notes": "second shelf right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "almond breeze",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Almond Breeze Unsweetened Original Almond Milk",
+            "Quantity": "1",
+            "Notes": "second shelf right"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "pepitas",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Pepitas",
+            "Quantity": "1",
+            "Notes": "third shelf left in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "cashews",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Cashews",
+            "Quantity": "1",
+            "Notes": "third shelf center in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "icing sugar",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Sugar",
+            "Quantity": "1",
+            "Notes": "bottom shelf far left in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "dried cranberries",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Dried Cranberries",
+            "Quantity": "1",
+            "Notes": "third shelf background in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "cocoa powder",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Cocoa Powder",
+            "Quantity": "1",
+            "Notes": "third shelf center in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "raisins",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "President's Choice Raisins",
+            "Quantity": "1",
+            "Notes": "third shelf center jar"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "baking powder",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Baking Soda",
+            "Quantity": "1",
+            "Notes": "bottom shelf center in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "all bran buds",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "cheerios",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Cheerios Cereal",
+            "Quantity": "1",
+            "Notes": "third shelf center-right in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "cinnamon cereal",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "rice",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Minute Rice",
+            "Quantity": "1",
+            "Notes": "third shelf far right in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "icing sugar",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "white flour",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "White Flour",
+            "Quantity": "1",
+            "Notes": "bottom shelf far left in clear container"
+          },
+          "quantity_match": true
+        },
+        {
+          "expected": {
+            "name": "sugar",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "baking soda",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "kirkland cookies",
+            "quantity": 7
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "apple sauce",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "chocolate chip bar",
+            "quantity": 4
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "tostitos",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "premium plus crackers",
+            "quantity": 1
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "snack factory pretzel crisps",
+            "quantity": 2
+          },
+          "quantity_match": false
+        },
+        {
+          "expected": {
+            "name": "popcorn",
+            "quantity": 1
+          },
+          "detected": {
+            "Name": "Popcorn",
+            "Quantity": "1",
+            "Notes": "bottom shelf center-right in Ziploc bag"
+          },
+          "quantity_match": true
+        }
+      ],
+      "extra": [
+        {
+          "name": "Simply Potato Chips",
+          "quantity": "1"
+        },
+        {
+          "name": "Little Bellies Organic Baby Snacks",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Gingerbread Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Double Espresso Dolce Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Decaffeinato Ontuoso Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Half Caffeinato Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Double Espresso Scuro Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Nespresso Vertuo Intenso Coffee Pods",
+          "quantity": "1"
+        },
+        {
+          "name": "Sunny Fruit Organic Dried Figs",
+          "quantity": "1"
+        },
+        {
+          "name": "Pecans",
+          "quantity": "1"
+        }
+      ]
+    }
+  ],
+  "avg_item_accuracy": 0.5784532100366574,
+  "avg_quantity_accuracy": 0.7651461988304092
+}

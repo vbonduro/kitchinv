@@ -183,11 +183,159 @@ func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult, overri
 	}
 }
 
-// namesMatch returns true if either name contains the other, case-insensitively.
+// tokenOverlapThreshold is the minimum Jaccard similarity required for a token
+// overlap match. 0.2 means at least 1 shared meaningful word out of 5 distinct.
+const tokenOverlapThreshold = 0.2
+
+// stopWords are common words excluded from token matching to avoid false positives.
+var stopWords = map[string]bool{
+	// Articles / prepositions (including French ones that appear in brand names)
+	"a": true, "an": true, "the": true, "of": true, "in": true,
+	"and": true, "with": true, "for": true, "sans": true,
+	"de": true, "le": true, "la": true,
+	// Generic container / packaging words
+	"box": true, "bag": true, "pack": true, "package": true,
+	"can": true, "jar": true, "bottle": true, "carton": true, "tub": true,
+	// Generic preparation / state descriptors
+	"mix": true, "frozen": true, "canned": true, "free": true,
+	"fresh": true, "dried": true, "plain": true, "original": true,
+	"organic": true, "whole": true, "light": true, "dark": true,
+	"small": true, "large": true, "medium": true,
+	// Generic food category words that appear in many unrelated items
+	"sauce": true, "drink": true, "beverage": true,
+	// Ice is too generic — appears in "ice cream", "ice pops", "iced tea" etc.
+	"ice": true, "cream": true,
+	// Colours used as descriptors in brand names
+	"red": true, "white": true, "green": true, "blue": true,
+	// Hot/cold descriptors
+	"hot": true, "cold": true,
+	// Long brand name filler words
+	"cafe": true, "torrefaction": true, "francaise": true, "francai": true,
+	"fine": true, "filtered": true, "lactose": true,
+	// Generic food preparation / container descriptors (stemmed forms)
+	"packag": true, // "packaged" stems to "packag"
+	// Generic food category words too broad to be identifying on their own
+	"cheese": true,
+	// Generic soup/stew words that inflate union without helping identification
+	"soup": true, "noodle": true, "broth": true,
+	// Brand-name structural words
+	"own": true, "earth": true,
+	// Chip is too ambiguous (chocolate chip vs potato chip)
+	"chip": true,
+	// Short brand abbreviations / articles that cause false matches
+	"pc": true, "st": true,
+}
+
+// namesMatch returns true if either name contains the other (case-insensitive),
+// or if the token Jaccard similarity meets tokenOverlapThreshold.
 func namesMatch(a, b string) bool {
-	a = strings.ToLower(strings.TrimSpace(a))
-	b = strings.ToLower(strings.TrimSpace(b))
-	return strings.Contains(a, b) || strings.Contains(b, a)
+	al := strings.ToLower(strings.TrimSpace(a))
+	bl := strings.ToLower(strings.TrimSpace(b))
+	if strings.Contains(al, bl) || strings.Contains(bl, al) {
+		return true
+	}
+	return tokenJaccard(al, bl) >= tokenOverlapThreshold
+}
+
+// tokenJaccard computes Jaccard similarity on the word-token sets of two strings,
+// excluding stop words.
+func tokenJaccard(a, b string) float64 {
+	ta := tokenSet(a)
+	tb := tokenSet(b)
+	if len(ta) == 0 && len(tb) == 0 {
+		return 0
+	}
+	intersection := 0
+	for w := range ta {
+		if tb[w] {
+			intersection++
+		}
+	}
+	union := len(ta) + len(tb) - intersection
+	if union == 0 {
+		return 0
+	}
+	return float64(intersection) / float64(union)
+}
+
+// accentMap maps accented runes to their ASCII equivalents for normalization.
+var accentMap = map[rune]rune{
+	'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+	'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+	'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+	'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+	'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+	'ñ': 'n', 'ç': 'c', 'ý': 'y', 'ß': 's',
+}
+
+// normalizeRunes replaces accented characters with their ASCII equivalents.
+func normalizeRunes(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if a, ok := accentMap[r]; ok {
+			b.WriteRune(a)
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// stem applies simple suffix normalization to reduce inflected forms:
+// -ies plurals, sibilant -es plurals, regular -s plurals, possessives,
+// and common spelling/compound variants.
+func stem(w string) string {
+	// Possessive: strip trailing 's (frank's→frank)
+	if strings.HasSuffix(w, "'s") {
+		w = w[:len(w)-2]
+	}
+	switch {
+	case w == "lasagne":
+		return "lasagna"
+	case w == "popsicle" || w == "popsicles":
+		return "pop"
+	case w == "redhot":
+		return "hot" // will be a stop word — effectively strips it; frank still matches
+	case len(w) > 4 && strings.HasSuffix(w, "ies"):
+		return w[:len(w)-3] + "y" // berries→berry, babies→baby
+	case len(w) > 4 && (strings.HasSuffix(w, "shes") ||
+		strings.HasSuffix(w, "ches") ||
+		strings.HasSuffix(w, "xes") ||
+		strings.HasSuffix(w, "zes")):
+		return w[:len(w)-2] // dishes→dish, patches→patch
+	case len(w) > 5 && strings.HasSuffix(w, "ed"):
+		base := w[:len(w)-2]
+		// collapse doubled final consonant: shredded→shreDD→shred
+		if len(base) >= 2 && base[len(base)-1] == base[len(base)-2] {
+			base = base[:len(base)-1]
+		}
+		return base
+	case len(w) > 2 && strings.HasSuffix(w, "s"):
+		return w[:len(w)-1] // pickles→pickle, extracts→extract, noodles→noodle
+	}
+	return w
+}
+
+// tokenSet splits s into lowercase, accent-normalized, stemmed words and returns
+// the set, excluding stop words and single-character tokens.
+// Slash-separated compounds (e.g. "Spices/Extracts") are split into sub-tokens.
+func tokenSet(s string) map[string]bool {
+	s = normalizeRunes(strings.ToLower(strings.TrimSpace(s)))
+	set := make(map[string]bool)
+	for _, w := range strings.Fields(s) {
+		w = strings.TrimRight(w, ".,;:!?'\"/)")
+		w = strings.TrimLeft(w, "('\"")
+		// split slash-compounds into individual tokens
+		parts := strings.Split(w, "/")
+		for _, p := range parts {
+			p = stem(p)
+			if len(p) <= 1 || stopWords[p] {
+				continue
+			}
+			set[p] = true
+		}
+	}
+	return set
 }
 
 // quantityEqual returns true if the detected quantity string equals the expected int.
