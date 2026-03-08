@@ -35,6 +35,9 @@ import (
 	ollamavision "github.com/vbonduro/kitchinv/internal/vision/ollama"
 )
 
+// fileURICache maps fixture name to Gemini File API URI (expires after 48h).
+type fileURICache map[string]string
+
 var imageExts = map[string]string{
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
@@ -72,6 +75,8 @@ func main() {
 	saveFile := flag.String("save", "", "save raw model outputs to this file for offline replay")
 	replayFile := flag.String("replay", "", "replay and rescore a saved raw run instead of calling the API")
 	jsonOut := flag.Bool("json", false, "output results as JSON")
+	uploadFixtures := flag.Bool("upload-fixtures", false, "upload fixture images to Gemini File API and write URIs to cache, then exit")
+	fileURICachePath := flag.String("file-uri-cache", "benchmarks/file-uris.json", "path to cached Gemini file URIs JSON")
 	flag.Parse()
 
 	overrides := loadOverrides(*overridesFile)
@@ -83,10 +88,21 @@ func main() {
 
 	cfg := config.Load()
 
+	if *uploadFixtures {
+		if cfg.GeminiAPIKey == "" {
+			log.Fatal("GEMINI_API_KEY must be set for -upload-fixtures")
+		}
+		uploadFixturesToGemini(cfg.GeminiAPIKey, *fixturesDir, *fileURICachePath)
+		return
+	}
+
 	analyzer, modelName, err := newAnalyzer(cfg)
 	if err != nil {
 		log.Fatalf("failed to create vision analyzer: %v", err)
 	}
+
+	// Load file URI cache for Gemini (enables faster/cheaper benchmark iterations).
+	uriCache := loadFileURICache(*fileURICachePath)
 
 	entries, err := os.ReadDir(*fixturesDir)
 	if err != nil {
@@ -108,19 +124,34 @@ func main() {
 			continue
 		}
 
-		f, err := os.Open(imgPath)
-		if err != nil {
-			log.Printf("skipping %s: failed to open image: %v", entry.Name(), err)
-			continue
+		fmt.Fprintf(os.Stderr, "analysing %s...\n", entry.Name())
+
+		var result *vision.AnalysisResult
+		// Use cached file URI if available and backend is Gemini.
+		if cfg.VisionBackend == "gemini" {
+			if uri, ok := uriCache[entry.Name()]; ok {
+				geminiAnalyzer, ok := analyzer.(*geminivision.GeminiAnalyzer)
+				if ok {
+					fmt.Fprintf(os.Stderr, "  using cached file URI for %s\n", entry.Name())
+					result, err = geminiAnalyzer.AnalyzeWithFileURI(context.Background(), uri, mimeType)
+				}
+			}
 		}
 
-		fmt.Fprintf(os.Stderr, "analysing %s...\n", entry.Name())
-		result, analyzeErr := analyzer.Analyze(context.Background(), f, mimeType)
-		if closeErr := f.Close(); closeErr != nil {
-			log.Printf("warning: failed to close image file %s: %v", imgPath, closeErr)
+		if result == nil {
+			f, openErr := os.Open(imgPath)
+			if openErr != nil {
+				log.Printf("skipping %s: failed to open image: %v", entry.Name(), openErr)
+				continue
+			}
+			result, err = analyzer.Analyze(context.Background(), f, mimeType)
+			if closeErr := f.Close(); closeErr != nil {
+				log.Printf("warning: failed to close image file %s: %v", imgPath, closeErr)
+			}
 		}
-		if analyzeErr != nil {
-			log.Printf("skipping %s: analysis failed: %v", entry.Name(), analyzeErr)
+
+		if err != nil {
+			log.Printf("skipping %s: analysis failed: %v", entry.Name(), err)
 			continue
 		}
 
@@ -148,6 +179,55 @@ func main() {
 
 	summary := buildSummary(cfg.VisionBackend, modelName, results)
 	outputSummary(summary, *jsonOut)
+}
+
+func uploadFixturesToGemini(apiKey, fixturesDir, cachePath string) {
+	entries, err := os.ReadDir(fixturesDir)
+	if err != nil {
+		log.Fatalf("failed to read fixtures directory %q: %v", fixturesDir, err)
+	}
+
+	cache := make(fileURICache)
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		fixturePath := filepath.Join(fixturesDir, entry.Name())
+		_, imgPath, mimeType, err := loadFixture(fixturePath)
+		if err != nil {
+			log.Printf("skipping %s: %v", entry.Name(), err)
+			continue
+		}
+
+		fmt.Fprintf(os.Stderr, "uploading %s...\n", entry.Name())
+		uri, err := geminivision.UploadFile(context.Background(), apiKey, "https://generativelanguage.googleapis.com", imgPath, mimeType)
+		if err != nil {
+			log.Printf("skipping %s: upload failed: %v", entry.Name(), err)
+			continue
+		}
+		cache[entry.Name()] = uri
+		fmt.Fprintf(os.Stderr, "  %s → %s\n", entry.Name(), uri)
+	}
+
+	if err := writeJSON(cachePath, cache); err != nil {
+		log.Fatalf("failed to write file URI cache to %q: %v", cachePath, err)
+	}
+	fmt.Fprintf(os.Stderr, "file URIs written to %s (%d fixtures)\n", cachePath, len(cache))
+}
+
+func loadFileURICache(path string) fileURICache {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var cache fileURICache
+	if err := json.Unmarshal(data, &cache); err != nil {
+		log.Printf("warning: failed to parse file URI cache %q: %v", path, err)
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "loaded %d file URIs from %s\n", len(cache), path)
+	return cache
 }
 
 func replayAndScore(path string, overrides benchmark.Overrides, jsonOut bool) {

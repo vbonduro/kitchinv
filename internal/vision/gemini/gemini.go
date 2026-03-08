@@ -29,6 +29,12 @@ type content struct {
 type part struct {
 	Text       string      `json:"text,omitempty"`
 	InlineData *inlineData `json:"inline_data,omitempty"`
+	FileData   *fileData   `json:"file_data,omitempty"`
+}
+
+type fileData struct {
+	MimeType string `json:"mime_type"`
+	FileURI  string `json:"file_uri"`
 }
 
 type inlineData struct {
@@ -82,6 +88,80 @@ func (a *GeminiAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 					InlineData: &inlineData{
 						MimeType: mimeType,
 						Data:     base64.StdEncoding.EncodeToString(imageData),
+					},
+				},
+				{Text: vision.ClaudeUserPrompt},
+			},
+		}},
+		GenerationConfig: genConfig{
+			ResponseMIMEType: "application/json",
+		},
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v1beta/models/%s:generateContent?key=%s", a.baseURL, a.model, a.apiKey)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call gemini: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Error("failed to close gemini response body", "error", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		errBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("gemini returned status %d: %s", resp.StatusCode, errBody)
+	}
+
+	var respBody response
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(respBody.Candidates) == 0 || len(respBody.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("gemini returned no candidates")
+	}
+
+	responseText := respBody.Candidates[0].Content.Parts[0].Text
+
+	result, err := vision.ParseJSONResponse(responseText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse vision response: %w", err)
+	}
+
+	if result.Status == vision.StatusUnclear {
+		return nil, fmt.Errorf("image is unclear: please retake the photo")
+	}
+
+	return result, nil
+}
+
+// AnalyzeWithFileURI sends a generateContent request using a previously
+// uploaded Gemini File API URI instead of inline base64 data.
+// Intended for benchmark use where the same images are analysed repeatedly.
+func (a *GeminiAnalyzer) AnalyzeWithFileURI(ctx context.Context, fileURI, mimeType string) (*vision.AnalysisResult, error) {
+	body := request{
+		SystemInstruction: &content{
+			Parts: []part{{Text: vision.ClaudeSystemPrompt}},
+		},
+		Contents: []content{{
+			Parts: []part{
+				{
+					FileData: &fileData{
+						MimeType: mimeType,
+						FileURI:  fileURI,
 					},
 				},
 				{Text: vision.ClaudeUserPrompt},
