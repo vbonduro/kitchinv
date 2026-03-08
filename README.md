@@ -16,6 +16,7 @@ kitchinv lets you photograph every storage area in your home (fridge, freezer, p
 - [Quick start (Docker)](#quick-start-docker)
 - [Switching to Claude](#switching-to-claude)
 - [Switching to Gemini](#switching-to-gemini)
+- [Deploying on Unraid](#deploying-on-unraid)
 - [Local development](#local-development)
 - [Configuration](#configuration)
 
@@ -119,6 +120,83 @@ The Gemini model defaults to `gemini-2.5-flash`. Override with `GEMINI_MODEL=gem
 Get an API key at [aistudio.google.com](https://aistudio.google.com/).
 
 > **Note:** The vision prompt is tuned specifically for `gemini-2.5-flash`. Using a different model may reduce item detection accuracy. See [docs/vision-model-benchmark.md](docs/vision-model-benchmark.md) for the full benchmark results and model comparison.
+
+---
+
+## Deploying on Unraid
+
+kitchinv runs well as a Docker container on Unraid. The recommended setup keeps the app off the public internet (access via Tailscale only) and stores API keys in files rather than environment variables (so they don't appear in `docker inspect` or process listings).
+
+### Prerequisites
+
+**1. Tailscale** (strongly recommended)
+
+Install the Tailscale plugin from Unraid Community Applications. Once installed, your Unraid server joins your tailnet and kitchinv is only reachable from your own devices — not the public internet. Do **not** expose port 8080 via your router's port forwarding.
+
+**2. A Gemini API key**
+
+Get one free at [aistudio.google.com](https://aistudio.google.com/). The vision prompt is tuned for `gemini-2.5-flash` — see [docs/vision-model-benchmark.md](docs/vision-model-benchmark.md) for model comparison.
+
+### Step 1: Create the appdata directories
+
+In Unraid's terminal (or via SSH):
+
+```bash
+mkdir -p /mnt/user/appdata/kitchinv/data
+mkdir -p /mnt/user/appdata/kitchinv/secrets
+```
+
+### Step 2: Store your API key securely
+
+Write your Gemini API key to a file with tight permissions:
+
+```bash
+echo -n "YOUR_GEMINI_API_KEY" > /mnt/user/appdata/kitchinv/secrets/gemini_key
+chmod 600 /mnt/user/appdata/kitchinv/secrets/gemini_key
+chown nobody:users /mnt/user/appdata/kitchinv/secrets/gemini_key
+```
+
+This keeps the key out of `docker inspect`, `ps` output, and the Unraid template XML — it's only readable by the container process.
+
+### Step 3: Install via Community Apps template
+
+Add the template URL in Unraid's Community Apps:
+
+```
+https://raw.githubusercontent.com/vbonduro/kitchinv/main/deploy/unraid/kitchinv.xml
+```
+
+Or install manually: in the Docker tab, click **Add Container**, and configure:
+
+| Field | Value |
+|-------|-------|
+| Repository | `ghcr.io/vbonduro/kitchinv` |
+| Port | `8080` → `8080` |
+| Path `/data` | `/mnt/user/appdata/kitchinv/data` |
+| Path `/secrets` | `/mnt/user/appdata/kitchinv/secrets` (read-only) |
+| `VISION_BACKEND` | `gemini` |
+| `GEMINI_API_KEY_FILE` | `/secrets/gemini_key` |
+| `GEMINI_MODEL` | `gemini-2.5-flash` |
+
+### Step 4: Access kitchinv
+
+Once the container is running, open it from any device on your Tailscale network:
+
+```
+http://<unraid-tailscale-ip>:8080
+```
+
+Or set a Tailscale MagicDNS hostname (e.g. `http://unraid:8080`).
+
+### Updating
+
+When a new version is released (tagged on GitHub), update by pulling the new image in the Unraid Docker tab:
+
+1. Click the kitchinv container row
+2. Click **Check for Updates** → **Update**
+3. The container restarts with the new image; your data in `/mnt/user/appdata/kitchinv/data` is preserved
+
+Alternatively, enable **Watchtower** (available in Community Apps) to auto-pull and restart containers when new image versions are published to GHCR.
 
 ---
 
@@ -249,8 +327,10 @@ All configuration is via environment variables. Every variable has a sensible de
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API base URL |
 | `OLLAMA_MODEL` | `moondream` | Ollama vision model name |
 | `CLAUDE_API_KEY` | *(required if backend=claude)* | Anthropic API key |
+| `CLAUDE_API_KEY_FILE` | *(optional)* | Path to file containing Anthropic API key (takes precedence over `CLAUDE_API_KEY`) |
 | `CLAUDE_MODEL` | `claude-opus-4-6` | Claude model ID |
 | `GEMINI_API_KEY` | *(required if backend=gemini)* | Google AI API key |
+| `GEMINI_API_KEY_FILE` | *(optional)* | Path to file containing Google AI API key (takes precedence over `GEMINI_API_KEY`) |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model ID |
 | `PHOTO_BACKEND` | `local` | Photo storage backend (only `local` supported) |
 | `PHOTO_LOCAL_PATH` | `/data/photos` | Directory for uploaded photo files |
