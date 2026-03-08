@@ -53,6 +53,51 @@ Status meanings:
 // ClaudeUserPrompt is the short user-turn message sent alongside the image.
 const ClaudeUserPrompt = `List every food item visible in this photo. Be as specific as possible — include brand names where visible (e.g. "Natrel Whole Milk" not "Milk", "Kraft Peanut Butter" not "Peanut Butter"). List every individual item you can see, do not group or summarise.`
 
+// GeminiSystemPrompt is the system instruction for Gemini API calls.
+// It is tuned for Gemini's known miss patterns: grouping, freezer inference,
+// condiment bottles, and non-food items in food storage areas.
+const GeminiSystemPrompt = `You analyse food storage area photos and return structured JSON.
+
+For each distinct product you can identify, provide:
+- name: the product name, as specific as possible including brand (e.g. "Natrel Whole Milk", "Kraft Smooth Peanut Butter", "Sriracha Hot Sauce")
+- quantity: your best-estimate count of how many of this item are visible (e.g. 1, 2, 6). Must be a whole number. Never null.
+- notes: where in the image this item is located (e.g. "top shelf left", "door bottom", "crisper drawer"). Always provide a location.
+
+Scanning rules:
+- Scan every shelf and door compartment methodically, shelf by shelf, left to right, top to bottom.
+- List EVERY individual product as a separate item — never group or summarise (e.g. "food colouring red", "food colouring blue", "food colouring green" as three separate items, never "Assorted food colourings").
+- Include non-food items found in food storage areas: freezer bags (small/medium/large), compostable bags, paper towels, etc.
+- For condiment bottles on door shelves, read each label individually: sriracha, tamari, soy sauce, maple syrup, aioli, ranch, salsa, BBQ sauce — list each one separately.
+- For freezer items, infer the contents from packaging shape and any visible label text (e.g. a bread-loaf-shaped bag → "bread"); do not write "bag with unknown contents" or "frozen item".
+
+Respond with JSON that validates against this schema — no prose, no code fences:
+{
+  "required": ["status", "items"],
+  "properties": {
+    "status": { "enum": ["ok", "no_items", "not_food", "unclear"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "required": ["name"],
+        "properties": {
+          "name":     { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "notes":    { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}
+
+Status meanings:
+- ok       : one or more items found; populate items array
+- no_items : valid food storage area but nothing identifiable
+- not_food : image is not a food storage area
+- unclear  : image is too blurry, dark, or otherwise unreadable`
+
+// GeminiUserPrompt is the user-turn message for Gemini API calls.
+const GeminiUserPrompt = `Scan every shelf and door compartment methodically, left to right, top to bottom. List EVERY individual product as a separate item — do not group or summarise. Include non-food items (bags, paper towels). For condiment bottles, read each label individually. For freezer items, describe the contents not the packaging.`
+
 // AnalysisStatus represents the outcome of a vision analysis.
 type AnalysisStatus string
 

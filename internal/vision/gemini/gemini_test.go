@@ -156,6 +156,39 @@ func TestGeminiAnalyzeWithFileURI_serverError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGeminiRequestUsesGeminiPrompt(t *testing.T) {
+	var capturedReq request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := json.Unmarshal(body, &capturedReq); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(geminiResp(`{"status":"ok","items":[]}`))
+	}))
+	defer server.Close()
+
+	analyzer := NewGeminiAnalyzer("test-key", "gemini-2.0-flash")
+	analyzer.baseURL = server.URL
+
+	// Test Analyze uses GeminiSystemPrompt, not ClaudeSystemPrompt
+	_, _ = analyzer.Analyze(context.Background(), bytes.NewReader([]byte{0xFF, 0xD8}), "image/jpeg")
+	require.NotNil(t, capturedReq.SystemInstruction)
+	require.NotEmpty(t, capturedReq.SystemInstruction.Parts)
+	assert.Equal(t, vision.GeminiSystemPrompt, capturedReq.SystemInstruction.Parts[0].Text)
+
+	// Test AnalyzeWithFileURI uses GeminiSystemPrompt, not ClaudeSystemPrompt
+	_, _ = analyzer.AnalyzeWithFileURI(context.Background(), "https://files.example.com/abc123", "image/jpeg")
+	require.NotNil(t, capturedReq.SystemInstruction)
+	require.NotEmpty(t, capturedReq.SystemInstruction.Parts)
+	assert.Equal(t, vision.GeminiSystemPrompt, capturedReq.SystemInstruction.Parts[0].Text)
+}
+
 // errReader always returns an error on Read.
 type errReader struct{}
 
