@@ -104,9 +104,9 @@ func (a *ClaudeAnalyzer) Analyze(ctx context.Context, r io.Reader, mimeType stri
 
 	body := request{
 		Model: a.model,
-		// 1024 tokens is well above the expected response for a typical pantry photo
-		// (≈30 items × ~15 tokens each = ~450 tokens), with headroom for verbose models.
-		MaxTokens: 1024,
+		// 4096 tokens covers the largest fixtures (51 items × ~30 tokens each ≈ 1500
+		// tokens), with headroom for verbose Claude output and JSON structure overhead.
+		MaxTokens: 4096,
 		System:    vision.ClaudeSystemPrompt,
 		Messages:  buildMessages(imageData, mimeType),
 	}
