@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>kitchinv</Name>
-  <Repository>ghcr.io/vbonduro/kitchinv</Repository>
+  <Repository>ghcr.io/vbonduro/kitchinv:latest</Repository>
   <Registry>https://ghcr.io</Registry>
   <Network>bridge</Network>
   <Shell>sh</Shell>
@@ -14,65 +14,24 @@
   <TemplateURL>https://raw.githubusercontent.com/vbonduro/kitchinv/main/deploy/unraid/kitchinv.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/vbonduro/kitchinv/main/deploy/unraid/icon.png</Icon>
   <ExtraParams/>
-  <PostArgs/>
-  <CPUset/>
-  <DateInstalled/>
-  <DonateText/>
-  <DonateLink/>
   <Description>Home kitchen inventory manager. Photograph your fridge, freezer, and pantry — kitchinv extracts a searchable food inventory from each photo using a vision AI model.</Description>
-  <Networking>
-    <Mode>bridge</Mode>
-    <Publish>
-      <Port>
-        <HostPort>8080</HostPort>
-        <ContainerPort>8080</ContainerPort>
-        <Protocol>tcp</Protocol>
-      </Port>
-    </Publish>
-  </Networking>
-  <Data>
-    <Volume>
-      <HostDir>/mnt/user/appdata/kitchinv/data</HostDir>
-      <ContainerDir>/data</ContainerDir>
-      <Mode>rw</Mode>
-    </Volume>
-    <Volume>
-      <HostDir>/mnt/user/appdata/kitchinv/secrets</HostDir>
-      <ContainerDir>/secrets</ContainerDir>
-      <Mode>ro</Mode>
-    </Volume>
-  </Data>
-  <Environment>
-    <Variable>
-      <Value>gemini</Value>
-      <Name>VISION_BACKEND</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>/secrets/gemini_key</Value>
-      <Name>GEMINI_API_KEY_FILE</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>gemini-2.5-flash</Value>
-      <Name>GEMINI_MODEL</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>/data/kitchinv.db</Value>
-      <Name>DB_PATH</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>/data/photos</Value>
-      <Name>PHOTO_LOCAL_PATH</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>:8080</Value>
-      <Name>LISTEN_ADDR</Name>
-      <Mode/>
-    </Variable>
-  </Environment>
-  <Labels/>
+
+  <Config Name="Web UI Port" Target="8080" Default="8080" Mode="tcp" Description="Port to access the kitchinv web interface." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/kitchinv/data" Mode="rw" Description="Stores the SQLite database and uploaded photos." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/kitchinv/data</Config>
+
+  <Config Name="Secrets" Target="/secrets" Default="/mnt/user/appdata/kitchinv/secrets" Mode="ro" Description="Directory containing API key files (e.g. gemini_key). See README for setup instructions." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/kitchinv/secrets</Config>
+
+  <Config Name="VISION_BACKEND" Target="VISION_BACKEND" Default="gemini" Mode="" Description="Vision provider: gemini, claude, or ollama." Type="Variable" Display="always" Required="true" Mask="false">gemini</Config>
+
+  <Config Name="GEMINI_API_KEY_FILE" Target="GEMINI_API_KEY_FILE" Default="/secrets/gemini_key" Mode="" Description="Path to file containing your Google AI API key. Create with: echo -n 'YOUR_KEY' > /mnt/user/appdata/kitchinv/secrets/gemini_key &amp;&amp; chmod 600 /mnt/user/appdata/kitchinv/secrets/gemini_key" Type="Variable" Display="always" Required="false" Mask="false">/secrets/gemini_key</Config>
+
+  <Config Name="GEMINI_MODEL" Target="GEMINI_MODEL" Default="gemini-2.5-flash" Mode="" Description="Gemini model to use. The prompt is tuned for gemini-2.5-flash." Type="Variable" Display="always" Required="false" Mask="false">gemini-2.5-flash</Config>
+
+  <Config Name="CLAUDE_API_KEY_FILE" Target="CLAUDE_API_KEY_FILE" Default="" Mode="" Description="Path to file containing your Anthropic API key. Only needed if VISION_BACKEND=claude." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+
+  <Config Name="CLAUDE_MODEL" Target="CLAUDE_MODEL" Default="claude-opus-4-6" Mode="" Description="Claude model to use. Only needed if VISION_BACKEND=claude." Type="Variable" Display="advanced" Required="false" Mask="false">claude-opus-4-6</Config>
+
+  <Config Name="LISTEN_ADDR" Target="LISTEN_ADDR" Default=":8080" Mode="" Description="HTTP listen address inside the container." Type="Variable" Display="advanced" Required="false" Mask="false">:8080</Config>
+
 </Container>
