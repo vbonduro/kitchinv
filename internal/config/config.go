@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"strings"
 )
@@ -56,6 +57,7 @@ func getSecret(envKey, fileEnvKey string) string {
 	if path, exists := os.LookupEnv(fileEnvKey); exists && path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
+			slog.Error("failed to read secret file", "env", fileEnvKey, "path", path, "error", err)
 			return ""
 		}
 		return strings.TrimSpace(string(data))
