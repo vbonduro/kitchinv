@@ -152,31 +152,22 @@ Write your Gemini API key to a file with tight permissions:
 
 ```bash
 echo -n "YOUR_GEMINI_API_KEY" > /mnt/user/appdata/kitchinv/secrets/gemini_key
+chown 100:100 /mnt/user/appdata/kitchinv/secrets/gemini_key
 chmod 600 /mnt/user/appdata/kitchinv/secrets/gemini_key
-chown nobody:users /mnt/user/appdata/kitchinv/secrets/gemini_key
 ```
 
-This keeps the key out of `docker inspect`, `ps` output, and the Unraid template XML — it's only readable by the container process.
+The container runs as UID 100 (`kitchinv` user). Setting ownership to `100:100` ensures the container process can read the file. This keeps the key out of `docker inspect`, `ps` output, and the Unraid template XML.
 
-### Step 3: Install via Community Apps template
+### Step 3: Install the template
 
-Add the template URL in Unraid's Community Apps:
+Download the template file to Unraid's user templates directory:
 
+```bash
+wget -P /boot/config/plugins/dockerMan/templates-user/ \
+  https://raw.githubusercontent.com/vbonduro/kitchinv/main/deploy/unraid/kitchinv.xml
 ```
-https://raw.githubusercontent.com/vbonduro/kitchinv/main/deploy/unraid/kitchinv.xml
-```
 
-Or install manually: in the Docker tab, click **Add Container**, and configure:
-
-| Field | Value |
-|-------|-------|
-| Repository | `ghcr.io/vbonduro/kitchinv` |
-| Port | `8080` → `8080` |
-| Path `/data` | `/mnt/user/appdata/kitchinv/data` |
-| Path `/secrets` | `/mnt/user/appdata/kitchinv/secrets` (read-only) |
-| `VISION_BACKEND` | `gemini` |
-| `GEMINI_API_KEY_FILE` | `/secrets/gemini_key` |
-| `GEMINI_MODEL` | `gemini-2.5-flash` |
+Then in the Unraid **Docker** tab, click **Add Container**, select the **kitchinv** template from the template dropdown, verify the settings, and click **Apply**.
 
 ### Step 4: Access kitchinv
 
