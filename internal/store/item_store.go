@@ -18,10 +18,10 @@ func NewItemStore(db *sql.DB) *ItemStore {
 	return &ItemStore{db: db}
 }
 
-func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes string) (*domain.Item, error) {
+func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes, source string) (*domain.Item, error) {
 	result, err := s.db.ExecContext(ctx, `
-		INSERT INTO items (area_id, photo_id, name, quantity, notes) VALUES (?, ?, ?, ?, ?)
-	`, areaID, photoID, name, quantity, notes)
+		INSERT INTO items (area_id, photo_id, name, quantity, notes, source) VALUES (?, ?, ?, ?, ?, ?)
+	`, areaID, photoID, name, quantity, notes, source)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create item: %w", err)
 	}
@@ -37,8 +37,8 @@ func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, na
 func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error) {
 	item := &domain.Item{}
 	err := s.db.QueryRowContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, notes, created_at FROM items WHERE id = ?
-	`, id).Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.CreatedAt)
+		SELECT id, area_id, photo_id, name, quantity, notes, source, created_at, updated_at FROM items WHERE id = ?
+	`, id).Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -52,7 +52,7 @@ func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error)
 
 func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, notes, created_at FROM items
+		SELECT id, area_id, photo_id, name, quantity, notes, source, created_at, updated_at FROM items
 		WHERE area_id = ? ORDER BY name ASC
 	`, areaID)
 	if err != nil {
@@ -67,7 +67,7 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
-		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, item)
@@ -85,7 +85,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	pattern := "%" + strings.ToLower(query) + "%"
 
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.notes, i.created_at FROM items i
+		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.notes, i.source, i.created_at, i.updated_at FROM items i
 		INNER JOIN areas a ON i.area_id = a.id
 		WHERE LOWER(i.name) LIKE ?
 		ORDER BY i.name ASC
@@ -102,7 +102,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
-		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, item)
@@ -117,7 +117,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 
 func (s *ItemStore) Update(ctx context.Context, id int64, name, quantity, notes string) error {
 	result, err := s.db.ExecContext(ctx, `
-		UPDATE items SET name = ?, quantity = ?, notes = ? WHERE id = ?
+		UPDATE items SET name = ?, quantity = ?, notes = ?, updated_at = datetime('now') WHERE id = ?
 	`, name, quantity, notes, id)
 	if err != nil {
 		return fmt.Errorf("failed to update item: %w", err)

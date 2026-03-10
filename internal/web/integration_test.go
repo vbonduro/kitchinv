@@ -142,6 +142,7 @@ func newTestServer(t *testing.T, vis vision.VisionAnalyzer) (*httptest.Server, f
 		store.NewAreaStore(database),
 		store.NewPhotoStore(database),
 		store.NewItemStore(database),
+		store.NewItemEditStore(database),
 		vis,
 		newMemPhotoStore(),
 		slog.Default(),

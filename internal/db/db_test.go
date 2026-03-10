@@ -9,7 +9,7 @@ import (
 )
 
 func TestOpenInMemory(t *testing.T) {
-	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on")
+	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_pragma=foreign_keys(1)")
 	require.NoError(t, err)
 	t.Cleanup(func() { assert.NoError(t, db.Close()) })
 
@@ -18,7 +18,7 @@ func TestOpenInMemory(t *testing.T) {
 }
 
 func TestMigrationsApply(t *testing.T) {
-	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on")
+	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_pragma=foreign_keys(1)")
 	require.NoError(t, err)
 	t.Cleanup(func() { assert.NoError(t, db.Close()) })
 

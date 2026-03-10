@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS item_edits;
+ALTER TABLE items DROP COLUMN updated_at;
+ALTER TABLE items DROP COLUMN source;

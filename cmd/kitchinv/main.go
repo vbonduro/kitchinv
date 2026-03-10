@@ -50,6 +50,7 @@ func main() {
 	areaStore := store.NewAreaStore(database)
 	photoStore := store.NewPhotoStore(database)
 	itemStore := store.NewItemStore(database)
+	itemEditStore := store.NewItemEditStore(database)
 
 	visionAnalyzer, err := newVisionAnalyzer(cfg, logger)
 	if err != nil {
@@ -63,7 +64,7 @@ func main() {
 		return
 	}
 
-	areaService := service.NewAreaService(areaStore, photoStore, itemStore, visionAnalyzer, photoStg, logger).WithDB(database)
+	areaService := service.NewAreaService(areaStore, photoStore, itemStore, itemEditStore, visionAnalyzer, photoStg, logger).WithDB(database)
 	server := web.NewServer(areaService, templates.FS, photoStg, logger)
 	if cfg.TestMode {
 		server.EnableTestMode(database, cfg.PhotoPath)
