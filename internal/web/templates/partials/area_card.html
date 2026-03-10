@@ -118,5 +118,5 @@
         </div>
     </div>
 </div>
-<script>setupDragDrop({{.ID}});setupPhotoTouchToggle({{.ID}});</script>
+<script>setupDragDrop({{.ID}});setupPhotoTouchToggle({{.ID}});{{if and .Photo (not .Items)}}pollAnalysing({{.ID}});{{end}}</script>
 {{end}}

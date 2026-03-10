@@ -174,6 +174,30 @@ func (s *Server) handleDeleteArea(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleGetAreaCard(w http.ResponseWriter, r *http.Request) {
+	areaID, err := parseID(r)
+	if err != nil {
+		http.Error(w, "invalid area id", http.StatusBadRequest)
+		return
+	}
+
+	area, items, photo, err := s.service.GetAreaWithItems(r.Context(), areaID)
+	if err != nil {
+		http.Error(w, "failed to get area", http.StatusInternalServerError)
+		s.logger.Error("get area card failed", "area_id", areaID, "error", err)
+		return
+	}
+	if area == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	summary := &service.AreaSummary{Area: area, Photo: photo, Items: items}
+	if err := s.renderPartial(w, "partials/area_card.html", summary); err != nil {
+		s.logger.Error("render partial failed", "error", err)
+	}
+}
+
 func (s *Server) handleGetAreaItems(w http.ResponseWriter, r *http.Request) {
 	areaID, err := parseID(r)
 	if err != nil {

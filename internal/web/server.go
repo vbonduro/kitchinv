@@ -84,6 +84,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("DELETE /areas/{id}/photo", s.handleDeletePhoto)
 	s.mux.HandleFunc("POST /areas/{id}/photos", s.handleUploadPhoto)
 	s.mux.HandleFunc("GET /areas/{id}/photo", s.handleGetPhoto)
+	s.mux.HandleFunc("GET /areas/{id}/card", s.handleGetAreaCard)
 	s.mux.HandleFunc("GET /areas/{id}/items", s.handleGetAreaItems)
 	s.mux.HandleFunc("POST /areas/{id}/items", s.handleCreateItem)
 	s.mux.HandleFunc("PUT /areas/{id}/items/{itemId}", s.handleUpdateItem)
