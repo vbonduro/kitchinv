@@ -802,6 +802,10 @@
 
     /* ── Rename area ────────────────────────────────────── */
     function startRenameArea(areaID) {
+        if (_uploadsInProgress.has(areaID)) {
+            showToast('Upload in progress — please wait before renaming');
+            return;
+        }
         var nameEl = document.querySelector('[data-testid="area-name-' + areaID + '"]');
         if (!nameEl) return;
         var current = nameEl.textContent;
@@ -859,6 +863,8 @@
     }
 
     /* ── Photo upload + SSE streaming ──────────────────── */
+    var _uploadsInProgress = new Set();
+
     function triggerUpload(areaID) {
         var input = document.querySelector('[data-testid="photo-input-' + areaID + '"]');
         if (input) input.click();
@@ -921,8 +927,11 @@
     }
 
     function startStream(areaID, file) {
+        if (_uploadsInProgress.has(areaID)) return;
+        _uploadsInProgress.add(areaID);
+
         var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
-        if (!card) return;
+        if (!card) { _uploadsInProgress.delete(areaID); return; }
 
         var photoSection = card.querySelector('.area-photo-section') || card.querySelector('.upload-zone');
         var itemsBody = card.querySelector('.items-tbody');
@@ -978,6 +987,7 @@
         function finishStream(error) {
             if (streamFinished) return;
             streamFinished = true;
+            _uploadsInProgress.delete(areaID);
             // Re-enable file input.
             if (fileInput) fileInput.disabled = false;
 

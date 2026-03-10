@@ -63,7 +63,7 @@ func main() {
 		return
 	}
 
-	areaService := service.NewAreaService(areaStore, photoStore, itemStore, visionAnalyzer, photoStg, logger)
+	areaService := service.NewAreaService(areaStore, photoStore, itemStore, visionAnalyzer, photoStg, logger).WithDB(database)
 	server := web.NewServer(areaService, templates.FS, photoStg, logger)
 	if cfg.TestMode {
 		server.EnableTestMode(database, cfg.PhotoPath)

@@ -3,10 +3,12 @@ package service
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
@@ -46,12 +48,14 @@ type itemRepository interface {
 }
 
 type AreaService struct {
-	areaStore  areaRepository
-	photoStore photoRepository
-	itemStore  itemRepository
-	visionAPI  vision.VisionAnalyzer
-	photoStg   photostore.PhotoStore
-	logger     *slog.Logger
+	areaStore   areaRepository
+	photoStore  photoRepository
+	itemStore   itemRepository
+	visionAPI   vision.VisionAnalyzer
+	photoStg    photostore.PhotoStore
+	logger      *slog.Logger
+	db          *sql.DB
+	uploadLocks sync.Map // key: int64 areaID → *sync.Mutex
 }
 
 func NewAreaService(
@@ -70,6 +74,20 @@ func NewAreaService(
 		photoStg:   photoStg,
 		logger:     logger,
 	}
+}
+
+// WithDB sets the *sql.DB used for transactional item replacement.
+// Must be called before UploadPhoto is used.
+func (s *AreaService) WithDB(db *sql.DB) *AreaService {
+	s.db = db
+	return s
+}
+
+func (s *AreaService) lockForArea(areaID int64) func() {
+	v, _ := s.uploadLocks.LoadOrStore(areaID, &sync.Mutex{})
+	mu := v.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
 }
 
 func (s *AreaService) CreateArea(ctx context.Context, name string) (*domain.Area, error) {
@@ -124,6 +142,8 @@ func (s *AreaService) DeleteArea(ctx context.Context, areaID int64) error {
 
 // UploadPhoto analyzes the image, saves it to storage, replaces the area's items, and
 // returns the newly created photo record and detected items.
+// Concurrent calls for the same areaID are serialised; concurrent calls for different
+// areas run in parallel.
 func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error) {
 	s.logger.Info("upload photo started", "area_id", areaID, "mime_type", mimeType, "bytes", len(imageData))
 
@@ -151,28 +171,90 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	}
 	s.logger.Debug("photo saved", "area_id", areaID, "storage_key", storageKey)
 
+	// Serialise the write sequence per area: create photo record, delete old
+	// items, insert new items. This prevents concurrent uploads to the same
+	// area from interleaving their delete+insert sequences and corrupting data.
+	unlock := s.lockForArea(areaID)
+	defer unlock()
+
 	photo, err := s.photoStore.Create(ctx, areaID, storageKey, mimeType)
 	if err != nil {
 		_ = s.photoStg.Delete(ctx, storageKey)
 		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
 	}
 
-	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
-		return photo, nil, fmt.Errorf("failed to delete old items: %w", err)
-	}
-
-	items := make([]*domain.Item, 0, len(result.Items))
-	for _, detected := range result.Items {
-		item, err := s.itemStore.Create(ctx, areaID, &photo.ID, detected.Name, detected.Quantity, detected.Notes)
-		if err != nil {
-			s.logger.Error("failed to create item", "name", detected.Name, "error", err)
-			continue
-		}
-		items = append(items, item)
+	items, err := s.replaceItems(ctx, areaID, photo.ID, result.Items)
+	if err != nil {
+		return photo, nil, err
 	}
 
 	s.logger.Info("upload photo complete", "area_id", areaID, "items_stored", len(items))
 	return photo, items, nil
+}
+
+// replaceItems atomically deletes all existing items for an area and inserts the
+// newly detected ones. If a *sql.DB is available it uses a transaction; otherwise
+// it falls back to non-transactional execution (test environments without WithDB).
+func (s *AreaService) replaceItems(ctx context.Context, areaID, photoID int64, detected []vision.DetectedItem) ([]*domain.Item, error) {
+	if s.db != nil {
+		return s.replaceItemsTx(ctx, areaID, photoID, detected)
+	}
+	// Fallback (tests without a DB reference): non-transactional but still
+	// protected by the per-area lock acquired in UploadPhoto.
+	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
+		return nil, fmt.Errorf("failed to delete old items: %w", err)
+	}
+	items := make([]*domain.Item, 0, len(detected))
+	for _, d := range detected {
+		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, d.Notes)
+		if err != nil {
+			s.logger.Error("failed to create item", "name", d.Name, "error", err)
+			continue
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64, detected []vision.DetectedItem) ([]*domain.Item, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM items WHERE area_id = ?`, areaID); err != nil {
+		return nil, fmt.Errorf("failed to delete old items: %w", err)
+	}
+
+	items := make([]*domain.Item, 0, len(detected))
+	for _, d := range detected {
+		result, err := tx.ExecContext(ctx,
+			`INSERT INTO items (area_id, photo_id, name, quantity, notes) VALUES (?, ?, ?, ?, ?)`,
+			areaID, photoID, d.Name, d.Quantity, d.Notes)
+		if err != nil {
+			s.logger.Error("failed to create item", "name", d.Name, "error", err)
+			continue
+		}
+		id, err := result.LastInsertId()
+		if err != nil {
+			s.logger.Error("failed to get item id", "name", d.Name, "error", err)
+			continue
+		}
+		items = append(items, &domain.Item{
+			ID:       id,
+			AreaID:   areaID,
+			PhotoID:  &photoID,
+			Name:     d.Name,
+			Quantity: d.Quantity,
+			Notes:    d.Notes,
+		})
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return items, nil
 }
 
 
