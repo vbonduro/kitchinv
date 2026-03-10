@@ -140,10 +140,10 @@ func (s *AreaService) DeleteArea(ctx context.Context, areaID int64) error {
 	return s.areaStore.Delete(ctx, areaID)
 }
 
-// UploadPhoto analyzes the image, saves it to storage, replaces the area's items, and
-// returns the newly created photo record and detected items.
-// Concurrent calls for the same areaID are serialised; concurrent calls for different
-// areas run in parallel.
+// UploadPhoto saves the photo to storage and commits the DB record before running
+// vision analysis, so a page refresh during analysis sees Photo&&!Items (analysing
+// state) and resumes polling. Concurrent calls for the same areaID are serialised;
+// concurrent calls for different areas run in parallel.
 func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error) {
 	s.logger.Info("upload photo started", "area_id", areaID, "mime_type", mimeType, "bytes", len(imageData))
 
@@ -155,16 +155,8 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 		return nil, nil, fmt.Errorf("area not found")
 	}
 
-	s.logger.Info("vision analysis started", "area_id", areaID)
-	result, err := s.visionAPI.Analyze(ctx, bytes.NewReader(imageData), mimeType)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to analyze image: %w", err)
-	}
-	s.logger.Info("vision analysis complete", "area_id", areaID, "status", result.Status, "items_detected", len(result.Items))
-	if result.Status != vision.StatusOK && result.Status != "" {
-		s.logger.Info("vision analysis non-ok result", "area_id", areaID, "status", result.Status)
-	}
-
+	// Save photo and commit the DB record before calling the vision API so
+	// that a client disconnect/refresh sees Photo&&!Items and polls for results.
 	storageKey, err := s.photoStg.Save(ctx, fmt.Sprintf("area_%d", areaID), mimeType, bytes.NewReader(imageData))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to save photo: %w", err)
@@ -181,6 +173,20 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	if err != nil {
 		_ = s.photoStg.Delete(ctx, storageKey)
 		return nil, nil, fmt.Errorf("failed to create photo record: %w", err)
+	}
+
+	s.logger.Info("vision analysis started", "area_id", areaID)
+	result, err := s.visionAPI.Analyze(ctx, bytes.NewReader(imageData), mimeType)
+	if err != nil {
+		if delErr := s.photoStore.Delete(ctx, photo.ID); delErr != nil {
+			s.logger.Error("failed to delete photo record after analysis failure", "photo_id", photo.ID, "error", delErr)
+		}
+		_ = s.photoStg.Delete(ctx, storageKey)
+		return nil, nil, fmt.Errorf("failed to analyze image: %w", err)
+	}
+	s.logger.Info("vision analysis complete", "area_id", areaID, "status", result.Status, "items_detected", len(result.Items))
+	if result.Status != vision.StatusOK && result.Status != "" {
+		s.logger.Info("vision analysis non-ok result", "area_id", areaID, "status", result.Status)
 	}
 
 	items, err := s.replaceItems(ctx, areaID, photo.ID, result.Items)
