@@ -178,8 +178,10 @@ func (s *AreaService) UploadPhoto(ctx context.Context, areaID int64, imageData [
 	s.logger.Info("vision analysis started", "area_id", areaID)
 	result, err := s.visionAPI.Analyze(ctx, bytes.NewReader(imageData), mimeType)
 	if err != nil {
+		// Roll back the photo record and storage file so the area reverts to
+		// the upload zone rather than being stuck in the analysing state.
 		if delErr := s.photoStore.Delete(ctx, photo.ID); delErr != nil {
-			s.logger.Error("failed to delete photo record after analysis failure", "photo_id", photo.ID, "error", delErr)
+			s.logger.Error("failed to delete photo record after analysis failure", "area_id", areaID, "error", delErr)
 		}
 		_ = s.photoStg.Delete(ctx, storageKey)
 		return nil, nil, fmt.Errorf("failed to analyze image: %w", err)
