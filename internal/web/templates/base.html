@@ -1065,6 +1065,36 @@
         }).catch(function() { showToast('Failed to remove photo'); });
     }
 
+    /* ── Poll for items after page load during analysis ── */
+    function pollAnalysing(areaID) {
+        var interval = setInterval(function() {
+            var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+            if (!card) { clearInterval(interval); return; }
+            // Stop polling if the analysing overlay is gone (another tab finished it).
+            if (!card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]')) {
+                clearInterval(interval);
+                return;
+            }
+            fetch('/areas/' + areaID + '/items')
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    // Empty response means analysis still in progress.
+                    if (!html || !html.trim()) return;
+                    clearInterval(interval);
+                    // Rebuild the card from the server so photo controls and
+                    // items section are all correct.
+                    fetch('/areas/' + areaID + '/card')
+                        .then(function(r) { return r.text(); })
+                        .then(function(cardHtml) {
+                            var c = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+                            if (c) c.outerHTML = cardHtml;
+                        })
+                        .catch(function(err) { console.error('poll card fetch failed:', err); });
+                })
+                .catch(function(err) { console.error('poll items fetch failed:', err); });
+        }, 3000);
+    }
+
     /* ── Add item ──────────────────────────────────────── */
     function addItem(evt, areaID) {
         if (evt.key && evt.key !== 'Enter') return;

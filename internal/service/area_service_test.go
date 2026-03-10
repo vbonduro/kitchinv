@@ -230,6 +230,38 @@ func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAreaServiceUploadPhoto_VisionError_RollsBackPhoto(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	photoStg := newStubPhotoStore()
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		&stubVision{err: errors.New("vision unavailable")},
+		photoStg,
+		slog.Default(),
+	)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	_, _, err = svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.Error(t, err)
+
+	// Area should have no photo — the photo record and storage file must be
+	// rolled back so the area reverts to the upload zone, not stuck analysing.
+	_, _, photo, err := svc.GetAreaWithItems(ctx, area.ID)
+	require.NoError(t, err)
+	assert.Nil(t, photo, "photo record should be rolled back after vision failure")
+
+	// Storage file should also be gone.
+	assert.Empty(t, photoStg.saved, "photo storage file should be deleted after vision failure")
+}
+
 func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)

@@ -115,6 +115,20 @@ func (m *memPhotoStore) Delete(_ context.Context, key string) error {
 	return nil
 }
 
+// blockingVision signals ready when Analyze is called, then blocks until
+// release is closed, allowing tests to inspect intermediate server state.
+type blockingVision struct {
+	ready   chan struct{}
+	release chan struct{}
+	result  *vision.AnalysisResult
+}
+
+func (b *blockingVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
+	close(b.ready)
+	<-b.release
+	return b.result, nil
+}
+
 // newTestServer sets up a real web.Server backed by in-memory SQLite and the
 // provided vision stub. Returns the test server and a cleanup function.
 func newTestServer(t *testing.T, vis vision.VisionAnalyzer) (*httptest.Server, func()) {
@@ -530,6 +544,103 @@ func TestIntegration_Search(t *testing.T) {
 
 // TestIntegration_RenameArea_DuplicateName verifies that PUT /areas/{id} with a
 // name already used by another area returns 409 with a descriptive message.
+func TestIntegration_GetAreaCard_NoPhoto(t *testing.T) {
+	srv, cleanup := newTestServer(t, &failingVision{err: errors.New("unused")})
+	t.Cleanup(cleanup)
+
+	createArea(t, srv, "Pantry")
+
+	resp, err := http.Get(srv.URL + "/areas/1/card")
+	if err != nil {
+		t.Fatalf("GET /areas/1/card: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	b, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, b)
+	}
+	html := string(b)
+	if !strings.Contains(html, "area-card") {
+		t.Errorf("expected area-card in response, got: %s", html)
+	}
+	if !strings.Contains(html, "upload-zone") {
+		t.Errorf("expected upload-zone (no photo state), got: %s", html)
+	}
+	if strings.Contains(html, "analyzing-indicator") {
+		t.Errorf("unexpected analyzing-indicator with no photo: %s", html)
+	}
+}
+
+func TestIntegration_GetAreaCard_AnalysingState_ShowsOverlay(t *testing.T) {
+	// A slow vision stub that blocks until released, so we can inspect the
+	// area card while the photo is committed but items not yet written.
+	ready := make(chan struct{})
+	release := make(chan struct{})
+	slowVis := &blockingVision{
+		ready:   ready,
+		release: release,
+		result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{{Name: "Milk", Quantity: "1"}},
+		},
+	}
+
+	srv, cleanup := newTestServer(t, slowVis)
+	t.Cleanup(cleanup)
+
+	createArea(t, srv, "Fridge")
+
+	// Start upload in background — it will block in vision analysis.
+	uploadDone := make(chan struct{})
+	go func() {
+		defer close(uploadDone)
+		body, contentType := buildMultipartBody(t, minimalJPEG)
+		resp, err := http.Post(srv.URL+"/areas/1/photos", contentType, body)
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	// Wait until the photo is saved and vision analysis has started.
+	<-ready
+
+	// At this point the area has a photo but no items — analysing state.
+	resp, err := http.Get(srv.URL + "/areas/1/card")
+	if err != nil {
+		t.Fatalf("GET /areas/1/card: %v", err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	html := string(b)
+
+	if !strings.Contains(html, "analyzing-indicator-1") {
+		t.Errorf("expected analyzing-indicator in analysing state, got: %s", html)
+	}
+	if strings.Contains(html, "upload-zone") {
+		t.Errorf("unexpected upload-zone during analysis: %s", html)
+	}
+
+	// Release the vision stub and wait for upload to finish.
+	close(release)
+	<-uploadDone
+
+	// After analysis completes, card should show items, no overlay.
+	resp, err = http.Get(srv.URL + "/areas/1/card")
+	if err != nil {
+		t.Fatalf("GET /areas/1/card after complete: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	b, _ = io.ReadAll(resp.Body)
+	html = string(b)
+
+	if strings.Contains(html, "analyzing-indicator") {
+		t.Errorf("unexpected analyzing-indicator after analysis complete: %s", html)
+	}
+	if !strings.Contains(html, "Milk") {
+		t.Errorf("expected item 'Milk' after analysis complete, got: %s", html)
+	}
+}
+
 func TestIntegration_RenameArea_DuplicateName(t *testing.T) {
 	srv, cleanup := newTestServer(t, &failingVision{err: errors.New("unused")})
 	t.Cleanup(cleanup)
