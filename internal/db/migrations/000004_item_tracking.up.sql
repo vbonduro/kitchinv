@@ -1,5 +1,6 @@
 ALTER TABLE items ADD COLUMN source     TEXT NOT NULL DEFAULT 'ai' CHECK(source IN ('ai', 'user'));
-ALTER TABLE items ADD COLUMN updated_at DATETIME NOT NULL DEFAULT (datetime('now'));
+ALTER TABLE items ADD COLUMN updated_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00';
+UPDATE items SET updated_at = created_at;
 
 CREATE TABLE item_edits (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
