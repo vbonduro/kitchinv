@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,9 +26,20 @@ func (s *stubVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.
 	return s.result, s.err
 }
 
+// chanVision is a VisionAnalyzer that reads results from a channel,
+// allowing tests to control what each concurrent call returns.
+type chanVision struct {
+	ch chan *vision.AnalysisResult
+}
+
+func (c *chanVision) Analyze(_ context.Context, _ io.Reader, _ string) (*vision.AnalysisResult, error) {
+	return <-c.ch, nil
+}
+
 // stubPhotoStore is a minimal in-memory photostore.PhotoStore for tests.
 type stubPhotoStore struct {
-	saved  map[string][]byte
+	mu      sync.Mutex
+	saved   map[string][]byte
 	saveErr error
 }
 
@@ -41,12 +53,16 @@ func (s *stubPhotoStore) Save(_ context.Context, prefix, _ string, r io.Reader) 
 	}
 	data, _ := io.ReadAll(r)
 	key := prefix + "/photo.jpg"
+	s.mu.Lock()
 	s.saved[key] = data
+	s.mu.Unlock()
 	return key, nil
 }
 
 func (s *stubPhotoStore) Get(_ context.Context, key string) (io.ReadCloser, string, error) {
+	s.mu.Lock()
 	data, ok := s.saved[key]
+	s.mu.Unlock()
 	if !ok {
 		return nil, "", errors.New("not found")
 	}
@@ -54,7 +70,9 @@ func (s *stubPhotoStore) Get(_ context.Context, key string) (io.ReadCloser, stri
 }
 
 func (s *stubPhotoStore) Delete(_ context.Context, key string) error {
+	s.mu.Lock()
 	delete(s.saved, key)
+	s.mu.Unlock()
 	return nil
 }
 
@@ -384,6 +402,99 @@ func TestAreaServiceDeleteItem(t *testing.T) {
 
 	err = svc.DeleteItem(ctx, item.ID)
 	require.NoError(t, err)
+}
+
+func TestAreaServiceUploadPhoto_ConcurrentSameArea_DoesNotCorruptItems(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	const numUploads = 5
+	cv := &chanVision{ch: make(chan *vision.AnalysisResult, numUploads)}
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		cv,
+		newStubPhotoStore(),
+		slog.Default(),
+	)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	// Each upload will return a distinct single-item result.
+	sets := make([][]vision.DetectedItem, numUploads)
+	for i := range sets {
+		sets[i] = []vision.DetectedItem{{Name: "Item from upload", Quantity: string(rune('A' + i))}}
+	}
+
+	var wg sync.WaitGroup
+	for i := range sets {
+		wg.Add(1)
+		cv.ch <- &vision.AnalysisResult{Items: sets[i]}
+		go func() {
+			defer wg.Done()
+			_, _, err := svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+			assert.NoError(t, err)
+		}()
+	}
+	wg.Wait()
+
+	// After all uploads, items must belong to exactly one upload's result set —
+	// no mixing of items from different uploads.
+	items, err := svc.SearchItems(ctx, "Item from upload")
+	require.NoError(t, err)
+	assert.Len(t, items, 1, "expected items from exactly one upload, got mixed results")
+}
+
+func TestAreaServiceUploadPhoto_ConcurrentDifferentAreas_DoNotInterfere(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	const numAreas = 5
+	cv := &chanVision{ch: make(chan *vision.AnalysisResult, numAreas)}
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		cv,
+		newStubPhotoStore(),
+		slog.Default(),
+	)
+	ctx := context.Background()
+
+	areaIDs := make([]int64, numAreas)
+	for i := range areaIDs {
+		a, err := svc.CreateArea(ctx, "Area "+string(rune('A'+i)))
+		require.NoError(t, err)
+		areaIDs[i] = a.ID
+		cv.ch <- &vision.AnalysisResult{Items: []vision.DetectedItem{
+			{Name: "UniqueItem" + string(rune('A'+i)), Quantity: "1"},
+		}}
+	}
+
+	var wg sync.WaitGroup
+	for _, id := range areaIDs {
+		wg.Add(1)
+		go func(areaID int64) {
+			defer wg.Done()
+			_, _, err := svc.UploadPhoto(ctx, areaID, []byte{0xFF, 0xD8}, "image/jpeg")
+			assert.NoError(t, err)
+		}(id)
+	}
+	wg.Wait()
+
+	// Each area must have exactly its own item.
+	for i, id := range areaIDs {
+		items, err := svc.SearchItems(ctx, "UniqueItem"+string(rune('A'+i)))
+		require.NoError(t, err)
+		assert.Len(t, items, 1, "area %d should have exactly 1 item", id)
+	}
 }
 
 func TestAreaServiceListAreasWithItems(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -63,6 +64,12 @@ func Open(dbPath string) (*sql.DB, error) {
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
+
+	// Configure connection pool. SQLite WAL allows concurrent reads with a
+	// single writer; 10 open connections is sufficient for a home server.
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	// Run migrations
 	if err := runMigrations(db); err != nil {
