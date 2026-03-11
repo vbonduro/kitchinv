@@ -238,11 +238,18 @@
             z-index: 10;
             box-shadow: 0 4px 8px -2px rgba(0,0,0,0.12);
         }
+        .area-card[data-pinned] .item-table thead th {
+            position: sticky;
+            top: var(--thead-top, 64px);
+        }
 
         /* ── Pin toggle button ─────────────────────────────── */
         .area-card[data-pinned] .btn-pin-toggle {
             color: var(--primary);
+            background: rgba(37,99,235,0.08);
         }
+        .btn-pin-toggle:focus { outline: none; }
+        .btn-pin-toggle:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
 
         /* ── Photo section ─────────────────────────────────── */
         .area-photo-section {
@@ -367,8 +374,6 @@
         .item-table th:nth-child(4),
         .item-table td:nth-child(4) { width: 8%; text-align: center; }
         .item-table thead th {
-            position: sticky;
-            top: var(--thead-top, 64px);
             z-index: 2;
             font-size: 0.6875rem;
             font-weight: 600;
