@@ -58,7 +58,7 @@ func TestMigrationsSchema(t *testing.T) {
 		t.Helper()
 		rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
 		require.NoError(t, err, "PRAGMA table_info(%s)", table)
-		defer rows.Close()
+		defer func() { assert.NoError(t, rows.Close()) }()
 
 		got := map[string]string{}
 		for rows.Next() {
