@@ -34,6 +34,10 @@ Thumbs.db
 !/data/photos/.gitkeep
 /dev-photos/
 
+# E2E debug artifacts
+e2e/debug-results/
+e2e/test-results/
+
 # Local dev artifacts
 good_inventory.txt
 .env

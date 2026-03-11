@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed benchmark bootstrap
+.PHONY: build test test-cover lint vet staticcheck govulncheck all ci docker-build docker-up docker-pull-model e2e e2e-headed e2e-debug benchmark bootstrap
 
 # ---------------------------------------------------------------------------
 # Tool discovery
@@ -72,6 +72,11 @@ e2e:
 
 e2e-headed:
 	cd e2e && npm install --prefer-offline && npx playwright test --headed
+
+## e2e-debug: run E2E with video, screenshots, and HTML report saved to e2e/debug-results/
+e2e-debug:
+	cd e2e && npm install --prefer-offline && npx playwright install chromium && E2E_DEBUG=1 npx playwright test
+	@echo "Results: e2e/debug-results/html/index.html"
 
 # ---------------------------------------------------------------------------
 # Vision benchmark
