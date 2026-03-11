@@ -229,12 +229,19 @@
 
         /* ── Sticky header+photo wrapper ───────────────────── */
         .area-sticky {
+            background: var(--card-bg);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .area-card[data-pinned] .area-sticky {
             position: sticky;
             top: var(--header-h);
             z-index: 10;
-            background: var(--card-bg);
-            border-radius: var(--radius) var(--radius) 0 0;
             box-shadow: 0 4px 8px -2px rgba(0,0,0,0.12);
+        }
+
+        /* ── Pin toggle button ─────────────────────────────── */
+        .area-card[data-pinned] .btn-pin-toggle {
+            color: var(--primary);
         }
 
         /* ── Photo section ─────────────────────────────────── */
@@ -913,6 +920,27 @@
         card.style.setProperty('--thead-top', (headerH + stickyH) + 'px');
     }
 
+    function togglePin(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var pinned = card.hasAttribute('data-pinned');
+        if (pinned) {
+            card.removeAttribute('data-pinned');
+            localStorage.removeItem('pin-' + areaID);
+        } else {
+            card.setAttribute('data-pinned', '');
+            localStorage.setItem('pin-' + areaID, '1');
+        }
+        updateStickyTheadTop(areaID);
+    }
+
+    function restorePinState(areaID) {
+        if (localStorage.getItem('pin-' + areaID)) {
+            var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+            if (card) card.setAttribute('data-pinned', '');
+        }
+    }
+
     function setupDragDrop(areaID) {
         var zone = document.querySelector('[data-testid="upload-zone-' + areaID + '"]');
         if (!zone) return;
@@ -1410,7 +1438,7 @@
         });
     }
 
-    /* ── Init drag-drop and touch-toggle on page load ──── */
+    /* ── Init drag-drop, touch-toggle, and pin state on page load ──── */
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.area-card').forEach(function(card) {
             var testid = card.getAttribute('data-testid') || '';
@@ -1419,6 +1447,7 @@
                 var id = parseInt(m[1], 10);
                 setupDragDrop(id);
                 setupPhotoTouchToggle(id);
+                restorePinState(id);
             }
         });
         updateAllStickyTheadTops();

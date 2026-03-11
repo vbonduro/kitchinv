@@ -117,11 +117,9 @@ test.describe('Areas', () => {
 
   // Regression test for kitchinv-zec: deleting all areas must show exactly one
   // "Add Area" button (the empty state), not two.
-  // kitchinv-yma: area title + photo anchor to the top while the user scrolls
-  // through a long item list so they can always refer to the image.
-  // Verified via computed style on the .area-sticky wrapper.
-  test('area photo section is sticky while scrolling through items', async ({ page }) => {
-    const name = `E2E Sticky ${Date.now()}`;
+  // kitchinv-sw4: photo section defaults to unanchored; pin toggle makes it sticky.
+  test('area photo section is not sticky by default', async ({ page }) => {
+    const name = `E2E Unanchored ${Date.now()}`;
     await createArea(page, name);
 
     const stickyWrapper = page.locator('.area-card', { hasText: name })
@@ -131,7 +129,42 @@ test.describe('Areas', () => {
     const position = await stickyWrapper.evaluate((el) =>
       window.getComputedStyle(el).position
     );
+    expect(position).not.toBe('sticky');
+  });
+
+  test('pin toggle makes photo section sticky', async ({ page }) => {
+    const name = `E2E PinToggle ${Date.now()}`;
+    await createArea(page, name);
+
+    const card = page.locator('.area-card', { hasText: name });
+    const stickyWrapper = card.locator('.area-sticky');
+    await stickyWrapper.waitFor();
+
+    // Click the pin button to enable sticky.
+    await card.locator('[data-testid="pin-photo-btn"]').click();
+
+    const position = await stickyWrapper.evaluate((el) =>
+      window.getComputedStyle(el).position
+    );
     expect(position).toBe('sticky');
+  });
+
+  test('pin toggle can be undone to unanchor the photo', async ({ page }) => {
+    const name = `E2E UnpinToggle ${Date.now()}`;
+    await createArea(page, name);
+
+    const card = page.locator('.area-card', { hasText: name });
+    const stickyWrapper = card.locator('.area-sticky');
+    await stickyWrapper.waitFor();
+
+    // Pin then unpin.
+    await card.locator('[data-testid="pin-photo-btn"]').click();
+    await card.locator('[data-testid="pin-photo-btn"]').click();
+
+    const position = await stickyWrapper.evaluate((el) =>
+      window.getComputedStyle(el).position
+    );
+    expect(position).not.toBe('sticky');
   });
 
   test('deleting all areas shows exactly one add area button', async ({ page }) => {
