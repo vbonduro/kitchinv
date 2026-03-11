@@ -19,7 +19,7 @@ var migrationsFS embed.FS
 // OpenForTesting opens an in-memory SQLite database with all migrations applied.
 // Use this in tests that need a real database.
 func OpenForTesting() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on")
+	db, err := sql.Open("sqlite", "file::memory:?cache=shared&mode=rwc&_journal_mode=WAL&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open in-memory database: %w", err)
 	}
@@ -37,10 +37,11 @@ func OpenForTesting() (*sql.DB, error) {
 // on the specific connection executing the DELETE — not guaranteed for all drivers.
 func Reset(database *sql.DB) error {
 	for _, stmt := range []string{
+		`DELETE FROM item_edits`,
 		`DELETE FROM items`,
 		`DELETE FROM photos`,
 		`DELETE FROM areas`,
-		`DELETE FROM sqlite_sequence WHERE name IN ('areas', 'photos', 'items')`,
+		`DELETE FROM sqlite_sequence WHERE name IN ('areas', 'photos', 'items', 'item_edits')`,
 	} {
 		if _, err := database.Exec(stmt); err != nil {
 			return err
@@ -54,7 +55,7 @@ func Open(dbPath string) (*sql.DB, error) {
 	// cache. mode=rwc creates the file if it does not exist. WAL mode allows
 	// concurrent reads alongside a single writer, which matters for a web server.
 	// foreign_keys=on enforces referential integrity, which SQLite disables by default.
-	dsn := fmt.Sprintf("file:%s?cache=shared&mode=rwc&_journal_mode=WAL&_foreign_keys=on", dbPath)
+	dsn := fmt.Sprintf("file:%s?cache=shared&mode=rwc&_journal_mode=WAL&_pragma=foreign_keys(1)", dbPath)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)

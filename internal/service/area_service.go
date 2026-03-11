@@ -38,7 +38,7 @@ type photoRepository interface {
 
 // itemRepository is the subset of store.ItemStore that AreaService requires.
 type itemRepository interface {
-	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes string) (*domain.Item, error)
+	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes, source string) (*domain.Item, error)
 	GetByID(ctx context.Context, id int64) (*domain.Item, error)
 	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error)
 	Update(ctx context.Context, id int64, name, quantity, notes string) error
@@ -47,32 +47,41 @@ type itemRepository interface {
 	Search(ctx context.Context, query string) ([]*domain.Item, error)
 }
 
+// itemEditRepository is the subset of store.ItemEditStore that AreaService requires.
+type itemEditRepository interface {
+	Create(ctx context.Context, itemID int64, field, oldValue, newValue string) (*domain.ItemEdit, error)
+	ListByItemID(ctx context.Context, itemID int64) ([]*domain.ItemEdit, error)
+}
+
 type AreaService struct {
-	areaStore   areaRepository
-	photoStore  photoRepository
-	itemStore   itemRepository
-	visionAPI   vision.VisionAnalyzer
-	photoStg    photostore.PhotoStore
-	logger      *slog.Logger
-	db          *sql.DB
-	uploadLocks sync.Map // key: int64 areaID → *sync.Mutex
+	areaStore      areaRepository
+	photoStore     photoRepository
+	itemStore      itemRepository
+	itemEditStore  itemEditRepository
+	visionAPI      vision.VisionAnalyzer
+	photoStg       photostore.PhotoStore
+	logger         *slog.Logger
+	db             *sql.DB
+	uploadLocks    sync.Map // key: int64 areaID → *sync.Mutex
 }
 
 func NewAreaService(
 	areaStore areaRepository,
 	photoStore photoRepository,
 	itemStore itemRepository,
+	itemEditStore itemEditRepository,
 	visionAPI vision.VisionAnalyzer,
 	photoStg photostore.PhotoStore,
 	logger *slog.Logger,
 ) *AreaService {
 	return &AreaService{
-		areaStore:  areaStore,
-		photoStore: photoStore,
-		itemStore:  itemStore,
-		visionAPI:  visionAPI,
-		photoStg:   photoStg,
-		logger:     logger,
+		areaStore:     areaStore,
+		photoStore:    photoStore,
+		itemStore:     itemStore,
+		itemEditStore: itemEditStore,
+		visionAPI:     visionAPI,
+		photoStg:      photoStg,
+		logger:        logger,
 	}
 }
 
@@ -214,7 +223,7 @@ func (s *AreaService) replaceItems(ctx context.Context, areaID, photoID int64, d
 	}
 	items := make([]*domain.Item, 0, len(detected))
 	for _, d := range detected {
-		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, d.Notes)
+		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, d.Notes, string(domain.ItemSourceAI))
 		if err != nil {
 			s.logger.Error("failed to create item", "name", d.Name, "error", err)
 			continue
@@ -238,8 +247,8 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 	items := make([]*domain.Item, 0, len(detected))
 	for _, d := range detected {
 		result, err := tx.ExecContext(ctx,
-			`INSERT INTO items (area_id, photo_id, name, quantity, notes) VALUES (?, ?, ?, ?, ?)`,
-			areaID, photoID, d.Name, d.Quantity, d.Notes)
+			`INSERT INTO items (area_id, photo_id, name, quantity, notes, source) VALUES (?, ?, ?, ?, ?, ?)`,
+			areaID, photoID, d.Name, d.Quantity, d.Notes, string(domain.ItemSourceAI))
 		if err != nil {
 			s.logger.Error("failed to create item", "name", d.Name, "error", err)
 			continue
@@ -256,6 +265,7 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 			Name:     d.Name,
 			Quantity: d.Quantity,
 			Notes:    d.Notes,
+			Source:   domain.ItemSourceAI,
 		})
 	}
 
@@ -319,13 +329,35 @@ func (s *AreaService) DeletePhoto(ctx context.Context, areaID int64) error {
 }
 
 func (s *AreaService) CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error) {
-	return s.itemStore.Create(ctx, areaID, nil, name, quantity, notes)
+	return s.itemStore.Create(ctx, areaID, nil, name, quantity, notes, string(domain.ItemSourceUser))
 }
 
 func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error) {
+	old, err := s.itemStore.GetByID(ctx, itemID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item: %w", err)
+	}
+	if old == nil {
+		return nil, fmt.Errorf("item not found")
+	}
+
 	if err := s.itemStore.Update(ctx, itemID, name, quantity, notes); err != nil {
 		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
+
+	// Record a diff entry for each changed field.
+	for _, change := range []struct{ field, oldVal, newVal string }{
+		{"name", old.Name, name},
+		{"quantity", old.Quantity, quantity},
+		{"notes", old.Notes, notes},
+	} {
+		if change.oldVal != change.newVal {
+			if _, err := s.itemEditStore.Create(ctx, itemID, change.field, change.oldVal, change.newVal); err != nil {
+				s.logger.Error("failed to record item edit", "item_id", itemID, "field", change.field, "error", err)
+			}
+		}
+	}
+
 	return s.itemStore.GetByID(ctx, itemID)
 }
 

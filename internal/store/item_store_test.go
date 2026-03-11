@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vbonduro/kitchinv/internal/domain"
 )
 
 func TestItemStoreCreate(t *testing.T) {
@@ -17,7 +18,7 @@ func TestItemStoreCreate(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened", "user")
 	require.NoError(t, err)
 	assert.NotZero(t, item.ID)
 	assert.Equal(t, area.ID, item.AreaID)
@@ -25,6 +26,43 @@ func TestItemStoreCreate(t *testing.T) {
 	assert.Equal(t, "1 liter", item.Quantity)
 	assert.Equal(t, "opened", item.Notes)
 	assert.Nil(t, item.PhotoID)
+	assert.Equal(t, domain.ItemSourceUser, item.Source)
+	assert.False(t, item.UpdatedAt.IsZero())
+}
+
+func TestItemStoreCreate_AISource(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	item, err := items.Create(ctx, area.ID, nil, "Eggs", "12", "", "ai")
+	require.NoError(t, err)
+	assert.Equal(t, domain.ItemSourceAI, item.Source)
+}
+
+func TestItemStoreUpdate_UpdatesUpdatedAt(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "user")
+	require.NoError(t, err)
+
+	before := item.UpdatedAt
+
+	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	require.NoError(t, err)
+
+	updated, err := items.GetByID(ctx, item.ID)
+	require.NoError(t, err)
+	assert.True(t, !updated.UpdatedAt.Before(before), "updated_at should not go backwards")
 }
 
 func TestItemStoreListByAreaID(t *testing.T) {
@@ -36,9 +74,9 @@ func TestItemStoreListByAreaID(t *testing.T) {
 	area, err := areas.Create(ctx, "Pantry")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Rice", "2 kg", "")
+	_, err = items.Create(ctx, area.ID, nil, "Rice", "2 kg", "", "ai")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Pasta", "500 g", "")
+	_, err = items.Create(ctx, area.ID, nil, "Pasta", "500 g", "", "ai")
 	require.NoError(t, err)
 
 	list, err := items.ListByAreaID(ctx, area.ID)
@@ -72,11 +110,11 @@ func TestItemStoreSearch(t *testing.T) {
 	area, err := areas.Create(ctx, "Kitchen")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Whole Milk", "1 liter", "")
+	_, err = items.Create(ctx, area.ID, nil, "Whole Milk", "1 liter", "", "ai")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Oat Milk", "1 liter", "")
+	_, err = items.Create(ctx, area.ID, nil, "Oat Milk", "1 liter", "", "ai")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Butter", "250 g", "")
+	_, err = items.Create(ctx, area.ID, nil, "Butter", "250 g", "", "ai")
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "milk")
@@ -92,7 +130,7 @@ func TestItemStoreSearch_CaseInsensitive(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Orange Juice", "1 liter", "")
+	_, err = items.Create(ctx, area.ID, nil, "Orange Juice", "1 liter", "", "ai")
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "ORANGE")
@@ -109,7 +147,7 @@ func TestItemStoreSearch_NoMatch(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Cheese", "1 block", "")
+	_, err = items.Create(ctx, area.ID, nil, "Cheese", "1 block", "", "ai")
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "nonexistent")
@@ -127,7 +165,7 @@ func TestItemStoreSearch_DeletedArea(t *testing.T) {
 
 	area, err := areas.Create(ctx, "ToDelete")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Milk", "1 liter", "")
+	_, err = items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "ai")
 	require.NoError(t, err)
 
 	// Delete the area — items should cascade-delete.
@@ -147,7 +185,7 @@ func TestItemStoreUpdate(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened", "ai")
 	require.NoError(t, err)
 
 	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
@@ -178,7 +216,7 @@ func TestItemStoreDelete(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "ai")
 	require.NoError(t, err)
 
 	err = items.Delete(ctx, item.ID)
@@ -207,9 +245,9 @@ func TestItemStoreDeleteByAreaID(t *testing.T) {
 	area, err := areas.Create(ctx, "Freezer")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Ice cream", "1 tub", "")
+	_, err = items.Create(ctx, area.ID, nil, "Ice cream", "1 tub", "", "ai")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Frozen peas", "500 g", "")
+	_, err = items.Create(ctx, area.ID, nil, "Frozen peas", "500 g", "", "ai")
 	require.NoError(t, err)
 
 	err = items.DeleteByAreaID(ctx, area.ID)
