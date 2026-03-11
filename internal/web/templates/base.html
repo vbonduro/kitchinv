@@ -229,13 +229,27 @@
 
         /* ── Sticky header+photo wrapper ───────────────────── */
         .area-sticky {
+            background: var(--card-bg);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .area-card[data-pinned] .area-sticky {
             position: sticky;
             top: var(--header-h);
             z-index: 10;
-            background: var(--card-bg);
-            border-radius: var(--radius) var(--radius) 0 0;
             box-shadow: 0 4px 8px -2px rgba(0,0,0,0.12);
         }
+        .area-card[data-pinned] .item-table thead th {
+            position: sticky;
+            top: var(--thead-top, 64px);
+        }
+
+        /* ── Pin toggle button ─────────────────────────────── */
+        .area-card[data-pinned] .btn-pin-toggle {
+            color: var(--primary);
+            background: rgba(37,99,235,0.08);
+        }
+        .btn-pin-toggle:focus { outline: none; }
+        .btn-pin-toggle:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
 
         /* ── Photo section ─────────────────────────────────── */
         .area-photo-section {
@@ -360,8 +374,6 @@
         .item-table th:nth-child(4),
         .item-table td:nth-child(4) { width: 8%; text-align: center; }
         .item-table thead th {
-            position: sticky;
-            top: var(--thead-top, 64px);
             z-index: 2;
             font-size: 0.6875rem;
             font-weight: 600;
@@ -913,6 +925,27 @@
         card.style.setProperty('--thead-top', (headerH + stickyH) + 'px');
     }
 
+    function togglePin(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var pinned = card.hasAttribute('data-pinned');
+        if (pinned) {
+            card.removeAttribute('data-pinned');
+            localStorage.removeItem('pin-' + areaID);
+        } else {
+            card.setAttribute('data-pinned', '');
+            localStorage.setItem('pin-' + areaID, '1');
+        }
+        updateStickyTheadTop(areaID);
+    }
+
+    function restorePinState(areaID) {
+        if (localStorage.getItem('pin-' + areaID)) {
+            var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+            if (card) card.setAttribute('data-pinned', '');
+        }
+    }
+
     function setupDragDrop(areaID) {
         var zone = document.querySelector('[data-testid="upload-zone-' + areaID + '"]');
         if (!zone) return;
@@ -1410,7 +1443,7 @@
         });
     }
 
-    /* ── Init drag-drop and touch-toggle on page load ──── */
+    /* ── Init drag-drop, touch-toggle, and pin state on page load ──── */
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.area-card').forEach(function(card) {
             var testid = card.getAttribute('data-testid') || '';
@@ -1419,6 +1452,7 @@
                 var id = parseInt(m[1], 10);
                 setupDragDrop(id);
                 setupPhotoTouchToggle(id);
+                restorePinState(id);
             }
         });
         updateAllStickyTheadTops();
