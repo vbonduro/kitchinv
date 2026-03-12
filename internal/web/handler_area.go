@@ -228,7 +228,6 @@ func (s *Server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Name     string `json:"name"`
 		Quantity string `json:"quantity"`
-		Notes    string `json:"notes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -241,7 +240,7 @@ func (s *Server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := s.service.CreateItem(r.Context(), areaID, name, strings.TrimSpace(body.Quantity), strings.TrimSpace(body.Notes))
+	item, err := s.service.CreateItem(r.Context(), areaID, name, strings.TrimSpace(body.Quantity))
 	if err != nil {
 		http.Error(w, "failed to create item", http.StatusInternalServerError)
 		s.logger.Error("create item failed", "area_id", areaID, "error", err)
@@ -268,7 +267,6 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Name     string `json:"name"`
 		Quantity string `json:"quantity"`
-		Notes    string `json:"notes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -281,7 +279,7 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := s.service.UpdateItem(r.Context(), itemID, name, strings.TrimSpace(body.Quantity), strings.TrimSpace(body.Notes))
+	item, err := s.service.UpdateItem(r.Context(), itemID, name, strings.TrimSpace(body.Quantity))
 	if err != nil {
 		http.Error(w, "failed to update item", http.StatusInternalServerError)
 		s.logger.Error("update item failed", "item_id", itemID, "error", err)

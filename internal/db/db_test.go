@@ -81,8 +81,11 @@ func TestMigrationsSchema(t *testing.T) {
 		{"photo_id", "INTEGER"},
 		{"name", "TEXT"},
 		{"quantity", "TEXT"},
-		{"notes", "TEXT"},
 		{"source", "TEXT"},
+		{"bbox_x1", "REAL"},
+		{"bbox_y1", "REAL"},
+		{"bbox_x2", "REAL"},
+		{"bbox_y2", "REAL"},
 		{"created_at", "DATETIME"},
 		{"updated_at", "DATETIME"},
 	})

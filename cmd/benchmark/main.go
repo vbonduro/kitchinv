@@ -375,20 +375,20 @@ func printSummary(s Summary) {
 				fmt.Printf("  ✗ MISS   expected: %s (qty %d)\n",
 					ir.Expected.Name, ir.Expected.Quantity)
 			} else if !ir.QuantityMatch {
-				fmt.Printf("  ~ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)\n",
+				fmt.Printf("  ~ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)  bbox:%s\n",
 					ir.Expected.Name, ir.Expected.Quantity,
-					ir.Detected.Name, ir.Detected.Quantity)
+					ir.Detected.Name, ir.Detected.Quantity, fmtBBox(ir.Detected.BBox))
 			} else {
-				fmt.Printf("  ✓ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)\n",
+				fmt.Printf("  ✓ MATCH  expected: %s (qty %d)  →  got: %s (qty %s)  bbox:%s\n",
 					ir.Expected.Name, ir.Expected.Quantity,
-					ir.Detected.Name, ir.Detected.Quantity)
+					ir.Detected.Name, ir.Detected.Quantity, fmtBBox(ir.Detected.BBox))
 			}
 		}
 
 		if len(r.Extra) > 0 {
 			fmt.Println()
 			for _, e := range r.Extra {
-				fmt.Printf("  + EXTRA  %s (qty %s)\n", e.Name, e.Quantity)
+				fmt.Printf("  + EXTRA  %s (qty %s)  bbox:%s\n", e.Name, e.Quantity, fmtBBox(e.BBox))
 			}
 		}
 		fmt.Println()
@@ -397,5 +397,12 @@ func printSummary(s Summary) {
 	fmt.Printf("━━━ OVERALL ━━━\n")
 	fmt.Printf("  Avg item accuracy:     %.0f%%\n", s.AvgItemAccuracy*100)
 	fmt.Printf("  Avg quantity accuracy: %.0f%%\n", s.AvgQuantityAccuracy*100)
+}
+
+func fmtBBox(b *[4]float64) string {
+	if b == nil {
+		return "none"
+	}
+	return fmt.Sprintf("[%.2f,%.2f,%.2f,%.2f]", b[0], b[1], b[2], b[3])
 }
 

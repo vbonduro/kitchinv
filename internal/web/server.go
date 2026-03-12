@@ -30,8 +30,8 @@ type kitchenService interface {
 	DeleteArea(ctx context.Context, areaID int64) error
 	DeletePhoto(ctx context.Context, areaID int64) error
 	UploadPhoto(ctx context.Context, areaID int64, imageData []byte, mimeType string) (*domain.Photo, []*domain.Item, error)
-	CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error)
-	UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error)
+	CreateItem(ctx context.Context, areaID int64, name, quantity string) (*domain.Item, error)
+	UpdateItem(ctx context.Context, itemID int64, name, quantity string) (*domain.Item, error)
 	DeleteItem(ctx context.Context, itemID int64) error
 	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
 }

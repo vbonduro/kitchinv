@@ -17,7 +17,7 @@ func TestItemEditStoreCreate(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened", "user")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "user", nil)
 	require.NoError(t, err)
 
 	edit, err := edits.Create(ctx, item.ID, "name", "Milk", "Whole Milk")
@@ -39,7 +39,7 @@ func TestItemEditStoreListByItemID(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "user")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "user", nil)
 	require.NoError(t, err)
 
 	_, err = edits.Create(ctx, item.ID, "name", "Milk", "Whole Milk")
@@ -61,7 +61,7 @@ func TestItemEditStoreListByItemID_CascadeDelete(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "user")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "user", nil)
 	require.NoError(t, err)
 
 	_, err = edits.Create(ctx, item.ID, "name", "Milk", "Whole Milk")

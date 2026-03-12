@@ -38,10 +38,10 @@ type photoRepository interface {
 
 // itemRepository is the subset of store.ItemStore that AreaService requires.
 type itemRepository interface {
-	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes, source string) (*domain.Item, error)
+	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bbox *[4]float64) (*domain.Item, error)
 	GetByID(ctx context.Context, id int64) (*domain.Item, error)
 	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error)
-	Update(ctx context.Context, id int64, name, quantity, notes string) error
+	Update(ctx context.Context, id int64, name, quantity string) error
 	Delete(ctx context.Context, id int64) error
 	DeleteByAreaID(ctx context.Context, areaID int64) error
 	Search(ctx context.Context, query string) ([]*domain.Item, error)
@@ -223,7 +223,7 @@ func (s *AreaService) replaceItems(ctx context.Context, areaID, photoID int64, d
 	}
 	items := make([]*domain.Item, 0, len(detected))
 	for _, d := range detected {
-		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, d.Notes, string(domain.ItemSourceAI))
+		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, string(domain.ItemSourceAI), d.BBox)
 		if err != nil {
 			s.logger.Error("failed to create item", "name", d.Name, "error", err)
 			continue
@@ -246,9 +246,13 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 
 	items := make([]*domain.Item, 0, len(detected))
 	for _, d := range detected {
+		var bx1, by1, bx2, by2 *float64
+		if d.BBox != nil {
+			bx1, by1, bx2, by2 = &d.BBox[0], &d.BBox[1], &d.BBox[2], &d.BBox[3]
+		}
 		result, err := tx.ExecContext(ctx,
-			`INSERT INTO items (area_id, photo_id, name, quantity, notes, source) VALUES (?, ?, ?, ?, ?, ?)`,
-			areaID, photoID, d.Name, d.Quantity, d.Notes, string(domain.ItemSourceAI))
+			`INSERT INTO items (area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			areaID, photoID, d.Name, d.Quantity, string(domain.ItemSourceAI), bx1, by1, bx2, by2)
 		if err != nil {
 			s.logger.Error("failed to create item", "name", d.Name, "error", err)
 			continue
@@ -264,8 +268,11 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 			PhotoID:  &photoID,
 			Name:     d.Name,
 			Quantity: d.Quantity,
-			Notes:    d.Notes,
 			Source:   domain.ItemSourceAI,
+			BBoxX1:   bx1,
+			BBoxY1:   by1,
+			BBoxX2:   bx2,
+			BBoxY2:   by2,
 		})
 	}
 
@@ -328,11 +335,11 @@ func (s *AreaService) DeletePhoto(ctx context.Context, areaID int64) error {
 	return nil
 }
 
-func (s *AreaService) CreateItem(ctx context.Context, areaID int64, name, quantity, notes string) (*domain.Item, error) {
-	return s.itemStore.Create(ctx, areaID, nil, name, quantity, notes, string(domain.ItemSourceUser))
+func (s *AreaService) CreateItem(ctx context.Context, areaID int64, name, quantity string) (*domain.Item, error) {
+	return s.itemStore.Create(ctx, areaID, nil, name, quantity, string(domain.ItemSourceUser), nil)
 }
 
-func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quantity, notes string) (*domain.Item, error) {
+func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quantity string) (*domain.Item, error) {
 	old, err := s.itemStore.GetByID(ctx, itemID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get item: %w", err)
@@ -341,7 +348,7 @@ func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quanti
 		return nil, fmt.Errorf("item not found")
 	}
 
-	if err := s.itemStore.Update(ctx, itemID, name, quantity, notes); err != nil {
+	if err := s.itemStore.Update(ctx, itemID, name, quantity); err != nil {
 		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
 
@@ -349,7 +356,6 @@ func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quanti
 	for _, change := range []struct{ field, oldVal, newVal string }{
 		{"name", old.Name, name},
 		{"quantity", old.Quantity, quantity},
-		{"notes", old.Notes, notes},
 	} {
 		if change.oldVal != change.newVal {
 			if _, err := s.itemEditStore.Create(ctx, itemID, change.field, change.oldVal, change.newVal); err != nil {
