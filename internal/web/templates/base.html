@@ -243,6 +243,33 @@
             top: var(--thead-top, 64px);
         }
 
+        /* ── View/Edit mode ────────────────────────────────── */
+        body:not([data-edit-mode]) .edit-only { display: none !important; }
+        .btn-edit-mode {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-faint);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-edit-mode:hover { background: rgba(255,255,255,0.2); color: var(--text); }
+        body[data-edit-mode] .btn-edit-mode {
+            color: var(--primary);
+            background: rgba(37,99,235,0.15);
+        }
+        .btn-edit-mode:focus { outline: none; }
+        .btn-edit-mode:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
+        /* In edit mode, item rows show a pointer to signal they're clickable */
+        body[data-edit-mode] .item-row { cursor: pointer; }
+
         /* ── Pin toggle button ─────────────────────────────── */
         .area-card[data-pinned] .btn-pin-toggle {
             color: var(--primary);
@@ -701,6 +728,17 @@
                 </div>
             </a>
 
+            <button class="btn-edit-mode" data-testid="edit-mode-btn" onclick="toggleEditMode()" aria-label="Toggle edit mode" title="Toggle edit mode">
+                <!-- Pencil icon (view mode) -->
+                <svg class="icon-edit-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                </svg>
+                <!-- Checkmark icon (edit mode active) -->
+                <svg class="icon-edit-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M20 6 9 17l-5-5"/>
+                </svg>
+            </button>
+
             <div class="header-search" data-testid="search-bar">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -768,7 +806,7 @@
             // Insert before the "new area" button, re-creating it if it was removed.
             var btnWrap = document.getElementById('new-area-btn-wrap');
             if (!btnWrap) {
-                var btnWrapHTML = '<div id="new-area-btn-wrap" style="text-align:center; padding-top: 0.5rem;">' +
+                var btnWrapHTML = '<div id="new-area-btn-wrap" class="edit-only" style="text-align:center; padding-top: 0.5rem;">' +
                     '<button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">' +
                     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>' +
                     'Add Area</button></div>';
@@ -923,6 +961,25 @@
         var headerEl = document.querySelector('.header');
         var headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
         card.style.setProperty('--thead-top', (headerH + stickyH) + 'px');
+    }
+
+    function isEditMode() {
+        return document.body.hasAttribute('data-edit-mode');
+    }
+
+    function toggleEditMode() {
+        var active = isEditMode();
+        if (active) {
+            document.body.removeAttribute('data-edit-mode');
+            localStorage.removeItem('edit-mode');
+        } else {
+            document.body.setAttribute('data-edit-mode', '');
+            localStorage.setItem('edit-mode', '1');
+        }
+        var iconOff = document.querySelector('.icon-edit-off');
+        var iconOn  = document.querySelector('.icon-edit-on');
+        if (iconOff) iconOff.style.display = active ? '' : 'none';
+        if (iconOn)  iconOn.style.display  = active ? 'none' : '';
     }
 
     function togglePin(areaID) {
@@ -1443,8 +1500,17 @@
         });
     }
 
-    /* ── Init drag-drop, touch-toggle, and pin state on page load ──── */
+    /* ── Init on page load ──────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function() {
+        // Restore edit mode.
+        if (localStorage.getItem('edit-mode')) {
+            document.body.setAttribute('data-edit-mode', '');
+            var iconOff = document.querySelector('.icon-edit-off');
+            var iconOn  = document.querySelector('.icon-edit-on');
+            if (iconOff) iconOff.style.display = 'none';
+            if (iconOn)  iconOn.style.display  = '';
+        }
+
         document.querySelectorAll('.area-card').forEach(function(card) {
             var testid = card.getAttribute('data-testid') || '';
             var m = testid.match(/area-card-(\d+)/);

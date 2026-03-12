@@ -18,6 +18,10 @@ function createJpegFixture(): string {
 
 async function createArea(page: Page, name: string): Promise<string> {
   await page.goto('/areas');
+  const body = page.locator('body');
+  if (!await body.evaluate((el) => el.hasAttribute('data-edit-mode'))) {
+    await page.locator('[data-testid="edit-mode-btn"]').click();
+  }
   await page.click('[data-testid="new-area-btn"]');
   await page.locator('#new-area-dialog').waitFor({ state: 'visible' });
   await page.fill('#new-area-dialog input[name="name"]', name);
