@@ -1,6 +1,12 @@
 import { test, expect } from '../fixtures';
 import { Page, request as playwrightRequest } from '@playwright/test';
 
+async function enableEditMode(page: Page) {
+  const body = page.locator('body');
+  const isEdit = await body.evaluate((el) => el.hasAttribute('data-edit-mode'));
+  if (!isEdit) await page.locator('[data-testid="edit-mode-btn"]').click();
+}
+
 async function addAreaViaDialog(page: Page, name: string) {
   await page.click('[data-testid="new-area-btn"]');
   await page.locator('#new-area-dialog').waitFor({ state: 'visible' });
@@ -14,6 +20,7 @@ async function addAreaViaDialog(page: Page, name: string) {
  */
 async function createArea(page: Page, name: string) {
   await page.goto('/areas');
+  await enableEditMode(page);
   await addAreaViaDialog(page, name);
   await page.locator('.area-card-name', { hasText: name }).waitFor({ timeout: 10_000 });
 }
@@ -21,6 +28,7 @@ async function createArea(page: Page, name: string) {
 async function createAreaWithItems(page: Page, appPort: number): Promise<string> {
   const name = `E2E ItemEdit ${Date.now()}`;
   await page.goto('/areas');
+  await enableEditMode(page);
   await addAreaViaDialog(page, name);
   const card = page.locator('.area-card', { hasText: name });
   await card.waitFor({ timeout: 10_000 });
@@ -75,6 +83,7 @@ test.describe('Areas', () => {
   // the first area is created, without requiring a page refresh.
   test('add area button visible after first area created (no refresh)', async ({ page }) => {
     await page.goto('/areas');
+    await enableEditMode(page);
 
     const name = `E2E FirstAreaBtn ${Date.now()}`;
     await addAreaViaDialog(page, name);
@@ -101,6 +110,7 @@ test.describe('Areas', () => {
 
   test('empty state removed when first area added', async ({ page }) => {
     await page.goto('/areas');
+    await enableEditMode(page);
 
     const emptyState = page.locator('[data-testid="empty-state"]');
     await expect(emptyState).toBeVisible();
@@ -230,5 +240,69 @@ test.describe('Areas', () => {
     const qtyInput = row.locator('input[data-field="qty"]');
     await expect(qtyInput).toBeVisible({ timeout: 3_000 });
     await expect(qtyInput).toHaveAttribute('type', 'number');
+  });
+
+  // kitchinv-o50: view/edit mode toggle
+  test('edit elements hidden by default (view mode)', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    // Switch back to view mode (createAreaWithItems enables edit mode).
+    await page.evaluate(() => localStorage.removeItem('edit-mode'));
+    await page.reload();
+
+    // Mutation controls must be hidden in view mode.
+    await expect(card.locator('[data-testid="delete-area-btn"]')).toBeHidden();
+    await expect(card.locator('[data-testid="delete-item-btn"]').first()).toBeHidden();
+    await expect(card.locator('.add-item-row')).toBeHidden();
+    await expect(page.locator('[data-testid="new-area-btn"]')).toBeHidden();
+  });
+
+  test('edit mode toggle shows edit elements', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+
+    // Switch back to view mode, then toggle on.
+    await page.evaluate(() => localStorage.removeItem('edit-mode'));
+    await page.reload();
+    await page.locator('[data-testid="edit-mode-btn"]').click();
+
+    await expect(card.locator('[data-testid="delete-area-btn"]')).toBeVisible();
+    await expect(card.locator('[data-testid="delete-item-btn"]').first()).toBeVisible();
+    await expect(card.locator('.add-item-row')).toBeVisible();
+    await expect(page.locator('[data-testid="new-area-btn"]')).toBeVisible();
+  });
+
+  test('item row click does nothing in view mode', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const row = card.locator('[data-testid="item-row"]').first();
+
+    // Switch to view mode.
+    await page.evaluate(() => localStorage.removeItem('edit-mode'));
+    await page.reload();
+    await row.click();
+
+    await expect(row.locator('input[data-field="name"]')).toBeHidden();
+  });
+
+  test('item row click starts edit in edit mode', async ({ page, appPort }) => {
+    const areaID = await createAreaWithItems(page, appPort);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const row = card.locator('[data-testid="item-row"]').first();
+
+    // Already in edit mode from createAreaWithItems.
+    await row.click();
+
+    await expect(row.locator('input[data-field="name"]')).toBeVisible({ timeout: 3_000 });
+  });
+
+  test('edit mode state persists across page reload', async ({ page, appPort }) => {
+    await createAreaWithItems(page, appPort);
+
+    // Already in edit mode; reload and verify it persists.
+    await page.reload();
+
+    await expect(page.locator('[data-testid="new-area-btn"]')).toBeVisible();
   });
 });

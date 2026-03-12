@@ -12,7 +12,7 @@
                 </div>
                 <div class="empty-state-title">No areas yet</div>
                 <div class="empty-state-text">Add your first storage area to start tracking inventory.</div>
-                <button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">
+                <button class="btn btn-primary edit-only" onclick="openNewAreaDialog()" data-testid="new-area-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 5v14"/><path d="M5 12h14"/>
                     </svg>
@@ -21,7 +21,7 @@
             </div>
         {{end}}
 
-        <div id="new-area-btn-wrap" style="text-align:center; padding-top: 0.5rem;{{if not .Areas}} display:none{{end}}">
+        <div id="new-area-btn-wrap" class="edit-only" style="text-align:center; padding-top: 0.5rem;{{if not .Areas}} display:none{{end}}">
             <button class="btn btn-primary" onclick="openNewAreaDialog()" data-testid="new-area-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 5v14"/><path d="M5 12h14"/>
