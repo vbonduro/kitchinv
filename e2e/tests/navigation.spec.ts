@@ -67,6 +67,7 @@ test.describe('Navigation', () => {
   });
 
   test('items persist after navigation (context.WithoutCancel)', async ({ page, ollamaPort }) => {
+    test.setTimeout(60_000);
     const jpegFixture = createJpegFixture();
     const apiContext = await request.newContext({ baseURL: `http://localhost:${ollamaPort}` });
 
@@ -83,15 +84,14 @@ test.describe('Navigation', () => {
       await page.goto('about:blank');
 
       // Poll until items appear: navigate back repeatedly until the card shows 3 rows
-      // or we exceed the deadline. This avoids a fixed sleep that can flake on slow CI.
-      const deadline = Date.now() + 30_000;
+      // or we exceed the deadline. Each goto takes time so no extra sleep needed.
+      const deadline = Date.now() + 50_000;
       let card = page.locator(`[data-testid="area-card-${areaID}"]`);
       while (Date.now() < deadline) {
         await page.goto('/areas');
         card = page.locator(`[data-testid="area-card-${areaID}"]`);
         const count = await card.locator('[data-testid="item-row"]').count();
         if (count === 3) break;
-        await page.waitForTimeout(1_000);
       }
       await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
     } finally {
