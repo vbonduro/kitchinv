@@ -36,7 +36,7 @@ async function createAreaWithItems(page: Page, appPort: number): Promise<string>
   const areaID = testid!.replace('area-card-', '');
 
   const ctx = await playwrightRequest.newContext({ baseURL: `http://localhost:${appPort}` });
-  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Milk', quantity: '2', notes: 'top shelf' } });
+  await ctx.post(`/areas/${areaID}/items`, { data: { name: 'Milk', quantity: '2' } });
   await ctx.dispose();
 
   await page.reload();
@@ -211,19 +211,6 @@ test.describe('Areas', () => {
 
     // Click the qty cell (second td).
     await row.locator('td').nth(1).click();
-
-    // Inline edit inputs must appear.
-    await expect(row.locator('input[data-field="name"]')).toBeVisible({ timeout: 3_000 });
-    await expect(row.locator('input[data-field="qty"]')).toBeVisible({ timeout: 3_000 });
-  });
-
-  test('clicking notes cell starts inline edit', async ({ page, appPort }) => {
-    const areaID = await createAreaWithItems(page, appPort);
-    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
-    const row = card.locator('[data-testid="item-row"]').first();
-
-    // Click the notes cell (third td).
-    await row.locator('td').nth(2).click();
 
     // Inline edit inputs must appear.
     await expect(row.locator('input[data-field="name"]')).toBeVisible({ timeout: 3_000 });

@@ -18,10 +18,15 @@ func NewItemStore(db *sql.DB) *ItemStore {
 	return &ItemStore{db: db}
 }
 
-func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, notes, source string) (*domain.Item, error) {
+func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bbox *[4]float64) (*domain.Item, error) {
+	var bx1, by1, bx2, by2 *float64
+	if bbox != nil {
+		bx1, by1, bx2, by2 = &bbox[0], &bbox[1], &bbox[2], &bbox[3]
+	}
 	result, err := s.db.ExecContext(ctx, `
-		INSERT INTO items (area_id, photo_id, name, quantity, notes, source) VALUES (?, ?, ?, ?, ?, ?)
-	`, areaID, photoID, name, quantity, notes, source)
+		INSERT INTO items (area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, areaID, photoID, name, quantity, source, bx1, by1, bx2, by2)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create item: %w", err)
 	}
@@ -37,8 +42,14 @@ func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, na
 func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error) {
 	item := &domain.Item{}
 	err := s.db.QueryRowContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, notes, source, created_at, updated_at FROM items WHERE id = ?
-	`, id).Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt)
+		SELECT id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at
+		FROM items WHERE id = ?
+	`, id).Scan(
+		&item.ID, &item.AreaID, &item.PhotoID,
+		&item.Name, &item.Quantity, &item.Source,
+		&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+		&item.CreatedAt, &item.UpdatedAt,
+	)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -52,8 +63,8 @@ func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error)
 
 func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, notes, source, created_at, updated_at FROM items
-		WHERE area_id = ? ORDER BY name ASC
+		SELECT id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at
+		FROM items WHERE area_id = ? ORDER BY name ASC
 	`, areaID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list items: %w", err)
@@ -67,7 +78,12 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
-		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&item.ID, &item.AreaID, &item.PhotoID,
+			&item.Name, &item.Quantity, &item.Source,
+			&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+			&item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, item)
@@ -81,11 +97,12 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 }
 
 func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, error) {
-	// Case-insensitive search with wildcards
 	pattern := "%" + strings.ToLower(query) + "%"
 
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.notes, i.source, i.created_at, i.updated_at FROM items i
+		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.source,
+		       i.bbox_x1, i.bbox_y1, i.bbox_x2, i.bbox_y2, i.created_at, i.updated_at
+		FROM items i
 		INNER JOIN areas a ON i.area_id = a.id
 		WHERE LOWER(i.name) LIKE ?
 		ORDER BY i.name ASC
@@ -102,7 +119,12 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
-		if err := rows.Scan(&item.ID, &item.AreaID, &item.PhotoID, &item.Name, &item.Quantity, &item.Notes, &item.Source, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&item.ID, &item.AreaID, &item.PhotoID,
+			&item.Name, &item.Quantity, &item.Source,
+			&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+			&item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, item)
@@ -115,10 +137,10 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	return items, nil
 }
 
-func (s *ItemStore) Update(ctx context.Context, id int64, name, quantity, notes string) error {
+func (s *ItemStore) Update(ctx context.Context, id int64, name, quantity string) error {
 	result, err := s.db.ExecContext(ctx, `
-		UPDATE items SET name = ?, quantity = ?, notes = ?, updated_at = datetime('now') WHERE id = ?
-	`, name, quantity, notes, id)
+		UPDATE items SET name = ?, quantity = ?, updated_at = datetime('now') WHERE id = ?
+	`, name, quantity, id)
 	if err != nil {
 		return fmt.Errorf("failed to update item: %w", err)
 	}

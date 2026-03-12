@@ -404,11 +404,10 @@ func TestAreaServiceCreateItem(t *testing.T) {
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "opened")
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 	assert.Equal(t, "Milk", item.Name)
 	assert.Equal(t, "1 liter", item.Quantity)
-	assert.Equal(t, "opened", item.Notes)
 	assert.Equal(t, domain.ItemSourceUser, item.Source)
 }
 
@@ -461,10 +460,10 @@ func TestAreaServiceUpdateItem_RecordsEdits(t *testing.T) {
 
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "")
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 
-	_, err = svc.UpdateItem(ctx, item.ID, "Whole Milk", "2 liters", "")
+	_, err = svc.UpdateItem(ctx, item.ID, "Whole Milk", "2 liters")
 	require.NoError(t, err)
 
 	edits, err := editStore.ListByItemID(ctx, item.ID)
@@ -499,10 +498,10 @@ func TestAreaServiceUpdateItem_NoEditsWhenUnchanged(t *testing.T) {
 
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "")
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 
-	_, err = svc.UpdateItem(ctx, item.ID, "Milk", "1 liter", "")
+	_, err = svc.UpdateItem(ctx, item.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 
 	edits, err := editStore.ListByItemID(ctx, item.ID)
@@ -518,14 +517,13 @@ func TestAreaServiceUpdateItem(t *testing.T) {
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "opened")
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 
-	updated, err := svc.UpdateItem(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	updated, err := svc.UpdateItem(ctx, item.ID, "Whole Milk", "2 liters")
 	require.NoError(t, err)
 	assert.Equal(t, "Whole Milk", updated.Name)
 	assert.Equal(t, "2 liters", updated.Quantity)
-	assert.Equal(t, "fresh", updated.Notes)
 }
 
 func TestAreaServiceDeleteItem(t *testing.T) {
@@ -536,7 +534,7 @@ func TestAreaServiceDeleteItem(t *testing.T) {
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter", "")
+	item, err := svc.CreateItem(ctx, area.ID, "Milk", "1 liter")
 	require.NoError(t, err)
 
 	err = svc.DeleteItem(ctx, item.ID)

@@ -3,10 +3,9 @@
     {{range .}}
     <div class="result-card">
         <div class="item-name">{{.Name}}</div>
-        {{if or .Quantity .Notes}}
+        {{if .Quantity}}
         <div class="item-meta">
-            {{if .Quantity}}<span class="item-qty">{{.Quantity}}</span>{{end}}
-            {{if .Notes}}<span>{{.Notes}}</span>{{end}}
+            <span class="item-qty">{{.Quantity}}</span>
         </div>
         {{end}}
         <a class="result-area-link" href="/areas/{{.AreaID}}">View area</a>

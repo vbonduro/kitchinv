@@ -60,9 +60,10 @@ func ParseLine(line string) *DetectedItem {
 
 // jsonItem is the wire representation of a single item in the JSON response.
 type jsonItem struct {
-	Name     string `json:"name"`
-	Quantity *int   `json:"quantity"`
-	Notes    *string `json:"notes"`
+	Name     string    `json:"name"`
+	Quantity *int      `json:"quantity"`
+	Notes    *string   `json:"notes"`
+	BBox     []float64 `json:"bbox"`
 }
 
 // jsonResponse is the wire representation of the full JSON response.
@@ -117,6 +118,10 @@ func ParseJSONResponse(raw string) (*AnalysisResult, error) {
 		}
 		if wi.Notes != nil {
 			item.Notes = *wi.Notes
+		}
+		if len(wi.BBox) == 4 {
+			bbox := [4]float64{wi.BBox[0], wi.BBox[1], wi.BBox[2], wi.BBox[3]}
+			item.BBox = &bbox
 		}
 		items = append(items, item)
 	}

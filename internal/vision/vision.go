@@ -23,7 +23,7 @@ const ClaudeSystemPrompt = `You analyse food storage area photos and return stru
 For each distinct food product you can identify, provide:
 - name: the food product name (e.g. "Whole Milk", "Cheddar Cheese", "Orange Juice")
 - quantity: your best-estimate count of how many of this item are visible (e.g. 1, 2, 6). Must be a whole number. Never null.
-- notes: where in the image this item is located (e.g. "top shelf left", "door bottom", "crisper drawer"). Always provide a location.
+- bbox: normalized bounding box [x1, y1, x2, y2] where 0,0 is top-left and 1,1 is bottom-right. Enclose the item as tightly as possible.
 
 Respond with JSON that validates against this schema — no prose, no code fences:
 {
@@ -37,7 +37,7 @@ Respond with JSON that validates against this schema — no prose, no code fence
         "properties": {
           "name":     { "type": "string" },
           "quantity": { "type": "integer", "minimum": 1 },
-          "notes":    { "type": ["string", "null"] }
+          "bbox":     { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 4, "maxItems": 4 }
         }
       }
     }
@@ -61,7 +61,7 @@ const GeminiSystemPrompt = `You analyse food storage area photos and return stru
 For each distinct product you can identify, provide:
 - name: the product name, as specific as possible including brand (e.g. "Natrel Whole Milk", "Kraft Smooth Peanut Butter", "Sriracha Hot Sauce")
 - quantity: your best-estimate count of how many of this item are visible (e.g. 1, 2, 6). Must be a whole number. Never null.
-- notes: where in the image this item is located (e.g. "top shelf left", "door bottom", "crisper drawer"). Always provide a location.
+- bbox: normalized bounding box [x1, y1, x2, y2] where 0,0 is top-left and 1,1 is bottom-right. Enclose the item as tightly as possible.
 
 Scanning rules:
 - Scan every shelf and door compartment methodically, shelf by shelf, left to right, top to bottom.
@@ -82,7 +82,7 @@ Respond with JSON that validates against this schema — no prose, no code fence
         "properties": {
           "name":     { "type": "string" },
           "quantity": { "type": "integer", "minimum": 1 },
-          "notes":    { "type": ["string", "null"] }
+          "bbox":     { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 4, "maxItems": 4 }
         }
       }
     }
@@ -122,4 +122,5 @@ type DetectedItem struct {
 	Name     string
 	Quantity string
 	Notes    string
+	BBox     *[4]float64 // normalized [x1, y1, x2, y2], nil if not provided
 }

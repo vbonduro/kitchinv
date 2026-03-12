@@ -76,7 +76,6 @@
                 <tr>
                     <th>Name</th>
                     <th>Qty</th>
-                    <th>Location</th>
                     <th></th>
                 </tr>
             </thead>
@@ -85,7 +84,6 @@
                 <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onclick="if(isEditMode())startEditItem({{$item.AreaID}}, {{$item.ID}}, event)">
                     <td class="item-name-cell">{{$item.Name}}</td>
                     <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
-                    <td class="item-notes-cell">{{$item.Notes}}</td>
                     <td class="item-actions">
                         <button class="btn btn-icon btn-icon-danger edit-only" data-testid="delete-item-btn" onclick="event.stopPropagation();deleteItem({{$item.AreaID}}, {{$item.ID}})" aria-label="Delete item">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

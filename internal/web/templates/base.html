@@ -393,13 +393,11 @@
         }
         /* Col 1: Name, Col 2: Qty, Col 3: Location, Col 4: Delete */
         .item-table th:nth-child(1),
-        .item-table td:nth-child(1) { width: 37%; }
+        .item-table td:nth-child(1) { width: 70%; }
         .item-table th:nth-child(2),
-        .item-table td:nth-child(2) { width: 18%; }
+        .item-table td:nth-child(2) { width: 22%; }
         .item-table th:nth-child(3),
-        .item-table td:nth-child(3) { width: 37%; }
-        .item-table th:nth-child(4),
-        .item-table td:nth-child(4) { width: 8%; text-align: center; }
+        .item-table td:nth-child(3) { width: 8%; text-align: center; }
         .item-table thead th {
             z-index: 2;
             font-size: 0.6875rem;
@@ -440,10 +438,6 @@
             padding: 0.125rem 0.5rem;
             border-radius: 999px;
             vertical-align: middle;
-        }
-        .item-notes-cell {
-            color: var(--text-muted);
-            font-size: 0.75rem;
         }
         .item-actions {
             opacity: 0;
@@ -1193,7 +1187,6 @@
         if (!card) return;
         var nameInput = card.querySelector('.add-item-name');
         var qtyInput = card.querySelector('.add-item-qty');
-        var notesInput = card.querySelector('.add-item-notes');
         var name = nameInput ? nameInput.value.trim() : '';
         if (!name) return;
 
@@ -1203,7 +1196,6 @@
             body: JSON.stringify({
                 name: name,
                 quantity: qtyInput ? qtyInput.value.trim() : '',
-                notes: notesInput ? notesInput.value.trim() : '',
             }),
         }).then(function(resp) {
             if (!resp.ok) throw new Error('Failed');
@@ -1217,16 +1209,14 @@
             tr.className = 'item-row item-row-entering';
             tr.setAttribute('data-testid', 'item-row');
             tr.setAttribute('data-item-id', item.ID);
-            tr.onclick = function(e) { startEditItem(areaID, item.ID, e); };
+            tr.onclick = function(e) { if(isEditMode()) startEditItem(areaID, item.ID, e); };
             tr.innerHTML =
                 '<td class="item-name-cell">' + esc(item.Name) + '</td>' +
                 '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
-                '<td class="item-notes-cell">' + esc(item.Notes || '') + '</td>' +
-                '<td class="item-actions"><button class="btn btn-icon btn-icon-danger" onclick="event.stopPropagation();deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
+                '<td class="item-actions"><button class="btn btn-icon btn-icon-danger edit-only" onclick="event.stopPropagation();deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
             tbody.appendChild(tr);
             if (nameInput) nameInput.value = '';
             if (qtyInput) qtyInput.value = '';
-            if (notesInput) notesInput.value = '';
             if (nameInput) nameInput.focus();
             showToast('Item added');
         }).catch(function() { showToast('Failed to add item'); });
@@ -1251,19 +1241,16 @@
 
         var nameCell = row.querySelector('.item-name-cell');
         var qtyBadge = row.querySelector('.item-qty-badge');
-        var notesCell = row.querySelector('.item-notes-cell');
 
         // Determine which cell was clicked so we can focus its input.
         var clickedCell = evt && evt.target ? evt.target.closest('td') : null;
         var focusField = 'name';
         if (clickedCell) {
             if (clickedCell === (qtyBadge ? qtyBadge.parentElement : row.cells[1])) focusField = 'qty';
-            else if (clickedCell === notesCell) focusField = 'notes';
         }
 
         var origName = nameCell ? nameCell.textContent.trim() : '';
         var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
-        var origNotes = notesCell ? notesCell.textContent.trim() : '';
 
         if (nameCell) {
             nameCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origName) + '" data-field="name">';
@@ -1271,9 +1258,6 @@
         var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
         if (qtyCell) {
             qtyCell.innerHTML = '<input type="number" min="1" class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
-        }
-        if (notesCell) {
-            notesCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origNotes) + '" data-field="notes">';
         }
 
         var focusInput = row.querySelector('[data-field="' + focusField + '"]');
@@ -1303,37 +1287,35 @@
 
             var ni = row.querySelector('[data-field="name"]');
             var qi = row.querySelector('[data-field="qty"]');
-            var noi = row.querySelector('[data-field="notes"]');
             var newName = ni ? ni.value.trim() : origName;
             var newQty = qi ? qi.value.trim() : origQty;
-            var newNotes = noi ? noi.value.trim() : origNotes;
 
             if (!newName) newName = origName;
 
             // Optimistically update UI.
-            revertCells(newName, newQty, newNotes);
+            revertCells(newName, newQty);
 
-            if (newName === origName && newQty === origQty && newNotes === origNotes) return;
+            if (newName === origName && newQty === origQty) return;
 
             fetch('/areas/' + areaID + '/items/' + itemID, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: newName, quantity: newQty, notes: newNotes}),
+                body: JSON.stringify({name: newName, quantity: newQty}),
             }).then(function(resp) {
                 if (!resp.ok) throw new Error('Failed');
                 showToast('Item updated');
             }).catch(function() {
-                revertCells(origName, origQty, origNotes);
+                revertCells(origName, origQty);
                 showToast('Failed to update item');
             });
         }
 
         function cancelEdit() {
             row.classList.remove('editing');
-            revertCells(origName, origQty, origNotes);
+            revertCells(origName, origQty);
         }
 
-        function revertCells(name, qty, notes) {
+        function revertCells(name, qty) {
             if (nameCell || row.cells[0]) {
                 var nc = nameCell || row.cells[0];
                 nc.innerHTML = esc(name);
@@ -1342,11 +1324,6 @@
             var qc = qtyCell || row.cells[1];
             if (qc) {
                 qc.innerHTML = qty ? '<span class="item-qty-badge">' + esc(qty) + '</span>' : '';
-            }
-            if (notesCell || row.cells[2]) {
-                var notc = notesCell || row.cells[2];
-                notc.innerHTML = esc(notes);
-                notc.className = 'item-notes-cell';
             }
         }
     }
@@ -1397,7 +1374,7 @@
                     return;
                 }
 
-                // Filter item rows — match against name, qty, and notes cells.
+                // Filter item rows — match against name and qty cells.
                 var rows = card.querySelectorAll('.item-row');
                 var cardHasMatch = false;
 

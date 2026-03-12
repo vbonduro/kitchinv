@@ -18,13 +18,12 @@ func TestItemStoreCreate(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened", "user")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "user", nil)
 	require.NoError(t, err)
 	assert.NotZero(t, item.ID)
 	assert.Equal(t, area.ID, item.AreaID)
 	assert.Equal(t, "Milk", item.Name)
 	assert.Equal(t, "1 liter", item.Quantity)
-	assert.Equal(t, "opened", item.Notes)
 	assert.Nil(t, item.PhotoID)
 	assert.Equal(t, domain.ItemSourceUser, item.Source)
 	assert.False(t, item.UpdatedAt.IsZero())
@@ -39,9 +38,28 @@ func TestItemStoreCreate_AISource(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Eggs", "12", "", "ai")
+	item, err := items.Create(ctx, area.ID, nil, "Eggs", "12", "ai", nil)
 	require.NoError(t, err)
 	assert.Equal(t, domain.ItemSourceAI, item.Source)
+}
+
+func TestItemStoreCreate_WithBBox(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	bbox := [4]float64{0.1, 0.2, 0.8, 0.9}
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", &bbox)
+	require.NoError(t, err)
+	require.NotNil(t, item.BBoxX1)
+	assert.InDelta(t, 0.1, *item.BBoxX1, 1e-9)
+	assert.InDelta(t, 0.2, *item.BBoxY1, 1e-9)
+	assert.InDelta(t, 0.8, *item.BBoxX2, 1e-9)
+	assert.InDelta(t, 0.9, *item.BBoxY2, 1e-9)
 }
 
 func TestItemStoreUpdate_UpdatesUpdatedAt(t *testing.T) {
@@ -52,12 +70,12 @@ func TestItemStoreUpdate_UpdatesUpdatedAt(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "user")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "user", nil)
 	require.NoError(t, err)
 
 	before := item.UpdatedAt
 
-	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters")
 	require.NoError(t, err)
 
 	updated, err := items.GetByID(ctx, item.ID)
@@ -74,9 +92,9 @@ func TestItemStoreListByAreaID(t *testing.T) {
 	area, err := areas.Create(ctx, "Pantry")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Rice", "2 kg", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Rice", "2 kg", "ai", nil)
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Pasta", "500 g", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Pasta", "500 g", "ai", nil)
 	require.NoError(t, err)
 
 	list, err := items.ListByAreaID(ctx, area.ID)
@@ -110,11 +128,11 @@ func TestItemStoreSearch(t *testing.T) {
 	area, err := areas.Create(ctx, "Kitchen")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Whole Milk", "1 liter", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Whole Milk", "1 liter", "ai", nil)
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Oat Milk", "1 liter", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Oat Milk", "1 liter", "ai", nil)
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Butter", "250 g", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Butter", "250 g", "ai", nil)
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "milk")
@@ -130,7 +148,7 @@ func TestItemStoreSearch_CaseInsensitive(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Orange Juice", "1 liter", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Orange Juice", "1 liter", "ai", nil)
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "ORANGE")
@@ -147,7 +165,7 @@ func TestItemStoreSearch_NoMatch(t *testing.T) {
 
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Cheese", "1 block", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Cheese", "1 block", "ai", nil)
 	require.NoError(t, err)
 
 	results, err := items.Search(ctx, "nonexistent")
@@ -165,7 +183,7 @@ func TestItemStoreSearch_DeletedArea(t *testing.T) {
 
 	area, err := areas.Create(ctx, "ToDelete")
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", nil)
 	require.NoError(t, err)
 
 	// Delete the area — items should cascade-delete.
@@ -185,17 +203,16 @@ func TestItemStoreUpdate(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "opened", "ai")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", nil)
 	require.NoError(t, err)
 
-	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters", "fresh")
+	err = items.Update(ctx, item.ID, "Whole Milk", "2 liters")
 	require.NoError(t, err)
 
 	updated, err := items.GetByID(ctx, item.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "Whole Milk", updated.Name)
 	assert.Equal(t, "2 liters", updated.Quantity)
-	assert.Equal(t, "fresh", updated.Notes)
 }
 
 func TestItemStoreUpdate_NotFound(t *testing.T) {
@@ -203,7 +220,7 @@ func TestItemStoreUpdate_NotFound(t *testing.T) {
 	items := NewItemStore(d)
 	ctx := context.Background()
 
-	err := items.Update(ctx, 99999, "Name", "1", "")
+	err := items.Update(ctx, 99999, "Name", "1")
 	assert.Error(t, err)
 }
 
@@ -216,7 +233,7 @@ func TestItemStoreDelete(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "", "ai")
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", nil)
 	require.NoError(t, err)
 
 	err = items.Delete(ctx, item.ID)
@@ -245,9 +262,9 @@ func TestItemStoreDeleteByAreaID(t *testing.T) {
 	area, err := areas.Create(ctx, "Freezer")
 	require.NoError(t, err)
 
-	_, err = items.Create(ctx, area.ID, nil, "Ice cream", "1 tub", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Ice cream", "1 tub", "ai", nil)
 	require.NoError(t, err)
-	_, err = items.Create(ctx, area.ID, nil, "Frozen peas", "500 g", "", "ai")
+	_, err = items.Create(ctx, area.ID, nil, "Frozen peas", "500 g", "ai", nil)
 	require.NoError(t, err)
 
 	err = items.DeleteByAreaID(ctx, area.ID)

@@ -61,8 +61,9 @@ type ItemResult struct {
 
 // ExtraItem is a model-detected item that had no ground truth counterpart.
 type ExtraItem struct {
-	Name     string `json:"name"`
-	Quantity string `json:"quantity"`
+	Name     string       `json:"name"`
+	Quantity string       `json:"quantity"`
+	BBox     *[4]float64  `json:"bbox,omitempty"`
 }
 
 // MatchResult holds the scoring outcome for a single fixture.
@@ -156,6 +157,7 @@ func Score(fixture string, gt GroundTruth, result *vision.AnalysisResult, overri
 			extra = append(extra, ExtraItem{
 				Name:     result.Items[j].Name,
 				Quantity: result.Items[j].Quantity,
+				BBox:     result.Items[j].BBox,
 			})
 		}
 	}

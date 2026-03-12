@@ -31,8 +31,11 @@ type Item struct {
 	PhotoID   *int64
 	Name      string
 	Quantity  string
-	Notes     string
 	Source    ItemSource
+	BBoxX1    *float64
+	BBoxY1    *float64
+	BBoxX2    *float64
+	BBoxY2    *float64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
