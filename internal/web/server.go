@@ -66,6 +66,18 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 				}
 				return m
 			},
+			"bboxW": func(x1, x2 *float64) float64 {
+				if x1 == nil || x2 == nil {
+					return 0
+				}
+				return *x2 - *x1
+			},
+			"bboxH": func(y1, y2 *float64) float64 {
+				if y1 == nil || y2 == nil {
+					return 0
+				}
+				return *y2 - *y1
+			},
 		},
 	}
 	s.registerRoutes()
