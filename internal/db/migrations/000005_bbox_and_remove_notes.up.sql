@@ -1,10 +1,7 @@
-ALTER TABLE items ADD COLUMN bbox_x1 REAL;
-ALTER TABLE items ADD COLUMN bbox_y1 REAL;
-ALTER TABLE items ADD COLUMN bbox_x2 REAL;
-ALTER TABLE items ADD COLUMN bbox_y2 REAL;
-
--- SQLite does not support DROP COLUMN before 3.35.0; we recreate the table
--- to drop the notes column.
+-- Recreate items table: drop notes column, add bbox columns.
+-- SQLite does not support DROP COLUMN before 3.35.0 so we use the
+-- recommended table-recreate approach. Foreign keys are disabled by the
+-- migration runner for the duration of this file.
 CREATE TABLE items_new (
     id         INTEGER  PRIMARY KEY AUTOINCREMENT,
     area_id    INTEGER  NOT NULL REFERENCES areas(id) ON DELETE CASCADE,
@@ -20,8 +17,8 @@ CREATE TABLE items_new (
     updated_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'
 );
 
-INSERT INTO items_new (id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at)
-SELECT id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at
+INSERT INTO items_new (id, area_id, photo_id, name, quantity, source, created_at, updated_at)
+SELECT id, area_id, photo_id, name, quantity, source, created_at, updated_at
 FROM items;
 
 DROP TABLE items;
@@ -29,8 +26,7 @@ ALTER TABLE items_new RENAME TO items;
 
 CREATE INDEX IF NOT EXISTS idx_items_area_id ON items(area_id);
 
--- Update item_edits field constraint to remove 'notes'.
--- SQLite does not support ALTER COLUMN so we recreate item_edits too.
+-- Recreate item_edits: tighten field CHECK constraint to remove 'notes'.
 CREATE TABLE item_edits_new (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id   INTEGER  NOT NULL REFERENCES items(id) ON DELETE CASCADE,

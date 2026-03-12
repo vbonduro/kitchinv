@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -81,6 +82,27 @@ func Open(dbPath string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+// execMigration runs a single migration SQL file on a dedicated connection
+// with foreign_keys temporarily disabled. This is required for migrations that
+// recreate tables (SQLite's only way to drop columns or change constraints),
+// where the intermediate DROP TABLE would otherwise violate FK constraints.
+func execMigration(db *sql.DB, sqlStr string) error {
+	ctx := context.Background()
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = conn.Close() }()
+	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
+		return err
+	}
+	if _, err := conn.ExecContext(ctx, sqlStr); err != nil {
+		return err
+	}
+	_, err = conn.ExecContext(ctx, "PRAGMA foreign_keys = ON")
+	return err
 }
 
 func runMigrations(db *sql.DB) error {
@@ -175,7 +197,7 @@ func runMigrations(db *sql.DB) error {
 			return fmt.Errorf("failed to read migration %s: %w", m.name, err)
 		}
 
-		if _, err := db.Exec(string(data)); err != nil {
+		if err := execMigration(db, string(data)); err != nil {
 			return fmt.Errorf("failed to apply migration %s: %w", m.name, err)
 		}
 
