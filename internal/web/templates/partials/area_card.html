@@ -11,13 +11,7 @@
                     <line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
                 </svg>
             </button>
-            <button class="btn btn-icon edit-only" onclick="startRenameArea({{.ID}})" aria-label="Rename area" title="Rename">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                    <path d="m15 5 4 4"/>
-                </svg>
-            </button>
-            <button class="btn btn-icon btn-icon-danger edit-only" data-testid="delete-area-btn" onclick="deleteArea({{.ID}})" aria-label="Delete area" title="Delete">
+<button class="btn btn-icon btn-icon-danger edit-only" data-testid="delete-area-btn" onclick="deleteArea({{.ID}})" aria-label="Delete area" title="Delete">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
