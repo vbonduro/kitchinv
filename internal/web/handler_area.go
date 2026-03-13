@@ -318,6 +318,22 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleReorderAreas(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []int64 `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if err := s.service.ReorderAreas(r.Context(), body.IDs); err != nil {
+		http.Error(w, "failed to reorder areas", http.StatusInternalServerError)
+		s.logger.Error("reorder areas failed", "error", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // parseID extracts the {id} path variable and returns it as int64.
 func parseID(r *http.Request) (int64, error) {
 	return strconv.ParseInt(r.PathValue("id"), 10, 64)

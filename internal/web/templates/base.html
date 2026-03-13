@@ -7,6 +7,8 @@
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
             integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
             crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/sortablejs@1.15.6/Sortable.min.js"
+            crossorigin="anonymous"></script>
     <style>
         /* ── Design tokens ─────────────────────────────────── */
         :root {
@@ -194,6 +196,8 @@
             border-bottom: 1px solid var(--card-border);
             gap: 0.5rem;
         }
+        body[data-edit-mode] .area-card-header { cursor: grab; }
+        body[data-edit-mode] .area-card-header:active { cursor: grabbing; }
         .area-card-name {
             font-size: 1rem;
             font-weight: 700;
@@ -988,14 +992,47 @@
         return document.body.hasAttribute('data-edit-mode');
     }
 
+    var _areasSortable = null;
+
+    function enableAreaSorting() {
+        var list = document.getElementById('area-list');
+        if (!list || _areasSortable) return;
+        _areasSortable = Sortable.create(list, {
+            handle: '.area-card-header',
+            animation: 150,
+            onEnd: function() {
+                var ids = Array.from(list.querySelectorAll('.area-card')).map(function(el) {
+                    var m = (el.getAttribute('data-testid') || '').match(/area-card-(\d+)/);
+                    return m ? parseInt(m[1], 10) : null;
+                }).filter(Boolean);
+                fetch('/areas/reorder', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ids: ids})
+                }).catch(function() {
+                    showToast('Failed to save order', 'error');
+                });
+            }
+        });
+    }
+
+    function disableAreaSorting() {
+        if (_areasSortable) {
+            _areasSortable.destroy();
+            _areasSortable = null;
+        }
+    }
+
     function toggleEditMode() {
         var active = isEditMode();
         if (active) {
             document.body.removeAttribute('data-edit-mode');
             localStorage.removeItem('edit-mode');
+            disableAreaSorting();
         } else {
             document.body.setAttribute('data-edit-mode', '');
             localStorage.setItem('edit-mode', '1');
+            enableAreaSorting();
         }
         var iconOff = document.querySelector('.icon-edit-off');
         var iconOn  = document.querySelector('.icon-edit-on');
@@ -1606,6 +1643,7 @@
             var iconOn  = document.querySelector('.icon-edit-on');
             if (iconOff) iconOff.style.display = 'none';
             if (iconOn)  iconOn.style.display  = '';
+            enableAreaSorting();
         }
 
         document.querySelectorAll('.area-card').forEach(function(card) {

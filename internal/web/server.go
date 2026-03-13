@@ -33,6 +33,7 @@ type kitchenService interface {
 	CreateItem(ctx context.Context, areaID int64, name, quantity string) (*domain.Item, error)
 	UpdateItem(ctx context.Context, itemID int64, name, quantity string) (*domain.Item, error)
 	DeleteItem(ctx context.Context, itemID int64) error
+	ReorderAreas(ctx context.Context, ids []int64) error
 	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
 }
 
@@ -79,6 +80,7 @@ func (s *Server) registerRoutes() {
 	})
 	s.mux.HandleFunc("GET /areas", s.handleListAreas)
 	s.mux.HandleFunc("POST /areas", s.handleCreateArea)
+	s.mux.HandleFunc("POST /areas/reorder", s.handleReorderAreas)
 	s.mux.HandleFunc("GET /areas/{id}", s.handleGetAreaDetail)
 	s.mux.HandleFunc("PUT /areas/{id}", s.handleUpdateArea)
 	s.mux.HandleFunc("DELETE /areas/{id}", s.handleDeleteArea)
