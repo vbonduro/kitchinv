@@ -329,6 +329,33 @@
         .area-photo-section:hover .area-photo-remove { opacity: 1; }
         .area-photo-remove:hover { background: var(--danger); }
 
+        /* BBox overlay */
+        .photo-wrapper {
+            position: relative;
+            line-height: 0;
+            width: 100%;
+        }
+        .bbox-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .bbox-rect {
+            fill: rgba(37,99,235,0.15);
+            stroke: #2563eb;
+            stroke-width: 0.008;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .bbox-rect.bbox-active {
+            opacity: 1;
+        }
+        /* Dim all item rows except the hovered one */
+        .items-tbody.bbox-hover .item-row { opacity: 0.4; transition: opacity 0.15s; }
+        .items-tbody.bbox-hover .item-row.bbox-row-active { opacity: 1; }
+
         /* Analyzing state */
         .area-analysing-overlay {
             position: absolute;
@@ -1099,9 +1126,13 @@
                 // Update photo section with server URL and controls.
                 var photoSec = card.querySelector('.area-photo-section');
                 if (photoSec) {
-                    photoSec.innerHTML = '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
-                        '<div class="area-photo-overlay" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
-                        '<button class="area-photo-remove" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+                    photoSec.innerHTML =
+                        '<div class="photo-wrapper">' +
+                            '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo" onload="fitBBoxOverlay(' + areaID + ')">' +
+                            '<svg class="bbox-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>' +
+                        '</div>' +
+                        '<div class="area-photo-overlay edit-only" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
+                        '<button class="area-photo-remove edit-only" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
                     setupPhotoTouchToggle(areaID);
                     updateStickyTheadTop(areaID);
                 }
@@ -1109,29 +1140,34 @@
                 // that all controls (delete, edit) and data-item-id attributes
                 // are present and interactive (kitchinv-c0o).
                 // Replace only the table inside .items-section to preserve the add-item-row.
-                fetch('/areas/' + areaID + '/items')
-                    .then(function(r) { return r.text(); })
-                    .then(function(html) {
-                        var itemsSection = card.querySelector('.items-section');
-                        if (!itemsSection) return;
-                        // Remove existing table and toggle button, keep add-item-row.
-                        var oldTable = itemsSection.querySelector('.item-table');
-                        if (oldTable) oldTable.remove();
-                        var oldToggle = itemsSection.querySelector('.items-toggle');
-                        if (oldToggle) oldToggle.remove();
-                        var oldNoItems = itemsSection.querySelector('.no-items-text');
-                        if (oldNoItems) oldNoItems.remove();
-                        // Prepend the server-rendered table/toggle before add-item-row.
-                        var addRow = itemsSection.querySelector('.add-item-row');
-                        var tmp = document.createElement('div');
-                        tmp.innerHTML = html;
-                        while (tmp.firstChild) {
-                            itemsSection.insertBefore(tmp.firstChild, addRow);
-                        }
-                        // Reveal items section now that analysis is complete.
-                        itemsSection.style.display = '';
-                    })
-                    .catch(function(err) { console.error('failed to refresh items:', err); });
+                // Fetch items HTML and JSON in parallel; use HTML for table, JSON for bbox rects.
+                Promise.all([
+                    fetch('/areas/' + areaID + '/items').then(function(r) { return r.text(); }),
+                    fetch('/areas/' + areaID + '/items', { headers: { 'Accept': 'application/json' } }).then(function(r) { return r.json(); }),
+                ]).then(function(results) {
+                    var html = results[0];
+                    var items = results[1];
+                    var itemsSection = card.querySelector('.items-section');
+                    if (!itemsSection) return;
+                    // Remove existing table and toggle button, keep add-item-row.
+                    var oldTable = itemsSection.querySelector('.item-table');
+                    if (oldTable) oldTable.remove();
+                    var oldToggle = itemsSection.querySelector('.items-toggle');
+                    if (oldToggle) oldToggle.remove();
+                    var oldNoItems = itemsSection.querySelector('.no-items-text');
+                    if (oldNoItems) oldNoItems.remove();
+                    // Prepend the server-rendered table/toggle before add-item-row.
+                    var addRow = itemsSection.querySelector('.add-item-row');
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    while (tmp.firstChild) {
+                        itemsSection.insertBefore(tmp.firstChild, addRow);
+                    }
+                    // Reveal items section now that analysis is complete.
+                    itemsSection.style.display = '';
+                    // Populate bbox rects; fitBBoxOverlay fires via onload on the img element.
+                    populateBBoxRects(areaID, items);
+                }).catch(function(err) { console.error('failed to refresh items:', err); });
             }
         }
     }
@@ -1231,6 +1267,89 @@
             if (row) row.remove();
             showToast('Item deleted');
         }).catch(function() { showToast('Failed to delete item'); });
+    }
+
+    /* ── BBox highlight ────────────────────────────────── */
+
+    // Position the SVG to cover only the rendered image content area,
+    // accounting for object-fit: contain letterboxing.
+    function fitBBoxOverlay(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var img = card.querySelector('.area-photo-img');
+        var svg = card.querySelector('.bbox-overlay');
+        if (!img || !svg) return;
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        if (!iw || !ih) return;
+        var cw = img.clientWidth, ch = img.clientHeight;
+        if (!cw || !ch) return;
+        var scale = Math.min(cw / iw, ch / ih);
+        var rw = iw * scale, rh = ih * scale;
+        var ox = (cw - rw) / 2, oy = (ch - rh) / 2;
+        svg.style.left   = ox + 'px';
+        svg.style.top    = oy + 'px';
+        svg.style.width  = rw + 'px';
+        svg.style.height = rh + 'px';
+    }
+
+    function populateBBoxRects(areaID, items) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var svg = card.querySelector('.bbox-overlay');
+        if (!svg) return;
+        svg.innerHTML = '';
+        (items || []).forEach(function(item) {
+            if (item.BBoxX1 == null || item.BBoxY1 == null || item.BBoxX2 == null || item.BBoxY2 == null) return;
+            var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('class', 'bbox-rect');
+            rect.setAttribute('data-item-id', String(item.ID));
+            rect.setAttribute('x', item.BBoxX1);
+            rect.setAttribute('y', item.BBoxY1);
+            rect.setAttribute('width', item.BBoxX2 - item.BBoxX1);
+            rect.setAttribute('height', item.BBoxY2 - item.BBoxY1);
+            svg.appendChild(rect);
+        });
+        // If image already loaded, fit the overlay now; otherwise onload handles it.
+        var img = card.querySelector('.area-photo-img');
+        if (img && img.complete && img.naturalWidth) fitBBoxOverlay(areaID);
+    }
+
+    function highlightBBox(areaID, itemID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        // Highlight the matching rect, dim others.
+        var rects = card.querySelectorAll('.bbox-rect');
+        if (!rects.length) return;
+        rects.forEach(function(r) {
+            if (r.getAttribute('data-item-id') === String(itemID)) {
+                r.classList.add('bbox-active');
+            } else {
+                r.classList.remove('bbox-active');
+            }
+        });
+        // Dim all rows except the hovered one.
+        var tbody = card.querySelector('.items-tbody');
+        if (tbody) {
+            tbody.classList.add('bbox-hover');
+            tbody.querySelectorAll('.item-row').forEach(function(row) {
+                if (row.getAttribute('data-item-id') === String(itemID)) {
+                    row.classList.add('bbox-row-active');
+                } else {
+                    row.classList.remove('bbox-row-active');
+                }
+            });
+        }
+    }
+
+    function clearBBox(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        card.querySelectorAll('.bbox-rect').forEach(function(r) { r.classList.remove('bbox-active'); });
+        var tbody = card.querySelector('.items-tbody');
+        if (tbody) {
+            tbody.classList.remove('bbox-hover');
+            tbody.querySelectorAll('.item-row').forEach(function(row) { row.classList.remove('bbox-row-active'); });
+        }
     }
 
     /* ── Edit item inline ──────────────────────────────── */

@@ -120,8 +120,18 @@ func ParseJSONResponse(raw string) (*AnalysisResult, error) {
 			item.Notes = *wi.Notes
 		}
 		if len(wi.BBox) == 4 {
-			bbox := [4]float64{wi.BBox[0], wi.BBox[1], wi.BBox[2], wi.BBox[3]}
-			item.BBox = &bbox
+			b := wi.BBox
+			// Gemini native format uses [y1, x1, y2, x2] in a 0-999 grid.
+			// Detect by checking if any value > 1 (normalized coords are 0-1).
+			if b[0] > 1 || b[1] > 1 || b[2] > 1 || b[3] > 1 {
+				// Convert [y1, x1, y2, x2] → normalized [x1, y1, x2, y2].
+				bbox := [4]float64{b[1] / 1000, b[0] / 1000, b[3] / 1000, b[2] / 1000}
+				item.BBox = &bbox
+			} else {
+				// Already normalized [x1, y1, x2, y2] (Claude, Ollama).
+				bbox := [4]float64{b[0], b[1], b[2], b[3]}
+				item.BBox = &bbox
+			}
 		}
 		items = append(items, item)
 	}

@@ -24,7 +24,16 @@
     {{if .Items}}
         {{if .Photo}}
         <div class="area-photo-section">
-            <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}">
+            <div class="photo-wrapper">
+                <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}" onload="fitBBoxOverlay({{.ID}})">
+                <svg class="bbox-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    {{range .Items}}{{if and .BBoxX1 .BBoxY1 .BBoxX2 .BBoxY2}}
+                    <rect class="bbox-rect" data-item-id="{{.ID}}"
+                        x="{{.BBoxX1}}" y="{{.BBoxY1}}"
+                        width="{{bboxW .BBoxX1 .BBoxX2}}" height="{{bboxH .BBoxY1 .BBoxY2}}"/>
+                    {{end}}{{end}}
+                </svg>
+            </div>
             <div class="area-photo-overlay edit-only" onclick="triggerUpload({{.ID}})">
                 <span class="area-photo-overlay-text">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -38,7 +47,7 @@
                     <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                 </svg>
             </button>
-        </div>
+        </div><!-- /.area-photo-section -->
         {{end}}
     {{else if .Photo}}
         <!-- Photo exists but no items yet — analyzing -->
@@ -81,7 +90,7 @@
             </thead>
             <tbody class="items-tbody">
             {{range $i, $item := .Items}}
-                <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onclick="if(isEditMode())startEditItem({{$item.AreaID}}, {{$item.ID}}, event)">
+                <tr class="item-row{{if gt $i 9}} item-row-hidden{{end}}" data-testid="item-row" data-item-id="{{$item.ID}}"{{if gt $i 9}} style="display:none"{{end}} onmouseenter="highlightBBox({{$item.AreaID}}, {{$item.ID}})" onmouseleave="clearBBox({{$item.AreaID}})" onclick="if(isEditMode())startEditItem({{$item.AreaID}}, {{$item.ID}}, event)">
                     <td class="item-name-cell">{{$item.Name}}</td>
                     <td>{{if $item.Quantity}}<span class="item-qty-badge">{{$item.Quantity}}</span>{{end}}</td>
                     <td class="item-actions">

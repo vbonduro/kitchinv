@@ -189,6 +189,19 @@ func TestParseJSONResponse(t *testing.T) {
 			wantStatus: StatusOK,
 			wantItems:  []DetectedItem{{Name: "Cheese", Quantity: "", Notes: ""}},
 		},
+		{
+			name:       "normalized bbox preserved as-is",
+			raw:        `{"status":"ok","items":[{"name":"Milk","quantity":1,"bbox":[0.1,0.2,0.3,0.4]}]}`,
+			wantStatus: StatusOK,
+			wantItems:  []DetectedItem{{Name: "Milk", Quantity: "1", BBox: &[4]float64{0.1, 0.2, 0.3, 0.4}}},
+		},
+		{
+			name:       "Gemini 1000-grid bbox converted to normalized [x1,y1,x2,y2]",
+			raw:        `{"status":"ok","items":[{"name":"Milk","quantity":1,"bbox":[200,100,400,300]}]}`,
+			wantStatus: StatusOK,
+			// Input [y1=200, x1=100, y2=400, x2=300] → normalized [x1=0.1, y1=0.2, x2=0.3, y2=0.4]
+			wantItems:  []DetectedItem{{Name: "Milk", Quantity: "1", BBox: &[4]float64{0.1, 0.2, 0.3, 0.4}}},
+		},
 	}
 
 	for _, tt := range tests {

@@ -25,12 +25,13 @@ const http = require('http');
 const PORT = parseInt(process.env.MOCK_OLLAMA_PORT || '19434', 10);
 
 // Items the mock always returns as a structured JSON response.
+// bbox values are normalized [x1, y1, x2, y2] in [0,1] range.
 const JSON_RESPONSE = JSON.stringify({
   status: 'ok',
   items: [
-    { name: 'Milk',         quantity: 2, notes: 'semi-skimmed' },
-    { name: 'Butter',       quantity: 1, notes: 'opened' },
-    { name: 'Orange Juice', quantity: 1, notes: null },
+    { name: 'Milk',         quantity: 2, bbox: [0.05, 0.10, 0.30, 0.40] },
+    { name: 'Butter',       quantity: 1, bbox: [0.35, 0.15, 0.60, 0.45] },
+    { name: 'Orange Juice', quantity: 1, bbox: [0.65, 0.10, 0.90, 0.50] },
   ],
 });
 
