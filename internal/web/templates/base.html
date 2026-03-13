@@ -7,8 +7,6 @@
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
             integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
             crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/sortablejs@1.15.6/Sortable.min.js"
-            crossorigin="anonymous"></script>
     <style>
         /* ── Design tokens ─────────────────────────────────── */
         :root {
@@ -196,8 +194,6 @@
             border-bottom: 1px solid var(--card-border);
             gap: 0.5rem;
         }
-        body[data-edit-mode] .area-card-header { cursor: grab; }
-        body[data-edit-mode] .area-card-header:active { cursor: grabbing; }
         .area-card-name {
             font-size: 1rem;
             font-weight: 700;
@@ -840,6 +836,7 @@
             }
             btnWrap.insertAdjacentHTML('beforebegin', html);
             btnWrap.style.display = '';
+            updateMoveButtons();
             nameInput.value = '';
             document.getElementById('new-area-dialog').close();
             showToast('Area created');
@@ -859,6 +856,7 @@
             if (!resp.ok) throw new Error('Failed');
             var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
             if (card) card.remove();
+            updateMoveButtons();
             // Show empty state if no cards left.
             var list = document.getElementById('area-list');
             if (list && !list.querySelector('.area-card')) {
@@ -992,34 +990,57 @@
         return document.body.hasAttribute('data-edit-mode');
     }
 
-    var _areasSortable = null;
-
-    function enableAreaSorting() {
+    function moveArea(areaID, direction) {
         var list = document.getElementById('area-list');
-        if (!list || _areasSortable) return;
-        _areasSortable = Sortable.create(list, {
-            handle: '.area-card-header',
-            animation: 150,
-            onEnd: function() {
-                var ids = Array.from(list.querySelectorAll('.area-card')).map(function(el) {
-                    var m = (el.getAttribute('data-testid') || '').match(/area-card-(\d+)/);
-                    return m ? parseInt(m[1], 10) : null;
-                }).filter(Boolean);
-                fetch('/areas/reorder', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ids: ids})
-                }).catch(function() {
-                    showToast('Failed to save order', 'error');
-                });
-            }
+        if (!list) return;
+        var cards = Array.from(list.querySelectorAll('.area-card'));
+        var idx = cards.findIndex(function(el) {
+            return el.getAttribute('data-testid') === 'area-card-' + areaID;
+        });
+        if (idx < 0) return;
+        var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= cards.length) return;
+
+        // Swap in DOM.
+        if (direction === 'up') {
+            list.insertBefore(cards[idx], cards[swapIdx]);
+        } else {
+            list.insertBefore(cards[swapIdx], cards[idx]);
+        }
+
+        // Refresh arrow visibility.
+        updateMoveButtons();
+
+        // Persist new order.
+        var ids = Array.from(list.querySelectorAll('.area-card')).map(function(el) {
+            var m = (el.getAttribute('data-testid') || '').match(/area-card-(\d+)/);
+            return m ? parseInt(m[1], 10) : null;
+        }).filter(Boolean);
+        fetch('/areas/reorder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids})
+        }).catch(function() {
+            showToast('Failed to save order', 'error');
         });
     }
 
-    function disableAreaSorting() {
-        if (_areasSortable) {
-            _areasSortable.destroy();
-            _areasSortable = null;
+    function updateMoveButtons() {
+        var list = document.getElementById('area-list');
+        if (!list) return;
+        var cards = Array.from(list.querySelectorAll('.area-card'));
+        // Reset all first, then hide boundary buttons.
+        cards.forEach(function(card) {
+            var up   = card.querySelector('.btn-move-up');
+            var down = card.querySelector('.btn-move-down');
+            if (up)   up.style.display   = '';
+            if (down) down.style.display = '';
+        });
+        if (cards.length > 0) {
+            var firstUp = cards[0].querySelector('.btn-move-up');
+            var lastDown = cards[cards.length - 1].querySelector('.btn-move-down');
+            if (firstUp)  firstUp.style.display  = 'none';
+            if (lastDown) lastDown.style.display = 'none';
         }
     }
 
@@ -1028,11 +1049,10 @@
         if (active) {
             document.body.removeAttribute('data-edit-mode');
             localStorage.removeItem('edit-mode');
-            disableAreaSorting();
         } else {
             document.body.setAttribute('data-edit-mode', '');
             localStorage.setItem('edit-mode', '1');
-            enableAreaSorting();
+            updateMoveButtons();
         }
         var iconOff = document.querySelector('.icon-edit-off');
         var iconOn  = document.querySelector('.icon-edit-on');
@@ -1643,7 +1663,7 @@
             var iconOn  = document.querySelector('.icon-edit-on');
             if (iconOff) iconOff.style.display = 'none';
             if (iconOn)  iconOn.style.display  = '';
-            enableAreaSorting();
+            updateMoveButtons();
         }
 
         document.querySelectorAll('.area-card').forEach(function(card) {
