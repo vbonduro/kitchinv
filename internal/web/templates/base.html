@@ -1299,15 +1299,16 @@
         if (!svg) return;
         svg.innerHTML = '';
         (items || []).forEach(function(item) {
-            if (item.BBoxX1 == null || item.BBoxY1 == null || item.BBoxX2 == null || item.BBoxY2 == null) return;
-            var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('class', 'bbox-rect');
-            rect.setAttribute('data-item-id', String(item.ID));
-            rect.setAttribute('x', item.BBoxX1);
-            rect.setAttribute('y', item.BBoxY1);
-            rect.setAttribute('width', item.BBoxX2 - item.BBoxX1);
-            rect.setAttribute('height', item.BBoxY2 - item.BBoxY1);
-            svg.appendChild(rect);
+            (item.BBoxes || []).forEach(function(bbox) {
+                var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('class', 'bbox-rect');
+                rect.setAttribute('data-item-id', String(item.ID));
+                rect.setAttribute('x', bbox[0]);
+                rect.setAttribute('y', bbox[1]);
+                rect.setAttribute('width', bbox[2] - bbox[0]);
+                rect.setAttribute('height', bbox[3] - bbox[1]);
+                svg.appendChild(rect);
+            });
         });
         // If image already loaded, fit the overlay now; otherwise onload handles it.
         var img = card.querySelector('.area-photo-img');

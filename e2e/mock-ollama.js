@@ -29,9 +29,11 @@ const PORT = parseInt(process.env.MOCK_OLLAMA_PORT || '19434', 10);
 const JSON_RESPONSE = JSON.stringify({
   status: 'ok',
   items: [
-    { name: 'Milk',         quantity: 2, bbox: [0.05, 0.10, 0.30, 0.40] },
+    { name: 'Milk',         quantity: 1, bbox: [0.05, 0.10, 0.30, 0.40] },
     { name: 'Butter',       quantity: 1, bbox: [0.35, 0.15, 0.60, 0.45] },
     { name: 'Orange Juice', quantity: 1, bbox: [0.65, 0.10, 0.90, 0.50] },
+    // Duplicate entry for Milk with a different bbox — should merge into one item with 2 bboxes.
+    { name: 'Milk',         quantity: 1, bbox: [0.05, 0.55, 0.30, 0.85] },
   ],
 });
 

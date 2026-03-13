@@ -52,14 +52,11 @@ func TestItemStoreCreate_WithBBox(t *testing.T) {
 	area, err := areas.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	bbox := [4]float64{0.1, 0.2, 0.8, 0.9}
-	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", &bbox)
+	bboxes := [][]float64{{0.1, 0.2, 0.8, 0.9}}
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1 liter", "ai", bboxes)
 	require.NoError(t, err)
-	require.NotNil(t, item.BBoxX1)
-	assert.InDelta(t, 0.1, *item.BBoxX1, 1e-9)
-	assert.InDelta(t, 0.2, *item.BBoxY1, 1e-9)
-	assert.InDelta(t, 0.8, *item.BBoxX2, 1e-9)
-	assert.InDelta(t, 0.9, *item.BBoxY2, 1e-9)
+	require.Len(t, item.BBoxes, 1)
+	assert.InDeltaSlice(t, bboxes[0], item.BBoxes[0], 1e-9)
 }
 
 func TestItemStoreUpdate_UpdatesUpdatedAt(t *testing.T) {
@@ -251,6 +248,62 @@ func TestItemStoreDelete_NotFound(t *testing.T) {
 
 	err := items.Delete(ctx, 99999)
 	assert.Error(t, err)
+}
+
+func TestItemStoreCreate_WithMultiBBox(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	bboxes := [][]float64{
+		{0.1, 0.2, 0.3, 0.4},
+		{0.5, 0.6, 0.7, 0.8},
+	}
+	item, err := items.Create(ctx, area.ID, nil, "Chickpeas", "2", "ai", bboxes)
+	require.NoError(t, err)
+	require.Len(t, item.BBoxes, 2)
+	assert.InDeltaSlice(t, bboxes[0], item.BBoxes[0], 1e-9)
+	assert.InDeltaSlice(t, bboxes[1], item.BBoxes[1], 1e-9)
+}
+
+func TestItemStoreCreate_NoBBox(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Pantry")
+	require.NoError(t, err)
+
+	item, err := items.Create(ctx, area.ID, nil, "Salt", "1", "user", nil)
+	require.NoError(t, err)
+	assert.Empty(t, item.BBoxes)
+}
+
+func TestItemStoreCreate_SingleBBoxRoundTrip(t *testing.T) {
+	d := openTestDB(t)
+	areas := NewAreaStore(d)
+	items := NewItemStore(d)
+	ctx := context.Background()
+
+	area, err := areas.Create(ctx, "Fridge")
+	require.NoError(t, err)
+
+	bboxes := [][]float64{{0.1, 0.2, 0.8, 0.9}}
+	item, err := items.Create(ctx, area.ID, nil, "Milk", "1", "ai", bboxes)
+	require.NoError(t, err)
+	require.Len(t, item.BBoxes, 1)
+	assert.InDeltaSlice(t, bboxes[0], item.BBoxes[0], 1e-9)
+
+	// Verify round-trip via GetByID.
+	fetched, err := items.GetByID(ctx, item.ID)
+	require.NoError(t, err)
+	require.Len(t, fetched.BBoxes, 1)
+	assert.InDeltaSlice(t, bboxes[0], fetched.BBoxes[0], 1e-9)
 }
 
 func TestItemStoreDeleteByAreaID(t *testing.T) {
