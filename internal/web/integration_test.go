@@ -673,3 +673,66 @@ func TestIntegration_RenameArea_DuplicateName(t *testing.T) {
 		t.Errorf("expected 'already exists' in response body, got: %s", b)
 	}
 }
+
+// TestIntegration_ReorderAreas verifies that POST /areas/reorder persists the
+// new sort order and that a subsequent GET /areas returns cards in that order.
+func TestIntegration_ReorderAreas(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	vis := &recordingVision{result: &vision.AnalysisResult{}}
+	srv, cleanup := newTestServer(t, vis)
+	defer cleanup()
+
+	// Create three areas: Alpha(1), Beta(2), Gamma(3).
+	for _, name := range []string{"Alpha", "Beta", "Gamma"} {
+		resp, err := http.PostForm(srv.URL+"/areas", url.Values{"name": {name}})
+		if err != nil {
+			t.Fatalf("POST /areas: %v", err)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("POST /areas status %d", resp.StatusCode)
+		}
+	}
+
+	// Reorder to Gamma(3), Alpha(1), Beta(2).
+	reorderBody := strings.NewReader(`{"ids":[3,1,2]}`)
+	resp, err := http.Post(srv.URL+"/areas/reorder", "application/json", reorderBody)
+	if err != nil {
+		t.Fatalf("POST /areas/reorder: %v", err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, b)
+	}
+
+	// GET /areas and verify card order in the HTML.
+	resp2, err := http.Get(srv.URL + "/areas")
+	if err != nil {
+		t.Fatalf("GET /areas: %v", err)
+	}
+	t.Cleanup(func() { _ = resp2.Body.Close() })
+	if resp2.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp2.StatusCode)
+	}
+
+	html, err := io.ReadAll(resp2.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	page := string(html)
+
+	gammaPos := strings.Index(page, "Gamma")
+	alphaPos := strings.Index(page, "Alpha")
+	betaPos := strings.Index(page, "Beta")
+	if gammaPos < 0 || alphaPos < 0 || betaPos < 0 {
+		t.Fatalf("expected all area names in HTML, got:\n%s", page)
+	}
+	if gammaPos > alphaPos || alphaPos > betaPos {
+		t.Errorf("expected order Gamma < Alpha < Beta in HTML, got positions: Gamma=%d Alpha=%d Beta=%d",
+			gammaPos, alphaPos, betaPos)
+	}
+}

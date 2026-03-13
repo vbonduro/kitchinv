@@ -78,8 +78,9 @@ func TestAreaStoreList(t *testing.T) {
 	areas, err := store.List(ctx)
 	require.NoError(t, err)
 	assert.Len(t, areas, 2)
-	assert.Equal(t, "Garage Fridge", areas[0].Name)
-	assert.Equal(t, "Pantry", areas[1].Name)
+	// List returns areas in insertion (sort_order) order, not alphabetically.
+	assert.Equal(t, "Pantry", areas[0].Name)
+	assert.Equal(t, "Garage Fridge", areas[1].Name)
 }
 
 func TestAreaStoreList_Empty(t *testing.T) {
@@ -140,4 +141,37 @@ func TestAreaStoreDelete_NotFound(t *testing.T) {
 
 	err := store.Delete(ctx, 99999)
 	assert.Error(t, err)
+}
+
+func TestAreaStoreUpdateSortOrder(t *testing.T) {
+	d := openTestDB(t)
+	s := NewAreaStore(d)
+	ctx := context.Background()
+
+	a1, err := s.Create(ctx, "Alpha")
+	require.NoError(t, err)
+	a2, err := s.Create(ctx, "Beta")
+	require.NoError(t, err)
+	a3, err := s.Create(ctx, "Gamma")
+	require.NoError(t, err)
+
+	// Reverse the order: Gamma, Alpha, Beta
+	err = s.UpdateSortOrder(ctx, []int64{a3.ID, a1.ID, a2.ID})
+	require.NoError(t, err)
+
+	areas, err := s.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, areas, 3)
+	assert.Equal(t, "Gamma", areas[0].Name)
+	assert.Equal(t, "Alpha", areas[1].Name)
+	assert.Equal(t, "Beta", areas[2].Name)
+}
+
+func TestAreaStoreUpdateSortOrder_Empty(t *testing.T) {
+	d := openTestDB(t)
+	s := NewAreaStore(d)
+	ctx := context.Background()
+
+	err := s.UpdateSortOrder(ctx, []int64{})
+	require.NoError(t, err)
 }

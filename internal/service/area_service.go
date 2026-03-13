@@ -40,6 +40,7 @@ type areaRepository interface {
 	List(ctx context.Context) ([]*domain.Area, error)
 	Update(ctx context.Context, id int64, name string) error
 	Delete(ctx context.Context, id int64) error
+	UpdateSortOrder(ctx context.Context, ids []int64) error
 }
 
 // photoRepository is the subset of store.PhotoStore that AreaService requires.
@@ -380,6 +381,10 @@ func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quanti
 
 func (s *AreaService) DeleteItem(ctx context.Context, itemID int64) error {
 	return s.itemStore.Delete(ctx, itemID)
+}
+
+func (s *AreaService) ReorderAreas(ctx context.Context, ids []int64) error {
+	return s.areaStore.UpdateSortOrder(ctx, ids)
 }
 
 func (s *AreaService) SearchItems(ctx context.Context, query string) ([]*domain.Item, error) {

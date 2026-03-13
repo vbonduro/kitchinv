@@ -6,12 +6,22 @@
     <div class="area-card-header">
         <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="if(isEditMode())startRenameArea({{.ID}})">{{.Name}}</span>
         <div class="area-card-actions">
+            <button class="btn btn-icon btn-move-up edit-only" onclick="moveArea({{.ID}},'up')" aria-label="Move up" title="Move up">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+                </svg>
+            </button>
+            <button class="btn btn-icon btn-move-down edit-only" onclick="moveArea({{.ID}},'down')" aria-label="Move down" title="Move down">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+                </svg>
+            </button>
             <button class="btn btn-icon btn-pin-toggle" data-testid="pin-photo-btn" onclick="togglePin({{.ID}})" aria-label="Pin photo" title="Pin photo to top while scrolling">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
                 </svg>
             </button>
-<button class="btn btn-icon btn-icon-danger edit-only" data-testid="delete-area-btn" onclick="deleteArea({{.ID}})" aria-label="Delete area" title="Delete">
+            <button class="btn btn-icon btn-icon-danger edit-only" data-testid="delete-area-btn" onclick="deleteArea({{.ID}})" aria-label="Delete area" title="Delete">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
