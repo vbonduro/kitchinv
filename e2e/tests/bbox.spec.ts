@@ -61,6 +61,10 @@ test.describe('BBox overlay', () => {
     // All 3 items from the mock have bbox — expect 3 rects.
     const rects = svg.locator('.bbox-rect');
     await expect(rects).toHaveCount(3);
+
+    // Hover first row to activate the rect, then screenshot for visual inspection.
+    await card.locator('[data-testid="item-row"]').nth(0).hover();
+    await page.screenshot({ path: '/tmp/bbox-test.png' });
   });
 
   test('hovering an item row activates its bbox rect and dims other rows', async ({ page }) => {

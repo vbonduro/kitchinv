@@ -333,6 +333,7 @@
         .photo-wrapper {
             position: relative;
             line-height: 0;
+            width: 100%;
         }
         .bbox-overlay {
             position: absolute;
@@ -1127,7 +1128,7 @@
                 if (photoSec) {
                     photoSec.innerHTML =
                         '<div class="photo-wrapper">' +
-                            '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo">' +
+                            '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo" onload="fitBBoxOverlay(' + areaID + ')">' +
                             '<svg class="bbox-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>' +
                         '</div>' +
                         '<div class="area-photo-overlay edit-only" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
@@ -1164,7 +1165,7 @@
                     }
                     // Reveal items section now that analysis is complete.
                     itemsSection.style.display = '';
-                    // Populate bbox rects in the SVG overlay.
+                    // Populate bbox rects; fitBBoxOverlay fires via onload on the img element.
                     populateBBoxRects(areaID, items);
                 }).catch(function(err) { console.error('failed to refresh items:', err); });
             }
@@ -1269,6 +1270,28 @@
     }
 
     /* ── BBox highlight ────────────────────────────────── */
+
+    // Position the SVG to cover only the rendered image content area,
+    // accounting for object-fit: contain letterboxing.
+    function fitBBoxOverlay(areaID) {
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        var img = card.querySelector('.area-photo-img');
+        var svg = card.querySelector('.bbox-overlay');
+        if (!img || !svg) return;
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        if (!iw || !ih) return;
+        var cw = img.clientWidth, ch = img.clientHeight;
+        if (!cw || !ch) return;
+        var scale = Math.min(cw / iw, ch / ih);
+        var rw = iw * scale, rh = ih * scale;
+        var ox = (cw - rw) / 2, oy = (ch - rh) / 2;
+        svg.style.left   = ox + 'px';
+        svg.style.top    = oy + 'px';
+        svg.style.width  = rw + 'px';
+        svg.style.height = rh + 'px';
+    }
+
     function populateBBoxRects(areaID, items) {
         var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
         if (!card) return;
@@ -1286,6 +1309,9 @@
             rect.setAttribute('height', item.BBoxY2 - item.BBoxY1);
             svg.appendChild(rect);
         });
+        // If image already loaded, fit the overlay now; otherwise onload handles it.
+        var img = card.querySelector('.area-photo-img');
+        if (img && img.complete && img.naturalWidth) fitBBoxOverlay(areaID);
     }
 
     function highlightBBox(areaID, itemID) {

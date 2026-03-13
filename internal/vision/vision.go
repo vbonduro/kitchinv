@@ -61,7 +61,7 @@ const GeminiSystemPrompt = `You analyse food storage area photos and return stru
 For each distinct product you can identify, provide:
 - name: the product name, as specific as possible including brand (e.g. "Natrel Whole Milk", "Kraft Smooth Peanut Butter", "Sriracha Hot Sauce")
 - quantity: your best-estimate count of how many of this item are visible (e.g. 1, 2, 6). Must be a whole number. Never null.
-- bbox: normalized bounding box [x1, y1, x2, y2] where 0,0 is top-left and 1,1 is bottom-right. Enclose the item as tightly as possible.
+- bbox: bounding box [y1, x1, y2, x2] as integers in a 1000×1000 coordinate grid, where [0,0] is the top-left pixel and [999,999] is the bottom-right pixel. Enclose the item as tightly as possible.
 
 Scanning rules:
 - Scan every shelf and door compartment methodically, shelf by shelf, left to right, top to bottom.
@@ -82,7 +82,7 @@ Respond with JSON that validates against this schema — no prose, no code fence
         "properties": {
           "name":     { "type": "string" },
           "quantity": { "type": "integer", "minimum": 1 },
-          "bbox":     { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 4, "maxItems": 4 }
+          "bbox":     { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 999 }, "minItems": 4, "maxItems": 4 }
         }
       }
     }
