@@ -32,10 +32,7 @@ type Item struct {
 	Name      string     `json:"Name"`
 	Quantity  string     `json:"Quantity"`
 	Source    ItemSource `json:"Source"`
-	BBoxX1    *float64   `json:"BBoxX1,omitempty"`
-	BBoxY1    *float64   `json:"BBoxY1,omitempty"`
-	BBoxX2    *float64   `json:"BBoxX2,omitempty"`
-	BBoxY2    *float64   `json:"BBoxY2,omitempty"`
+	BBoxes    [][]float64 `json:"BBoxes,omitempty"`
 	CreatedAt time.Time  `json:"CreatedAt"`
 	UpdatedAt time.Time  `json:"UpdatedAt"`
 }

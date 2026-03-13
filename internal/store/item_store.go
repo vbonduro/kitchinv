@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -18,15 +19,33 @@ func NewItemStore(db *sql.DB) *ItemStore {
 	return &ItemStore{db: db}
 }
 
-func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bbox *[4]float64) (*domain.Item, error) {
-	var bx1, by1, bx2, by2 *float64
-	if bbox != nil {
-		bx1, by1, bx2, by2 = &bbox[0], &bbox[1], &bbox[2], &bbox[3]
+func encodeBBoxes(bboxes [][]float64) sql.NullString {
+	if len(bboxes) == 0 {
+		return sql.NullString{}
 	}
+	b, err := json.Marshal(bboxes)
+	if err != nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: string(b), Valid: true}
+}
+
+func decodeBBoxes(ns sql.NullString) [][]float64 {
+	if !ns.Valid || ns.String == "" {
+		return nil
+	}
+	var bboxes [][]float64
+	if err := json.Unmarshal([]byte(ns.String), &bboxes); err != nil {
+		return nil
+	}
+	return bboxes
+}
+
+func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bboxes [][]float64) (*domain.Item, error) {
 	result, err := s.db.ExecContext(ctx, `
-		INSERT INTO items (area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, areaID, photoID, name, quantity, source, bx1, by1, bx2, by2)
+		INSERT INTO items (area_id, photo_id, name, quantity, source, bboxes)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, areaID, photoID, name, quantity, source, encodeBBoxes(bboxes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create item: %w", err)
 	}
@@ -41,13 +60,14 @@ func (s *ItemStore) Create(ctx context.Context, areaID int64, photoID *int64, na
 
 func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error) {
 	item := &domain.Item{}
+	var bboxesRaw sql.NullString
 	err := s.db.QueryRowContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at
+		SELECT id, area_id, photo_id, name, quantity, source, bboxes, created_at, updated_at
 		FROM items WHERE id = ?
 	`, id).Scan(
 		&item.ID, &item.AreaID, &item.PhotoID,
 		&item.Name, &item.Quantity, &item.Source,
-		&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+		&bboxesRaw,
 		&item.CreatedAt, &item.UpdatedAt,
 	)
 
@@ -58,12 +78,13 @@ func (s *ItemStore) GetByID(ctx context.Context, id int64) (*domain.Item, error)
 		return nil, fmt.Errorf("failed to get item: %w", err)
 	}
 
+	item.BBoxes = decodeBBoxes(bboxesRaw)
 	return item, nil
 }
 
 func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2, created_at, updated_at
+		SELECT id, area_id, photo_id, name, quantity, source, bboxes, created_at, updated_at
 		FROM items WHERE area_id = ? ORDER BY name ASC
 	`, areaID)
 	if err != nil {
@@ -78,14 +99,16 @@ func (s *ItemStore) ListByAreaID(ctx context.Context, areaID int64) ([]*domain.I
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
+		var bboxesRaw sql.NullString
 		if err := rows.Scan(
 			&item.ID, &item.AreaID, &item.PhotoID,
 			&item.Name, &item.Quantity, &item.Source,
-			&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+			&bboxesRaw,
 			&item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
+		item.BBoxes = decodeBBoxes(bboxesRaw)
 		items = append(items, item)
 	}
 
@@ -101,7 +124,7 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT i.id, i.area_id, i.photo_id, i.name, i.quantity, i.source,
-		       i.bbox_x1, i.bbox_y1, i.bbox_x2, i.bbox_y2, i.created_at, i.updated_at
+		       i.bboxes, i.created_at, i.updated_at
 		FROM items i
 		INNER JOIN areas a ON i.area_id = a.id
 		WHERE LOWER(i.name) LIKE ?
@@ -119,14 +142,16 @@ func (s *ItemStore) Search(ctx context.Context, query string) ([]*domain.Item, e
 	var items []*domain.Item
 	for rows.Next() {
 		item := &domain.Item{}
+		var bboxesRaw sql.NullString
 		if err := rows.Scan(
 			&item.ID, &item.AreaID, &item.PhotoID,
 			&item.Name, &item.Quantity, &item.Source,
-			&item.BBoxX1, &item.BBoxY1, &item.BBoxX2, &item.BBoxY2,
+			&bboxesRaw,
 			&item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
+		item.BBoxes = decodeBBoxes(bboxesRaw)
 		items = append(items, item)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,6 +15,19 @@ import (
 	"github.com/vbonduro/kitchinv/internal/photostore"
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
+
+// encodeBBoxesJSON encodes a slice of bboxes to a JSON string for DB insertion.
+// Returns nil if bboxes is empty (NULL in DB).
+func encodeBBoxesJSON(bboxes [][]float64) interface{} {
+	if len(bboxes) == 0 {
+		return nil
+	}
+	b, err := json.Marshal(bboxes)
+	if err != nil {
+		return nil
+	}
+	return string(b)
+}
 
 // ErrNameTaken is returned by UpdateArea when the requested name is already
 // used by another area.
@@ -38,7 +52,7 @@ type photoRepository interface {
 
 // itemRepository is the subset of store.ItemStore that AreaService requires.
 type itemRepository interface {
-	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bbox *[4]float64) (*domain.Item, error)
+	Create(ctx context.Context, areaID int64, photoID *int64, name, quantity, source string, bboxes [][]float64) (*domain.Item, error)
 	GetByID(ctx context.Context, id int64) (*domain.Item, error)
 	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Item, error)
 	Update(ctx context.Context, id int64, name, quantity string) error
@@ -221,11 +235,12 @@ func (s *AreaService) replaceItems(ctx context.Context, areaID, photoID int64, d
 	if err := s.itemStore.DeleteByAreaID(ctx, areaID); err != nil {
 		return nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
-	items := make([]*domain.Item, 0, len(detected))
-	for _, d := range detected {
-		item, err := s.itemStore.Create(ctx, areaID, &photoID, d.Name, d.Quantity, string(domain.ItemSourceAI), d.BBox)
+	merged := mergeDetectedItems(detected)
+	items := make([]*domain.Item, 0, len(merged))
+	for _, m := range merged {
+		item, err := s.itemStore.Create(ctx, areaID, &photoID, m.name, m.quantity, string(domain.ItemSourceAI), m.bboxes)
 		if err != nil {
-			s.logger.Error("failed to create item", "name", d.Name, "error", err)
+			s.logger.Error("failed to create item", "name", m.name, "error", err)
 			continue
 		}
 		items = append(items, item)
@@ -244,35 +259,30 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 		return nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 
-	items := make([]*domain.Item, 0, len(detected))
-	for _, d := range detected {
-		var bx1, by1, bx2, by2 *float64
-		if d.BBox != nil {
-			bx1, by1, bx2, by2 = &d.BBox[0], &d.BBox[1], &d.BBox[2], &d.BBox[3]
-		}
+	merged := mergeDetectedItems(detected)
+	items := make([]*domain.Item, 0, len(merged))
+	for _, m := range merged {
+		bboxesJSON := encodeBBoxesJSON(m.bboxes)
 		result, err := tx.ExecContext(ctx,
-			`INSERT INTO items (area_id, photo_id, name, quantity, source, bbox_x1, bbox_y1, bbox_x2, bbox_y2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			areaID, photoID, d.Name, d.Quantity, string(domain.ItemSourceAI), bx1, by1, bx2, by2)
+			`INSERT INTO items (area_id, photo_id, name, quantity, source, bboxes) VALUES (?, ?, ?, ?, ?, ?)`,
+			areaID, photoID, m.name, m.quantity, string(domain.ItemSourceAI), bboxesJSON)
 		if err != nil {
-			s.logger.Error("failed to create item", "name", d.Name, "error", err)
+			s.logger.Error("failed to create item", "name", m.name, "error", err)
 			continue
 		}
 		id, err := result.LastInsertId()
 		if err != nil {
-			s.logger.Error("failed to get item id", "name", d.Name, "error", err)
+			s.logger.Error("failed to get item id", "name", m.name, "error", err)
 			continue
 		}
 		items = append(items, &domain.Item{
 			ID:       id,
 			AreaID:   areaID,
 			PhotoID:  &photoID,
-			Name:     d.Name,
-			Quantity: d.Quantity,
+			Name:     m.name,
+			Quantity: m.quantity,
 			Source:   domain.ItemSourceAI,
-			BBoxX1:   bx1,
-			BBoxY1:   by1,
-			BBoxX2:   bx2,
-			BBoxY2:   by2,
+			BBoxes:   m.bboxes,
 		})
 	}
 
@@ -338,6 +348,7 @@ func (s *AreaService) DeletePhoto(ctx context.Context, areaID int64) error {
 func (s *AreaService) CreateItem(ctx context.Context, areaID int64, name, quantity string) (*domain.Item, error) {
 	return s.itemStore.Create(ctx, areaID, nil, name, quantity, string(domain.ItemSourceUser), nil)
 }
+
 
 func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quantity string) (*domain.Item, error) {
 	old, err := s.itemStore.GetByID(ctx, itemID)

@@ -37,6 +37,7 @@ async function createAreaWithPhoto(page: Page): Promise<string> {
   const areaID = testid!.replace('area-card-', '');
 
   // Upload photo and wait for items to appear.
+  // Mock returns 4 entries (Milk×2, Butter, OJ) which merge to 3 items.
   const jpegFixture = createJpegFixture();
   try {
     const fileInput = page.locator(`[data-testid="photo-input-${areaID}"]`);
@@ -58,9 +59,9 @@ test.describe('BBox overlay', () => {
     const svg = card.locator('.photo-wrapper .bbox-overlay');
     await expect(svg).toBeAttached();
 
-    // All 3 items from the mock have bbox — expect 3 rects.
+    // Mock returns 3 unique items but Milk has 2 bboxes — expect 4 rects total.
     const rects = svg.locator('.bbox-rect');
-    await expect(rects).toHaveCount(3);
+    await expect(rects).toHaveCount(4);
 
     // Hover first row to activate the rect, then screenshot for visual inspection.
     await card.locator('[data-testid="item-row"]').nth(0).hover();
@@ -82,7 +83,7 @@ test.describe('BBox overlay', () => {
     await firstRow.hover();
 
     // The matching rect must have class bbox-active.
-    const activeRect = svg.locator(`.bbox-rect[data-item-id="${itemID}"]`);
+    const activeRect = svg.locator(`.bbox-rect[data-item-id="${itemID}"]`).first();
     await expect(activeRect).toHaveClass(/bbox-active/);
 
     // The tbody must have class bbox-hover (dims other rows).
@@ -95,6 +96,38 @@ test.describe('BBox overlay', () => {
     // The other rows must NOT have bbox-row-active.
     const secondRow = rows.nth(1);
     await expect(secondRow).not.toHaveClass(/bbox-row-active/);
+  });
+
+  test('hovering merged item highlights all its bboxes', async ({ page }) => {
+    const areaID = await createAreaWithPhoto(page);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const rows = card.locator('[data-testid="item-row"]');
+    const svg = card.locator('.photo-wrapper .bbox-overlay');
+
+    // Find the Milk row — it has 2 bboxes after merging.
+    let milkRow = rows.nth(0);
+    for (let i = 0; i < 3; i++) {
+      const name = await rows.nth(i).locator('.item-name-cell').textContent();
+      if (name?.toLowerCase().includes('milk')) {
+        milkRow = rows.nth(i);
+        break;
+      }
+    }
+
+    const milkID = await milkRow.getAttribute('data-item-id');
+    expect(milkID).toBeTruthy();
+
+    // Hover the Milk row.
+    await milkRow.hover();
+
+    // All rects for Milk should be active.
+    const milkRects = svg.locator(`.bbox-rect[data-item-id="${milkID}"]`);
+    const milkRectCount = await milkRects.count();
+    expect(milkRectCount).toBe(2);
+
+    for (let i = 0; i < milkRectCount; i++) {
+      await expect(milkRects.nth(i)).toHaveClass(/bbox-active/);
+    }
   });
 
   test('moving mouse off item row clears highlight', async ({ page }) => {
