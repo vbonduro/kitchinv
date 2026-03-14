@@ -4,7 +4,10 @@
     <div class="area-sticky">
     <!-- Card header -->
     <div class="area-card-header">
-        <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="if(isEditMode())startRenameArea({{.ID}})">{{.Name}}</span>
+        <div class="area-card-title">
+            <span class="area-card-name" data-testid="area-name-{{.ID}}" onclick="if(isEditMode())startRenameArea({{.ID}})">{{.Name}}</span>
+            {{if .Photo}}<span class="photo-timestamp" data-testid="photo-timestamp">{{timeAgo .Photo.UploadedAt}}</span>{{end}}
+        </div>
         <div class="area-card-actions">
             <button class="btn btn-icon btn-move-up edit-only" onclick="moveArea({{.ID}},'up')" aria-label="Move up" title="Move up">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

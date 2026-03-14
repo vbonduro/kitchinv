@@ -736,3 +736,49 @@ func TestIntegration_ReorderAreas(t *testing.T) {
 			gammaPos, alphaPos, betaPos)
 	}
 }
+
+// TestIntegration_PhotoTimestamp verifies that after uploading a photo the area
+// card includes a human-readable upload timestamp.
+func TestIntegration_PhotoTimestamp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	vis := &recordingVision{result: &vision.AnalysisResult{}}
+	srv, cleanup := newTestServer(t, vis)
+	defer cleanup()
+
+	// Create area.
+	resp, err := http.PostForm(srv.URL+"/areas", url.Values{"name": {"Fridge"}})
+	if err != nil {
+		t.Fatalf("POST /areas: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	// Upload a photo.
+	body, ct := buildMultipartBody(t, minimalJPEG)
+	resp2, err := http.Post(srv.URL+"/areas/1/photos", ct, body)
+	if err != nil {
+		t.Fatalf("POST photo: %v", err)
+	}
+	t.Cleanup(func() { _ = resp2.Body.Close() })
+	if resp2.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp2.Body)
+		t.Fatalf("expected 200, got %d: %s", resp2.StatusCode, b)
+	}
+
+	// GET /areas and verify a timestamp is present.
+	resp3, err := http.Get(srv.URL + "/areas")
+	if err != nil {
+		t.Fatalf("GET /areas: %v", err)
+	}
+	t.Cleanup(func() { _ = resp3.Body.Close() })
+	html, err := io.ReadAll(resp3.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+
+	if !strings.Contains(string(html), "photo-timestamp") {
+		t.Errorf("expected photo-timestamp element in HTML, got:\n%s", html)
+	}
+}

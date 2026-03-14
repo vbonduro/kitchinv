@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
+
 	"github.com/vbonduro/kitchinv/internal/db"
 	"github.com/vbonduro/kitchinv/internal/domain"
 	"github.com/vbonduro/kitchinv/internal/photostore"
@@ -58,6 +60,7 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 		tmplFuncs: template.FuncMap{
 			"inc": func(i int) int { return i + 1 },
 			"sub": func(a, b int) int { return a - b },
+			"timeAgo": humanize.Time,
 			"dict": func(pairs ...any) map[string]any {
 				m := make(map[string]any, len(pairs)/2)
 				for i := 0; i+1 < len(pairs); i += 2 {
