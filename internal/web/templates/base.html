@@ -328,11 +328,17 @@
         }
         .area-photo-section:hover .area-photo-remove { opacity: 1; }
         .area-photo-remove:hover { background: var(--danger); }
+        .area-card-title {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
         .photo-timestamp {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
-            padding: 0.25rem 1rem;
-            text-align: right;
+            font-weight: 400;
+            margin-top: 0.1rem;
+            -webkit-text-fill-color: var(--text-muted);
         }
 
         /* BBox overlay */
@@ -1155,7 +1161,20 @@
             finishStream();
         }).catch(function(err) {
             console.error('Upload error:', err);
-            finishStream(true);
+            // Network error may have fired after the server already succeeded
+            // (e.g. browser reset the connection on a slow response). Check the
+            // server before restoring old state.
+            fetch('/areas/' + areaID + '/items')
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    if (html && html.trim()) {
+                        // Server has items — upload succeeded despite network error.
+                        finishStream();
+                    } else {
+                        finishStream(true);
+                    }
+                })
+                .catch(function() { finishStream(true); });
         });
 
         function finishStream(error) {
@@ -1183,54 +1202,18 @@
                 var itemsSec = card.querySelector('.items-section');
                 if (itemsSec) itemsSec.style.display = '';
             } else {
-                // Remove analyzing overlay.
-                var overlay = card.querySelector('[data-testid="analyzing-indicator-' + areaID + '"]');
-                if (overlay) overlay.remove();
-                // Update photo section with server URL and controls.
-                var photoSec = card.querySelector('.area-photo-section');
-                if (photoSec) {
-                    photoSec.innerHTML =
-                        '<div class="photo-wrapper">' +
-                            '<img src="/areas/' + areaID + '/photo?t=' + Date.now() + '" class="area-photo-img" alt="Photo" onload="fitBBoxOverlay(' + areaID + ')">' +
-                            '<svg class="bbox-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>' +
-                        '</div>' +
-                        '<div class="area-photo-overlay edit-only" onclick="triggerUpload(' + areaID + ')"><span class="area-photo-overlay-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Replace photo</span></div>' +
-                        '<button class="area-photo-remove edit-only" onclick="event.stopPropagation();removePhoto(' + areaID + ')" aria-label="Remove photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
-                    setupPhotoTouchToggle(areaID);
-                    updateStickyTheadTop(areaID);
-                }
-                // Replace streamed item rows with server-rendered partial so
-                // that all controls (delete, edit) and data-item-id attributes
-                // are present and interactive (kitchinv-c0o).
-                // Replace only the table inside .items-section to preserve the add-item-row.
-                // Fetch items HTML and JSON in parallel; use HTML for table, JSON for bbox rects.
-                Promise.all([
-                    fetch('/areas/' + areaID + '/items').then(function(r) { return r.text(); }),
-                    fetch('/areas/' + areaID + '/items', { headers: { 'Accept': 'application/json' } }).then(function(r) { return r.json(); }),
-                ]).then(function(results) {
-                    var html = results[0];
-                    var items = results[1];
-                    var itemsSection = card.querySelector('.items-section');
-                    if (!itemsSection) return;
-                    // Remove existing table and toggle button, keep add-item-row.
-                    var oldTable = itemsSection.querySelector('.item-table');
-                    if (oldTable) oldTable.remove();
-                    var oldToggle = itemsSection.querySelector('.items-toggle');
-                    if (oldToggle) oldToggle.remove();
-                    var oldNoItems = itemsSection.querySelector('.no-items-text');
-                    if (oldNoItems) oldNoItems.remove();
-                    // Prepend the server-rendered table/toggle before add-item-row.
-                    var addRow = itemsSection.querySelector('.add-item-row');
-                    var tmp = document.createElement('div');
-                    tmp.innerHTML = html;
-                    while (tmp.firstChild) {
-                        itemsSection.insertBefore(tmp.firstChild, addRow);
-                    }
-                    // Reveal items section now that analysis is complete.
-                    itemsSection.style.display = '';
-                    // Populate bbox rects; fitBBoxOverlay fires via onload on the img element.
-                    populateBBoxRects(areaID, items);
-                }).catch(function(err) { console.error('failed to refresh items:', err); });
+                // Replace the whole card with the server-rendered version so that
+                // the photo, items, timestamp, and all controls are correct.
+                fetch('/areas/' + areaID + '/card')
+                    .then(function(r) { return r.text(); })
+                    .then(function(cardHtml) {
+                        var c = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+                        if (c) {
+                            c.outerHTML = cardHtml;
+                            updateMoveButtons();
+                        }
+                    })
+                    .catch(function(err) { console.error('failed to reload card:', err); });
             }
         }
     }
