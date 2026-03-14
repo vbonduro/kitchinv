@@ -58,6 +58,7 @@
                 </svg>
             </button>
         </div><!-- /.area-photo-section -->
+        <div class="photo-timestamp" data-testid="photo-timestamp">Scanned {{timeAgo .Photo.UploadedAt}}</div>
         {{end}}
     {{else if .Photo}}
         <!-- Photo exists but no items yet — analyzing -->
@@ -68,6 +69,7 @@
                 <span class="area-analysing-text">Analyzing your space...</span>
             </div>
         </div>
+        <div class="photo-timestamp" data-testid="photo-timestamp">Scanned {{timeAgo .Photo.UploadedAt}}</div>
     {{else}}
         <!-- No photo — upload zone -->
         <div class="upload-zone edit-only" data-testid="upload-zone-{{.ID}}" onclick="triggerUpload({{.ID}})">
