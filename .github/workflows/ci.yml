@@ -100,6 +100,12 @@ jobs:
           path: coverage.out
           retention-days: 7
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
