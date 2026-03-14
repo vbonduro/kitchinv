@@ -66,9 +66,6 @@ func main() {
 
 	areaService := service.NewAreaService(areaStore, photoStore, itemStore, itemEditStore, visionAnalyzer, photoStg, logger).WithDB(database)
 	server := web.NewServer(areaService, templates.FS, photoStg, logger)
-	if cfg.TestMode {
-		server.EnableTestMode(database, cfg.PhotoPath)
-	}
 
 	if err := server.ListenAndServe(cfg.ListenAddr); err != nil {
 		logger.Error("server error", "error", err)
