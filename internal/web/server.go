@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"embed"
-	"fmt"
 	"html/template"
 	"log/slog"
-	"math"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/dustin/go-humanize"
 
 	"github.com/vbonduro/kitchinv/internal/db"
 	"github.com/vbonduro/kitchinv/internal/domain"
@@ -60,24 +60,7 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 		tmplFuncs: template.FuncMap{
 			"inc": func(i int) int { return i + 1 },
 			"sub": func(a, b int) int { return a - b },
-			"timeAgo": func(t time.Time) string {
-				d := time.Since(t)
-				switch {
-				case d < time.Minute:
-					return "just now"
-				case d < time.Hour:
-					mins := int(math.Round(d.Minutes()))
-					return fmt.Sprintf("%d minute%s ago", mins, pluralS(mins))
-				case d < 24*time.Hour:
-					hrs := int(math.Round(d.Hours()))
-					return fmt.Sprintf("%d hour%s ago", hrs, pluralS(hrs))
-				case d < 30*24*time.Hour:
-					days := int(math.Round(d.Hours() / 24))
-					return fmt.Sprintf("%d day%s ago", days, pluralS(days))
-				default:
-					return t.Format("Jan 2, 2006")
-				}
-			},
+			"timeAgo": humanize.Time,
 			"dict": func(pairs ...any) map[string]any {
 				m := make(map[string]any, len(pairs)/2)
 				for i := 0; i+1 < len(pairs); i += 2 {
@@ -137,13 +120,6 @@ func (s *Server) handleTestReset(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func pluralS(n int) string {
-	if n == 1 {
-		return ""
-	}
-	return "s"
 }
 
 // securityHeaders adds defensive HTTP response headers to every response.
