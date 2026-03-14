@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"log/slog"
@@ -31,12 +30,7 @@ func main() {
 	defer cleanup()
 	slog.SetDefault(logger)
 
-	var database *sql.DB
-	if cfg.TestMode {
-		database, err = db.OpenForTesting()
-	} else {
-		database, err = db.Open(cfg.DBPath)
-	}
+	database, err := db.Open(cfg.DBPath)
 	if err != nil {
 		logger.Error("failed to open database", "error", err)
 		return

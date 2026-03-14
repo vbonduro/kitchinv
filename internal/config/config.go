@@ -20,7 +20,6 @@ type Config struct {
 	PhotoPath     string
 	LogLevel      string
 	LogFile       string
-	TestMode      bool
 }
 
 func Load() *Config {
@@ -38,7 +37,6 @@ func Load() *Config {
 		PhotoPath:     getEnv("PHOTO_LOCAL_PATH", "/data/photos"),
 		LogLevel:      getEnv("LOG_LEVEL", "info"),
 		LogFile:       getEnv("LOG_FILE", ""),
-		TestMode:      os.Getenv("KITCHINV_TEST_MODE") == "1",
 	}
 }
 
