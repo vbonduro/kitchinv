@@ -31,25 +31,6 @@ func OpenForTesting() (*sql.DB, error) {
 	return db, nil
 }
 
-// Reset deletes all application data from the database and resets autoincrement
-// counters. Intended for use in E2E test mode only; never call this in production.
-// Tables are deleted in dependency order (items → photos → areas) rather than
-// relying on ON DELETE CASCADE, which requires foreign_keys PRAGMA to be active
-// on the specific connection executing the DELETE — not guaranteed for all drivers.
-func Reset(database *sql.DB) error {
-	for _, stmt := range []string{
-		`DELETE FROM item_edits`,
-		`DELETE FROM items`,
-		`DELETE FROM photos`,
-		`DELETE FROM areas`,
-		`DELETE FROM sqlite_sequence WHERE name IN ('areas', 'photos', 'items', 'item_edits')`,
-	} {
-		if _, err := database.Exec(stmt); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func Open(dbPath string) (*sql.DB, error) {
 	// cache=shared enables multiple connections to share the same in-memory page

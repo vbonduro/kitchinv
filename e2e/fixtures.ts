@@ -70,11 +70,11 @@ export const test = base.extend<TestFixtures>({
       env: {
         ...process.env,
         LISTEN_ADDR:      `:${port}`,
+        DB_PATH:          ':memory:',
         PHOTO_LOCAL_PATH: photoDir,
         VISION_BACKEND:   'ollama',
         OLLAMA_HOST:      `http://localhost:${ollamaPort}`,
         OLLAMA_MODEL:     'moondream',
-        KITCHINV_TEST_MODE: '1',
       },
       stdio: 'inherit',
     });

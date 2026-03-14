@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,4 +108,27 @@ func TestMigrationsIdempotent(t *testing.T) {
 
 	err = runMigrations(db)
 	assert.NoError(t, err, "running migrations a second time should be a no-op")
+}
+
+// TestOpen verifies that Open creates or opens a file-backed SQLite database,
+// applies all migrations, and returns a usable connection.
+func TestOpen(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+
+	db, err := Open(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, db.Close()) })
+
+	// File should exist on disk.
+	_, err = os.Stat(dbPath)
+	assert.NoError(t, err, "database file should be created on disk")
+
+	// Connection should be usable.
+	assert.NoError(t, db.Ping())
+
+	// Migrations should have been applied — spot-check a table.
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM areas").Scan(&count)
+	assert.NoError(t, err, "areas table should exist after Open")
 }
