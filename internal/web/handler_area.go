@@ -334,6 +334,24 @@ func (s *Server) handleReorderAreas(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleListSnapshots(w http.ResponseWriter, r *http.Request) {
+	areaID, err := parseID(r)
+	if err != nil {
+		http.Error(w, "invalid area id", http.StatusBadRequest)
+		return
+	}
+
+	snapshots, err := s.service.ListSnapshots(r.Context(), areaID)
+	if err != nil {
+		http.Error(w, "failed to list snapshots", http.StatusInternalServerError)
+		s.logger.Error("list snapshots failed", "area_id", areaID, "error", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(snapshots)
+}
+
 // parseID extracts the {id} path variable and returns it as int64.
 func parseID(r *http.Request) (int64, error) {
 	return strconv.ParseInt(r.PathValue("id"), 10, 64)

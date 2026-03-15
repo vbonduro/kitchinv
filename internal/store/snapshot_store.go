@@ -60,7 +60,7 @@ func (s *SnapshotStore) ListByAreaID(ctx context.Context, areaID int64) ([]*doma
 	}
 	defer func() { _ = rows.Close() }()
 
-	var snapshots []*domain.Snapshot
+	snapshots := make([]*domain.Snapshot, 0)
 	for rows.Next() {
 		var snap domain.Snapshot
 		var itemsJSON string

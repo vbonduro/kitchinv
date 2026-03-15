@@ -71,6 +71,7 @@ type itemEditRepository interface {
 // snapshotRepository persists area inventory snapshots.
 type snapshotRepository interface {
 	Create(ctx context.Context, areaID int64, items []domain.SnapshotItem) (*domain.Snapshot, error)
+	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Snapshot, error)
 }
 
 type AreaService struct {
@@ -413,4 +414,8 @@ func (s *AreaService) ReorderAreas(ctx context.Context, ids []int64) error {
 
 func (s *AreaService) SearchItems(ctx context.Context, query string) ([]*domain.Item, error) {
 	return s.itemStore.Search(ctx, query)
+}
+
+func (s *AreaService) ListSnapshots(ctx context.Context, areaID int64) ([]*domain.Snapshot, error) {
+	return s.snapshotStore.ListByAreaID(ctx, areaID)
 }
