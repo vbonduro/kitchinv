@@ -143,10 +143,11 @@ func newTestServer(t *testing.T, vis vision.VisionAnalyzer) (*httptest.Server, f
 		store.NewPhotoStore(database),
 		store.NewItemStore(database),
 		store.NewItemEditStore(database),
+		store.NewSnapshotStore(database),
 		vis,
 		newMemPhotoStore(),
 		slog.Default(),
-	)
+	).WithDB(database)
 	srv := httptest.NewServer(web.NewServer(svc, templates.FS, newMemPhotoStore(), slog.Default()))
 	return srv, func() {
 		srv.Close()

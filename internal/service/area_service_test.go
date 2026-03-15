@@ -87,10 +87,11 @@ func newTestService(t *testing.T) (*AreaService, func()) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
-	)
+	).WithDB(d)
 
 	return svc, func() { _ = d.Close() }
 }
@@ -153,6 +154,7 @@ func TestAreaServiceUploadPhoto_StoresItemsFromVision(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -184,7 +186,7 @@ func TestAreaServiceUploadPhoto_ReplacesExistingItems(t *testing.T) {
 	firstVision := &stubVision{result: &vision.AnalysisResult{
 		Items: []vision.DetectedItem{{Name: "Old Item", Quantity: "1", Notes: ""}},
 	}}
-	svc := NewAreaService(areaStore, photoStore, itemStore, store.NewItemEditStore(d), firstVision, photoStg, slog.Default())
+	svc := NewAreaService(areaStore, photoStore, itemStore, store.NewItemEditStore(d), store.NewSnapshotStore(d), firstVision, photoStg, slog.Default())
 
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
@@ -221,6 +223,7 @@ func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{err: errors.New("vision unavailable")},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -245,6 +248,7 @@ func TestAreaServiceUploadPhoto_VisionError_RollsBackPhoto(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{err: errors.New("vision unavailable")},
 		photoStg,
 		slog.Default(),
@@ -281,6 +285,7 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		photoStg,
 		slog.Default(),
@@ -313,6 +318,7 @@ func TestAreaServiceSearchItems(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -374,6 +380,7 @@ func TestAreaServiceDeletePhoto(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -426,6 +433,7 @@ func TestAreaServiceUploadPhoto_ItemsHaveAISource(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -452,6 +460,7 @@ func TestAreaServiceUpdateItem_RecordsEdits(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		editStore,
+		store.NewSnapshotStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -490,6 +499,7 @@ func TestAreaServiceUpdateItem_NoEditsWhenUnchanged(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		editStore,
+		store.NewSnapshotStore(d),
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -554,6 +564,7 @@ func TestAreaServiceUploadPhoto_ConcurrentSameArea_DoesNotCorruptItems(t *testin
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		cv,
 		newStubPhotoStore(),
 		slog.Default(),
@@ -601,6 +612,7 @@ func TestAreaServiceUploadPhoto_ConcurrentDifferentAreas_DoNotInterfere(t *testi
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		cv,
 		newStubPhotoStore(),
 		slog.Default(),
@@ -651,10 +663,11 @@ func TestAreaServiceListAreasWithItems(t *testing.T) {
 		store.NewPhotoStore(d),
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
-	)
+	).WithDB(d)
 	ctx := context.Background()
 
 	area, err := svc.CreateArea(ctx, "Fridge")
@@ -668,4 +681,69 @@ func TestAreaServiceListAreasWithItems(t *testing.T) {
 	assert.Equal(t, "Fridge", summaries[0].Name)
 	assert.Len(t, summaries[0].Items, 1)
 	assert.NotNil(t, summaries[0].Photo)
+}
+
+// TestAreaService_SnapshotCreatedOnReupload verifies that uploading a second
+// photo to an area that already has items creates a snapshot of the previous
+// inventory before replacing it.
+func TestAreaService_SnapshotCreatedOnReupload(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	snapshotStore := store.NewSnapshotStore(d)
+	ctx := context.Background()
+
+	firstResult := &vision.AnalysisResult{
+		Items: []vision.DetectedItem{
+			{Name: "Milk", Quantity: "2"},
+			{Name: "Eggs", Quantity: "12"},
+		},
+	}
+	secondResult := &vision.AnalysisResult{
+		Items: []vision.DetectedItem{
+			{Name: "Butter", Quantity: "1"},
+		},
+	}
+
+	vis := &chanVision{ch: make(chan *vision.AnalysisResult, 2)}
+	vis.ch <- firstResult
+	vis.ch <- secondResult
+
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		store.NewItemEditStore(d),
+		snapshotStore,
+		vis,
+		newStubPhotoStore(),
+		slog.Default(),
+	).WithDB(d)
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	// First upload — no prior items, no snapshot should be created.
+	_, _, err = svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+
+	snapshots, err := snapshotStore.ListByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	assert.Empty(t, snapshots, "no snapshot expected on first upload")
+
+	// Second upload — should snapshot the previous inventory (Milk + Eggs).
+	_, _, err = svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+
+	snapshots, err = snapshotStore.ListByAreaID(ctx, area.ID)
+	require.NoError(t, err)
+	require.Len(t, snapshots, 1, "expected one snapshot after second upload")
+
+	snap := snapshots[0]
+	assert.Equal(t, area.ID, snap.AreaID)
+	assert.False(t, snap.TakenAt.IsZero())
+	require.Len(t, snap.Items, 2)
+	names := []string{snap.Items[0].Name, snap.Items[1].Name}
+	assert.ElementsMatch(t, []string{"Milk", "Eggs"}, names)
 }
