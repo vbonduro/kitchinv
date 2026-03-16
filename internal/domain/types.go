@@ -37,6 +37,20 @@ type Item struct {
 	UpdatedAt time.Time  `json:"UpdatedAt"`
 }
 
+// SnapshotItem is a lightweight item record stored inside a snapshot.
+type SnapshotItem struct {
+	Name     string `json:"name"`
+	Quantity string `json:"quantity,omitempty"`
+}
+
+// Snapshot captures the item list for an area at a point in time.
+type Snapshot struct {
+	ID      int64
+	AreaID  int64
+	TakenAt time.Time
+	Items   []SnapshotItem
+}
+
 // ItemEdit records a single field change made by a user.
 type ItemEdit struct {
 	ID       int64

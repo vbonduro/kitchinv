@@ -34,6 +34,7 @@ type kitchenService interface {
 	DeleteItem(ctx context.Context, itemID int64) error
 	ReorderAreas(ctx context.Context, ids []int64) error
 	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
+	ListSnapshots(ctx context.Context, areaID int64) ([]*domain.Snapshot, error)
 }
 
 type Server struct {
@@ -91,6 +92,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("PUT /areas/{id}/items/{itemId}", s.handleUpdateItem)
 	s.mux.HandleFunc("DELETE /areas/{id}/items/{itemId}", s.handleDeleteItem)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
+	s.mux.HandleFunc("GET /areas/{id}/snapshots", s.handleListSnapshots)
 }
 
 

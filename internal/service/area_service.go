@@ -68,11 +68,18 @@ type itemEditRepository interface {
 	ListByItemID(ctx context.Context, itemID int64) ([]*domain.ItemEdit, error)
 }
 
+// snapshotRepository persists area inventory snapshots.
+type snapshotRepository interface {
+	Create(ctx context.Context, areaID int64, items []domain.SnapshotItem) (*domain.Snapshot, error)
+	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Snapshot, error)
+}
+
 type AreaService struct {
 	areaStore      areaRepository
 	photoStore     photoRepository
 	itemStore      itemRepository
 	itemEditStore  itemEditRepository
+	snapshotStore  snapshotRepository
 	visionAPI      vision.VisionAnalyzer
 	photoStg       photostore.PhotoStore
 	logger         *slog.Logger
@@ -85,6 +92,7 @@ func NewAreaService(
 	photoStore photoRepository,
 	itemStore itemRepository,
 	itemEditStore itemEditRepository,
+	snapshotStore snapshotRepository,
 	visionAPI vision.VisionAnalyzer,
 	photoStg photostore.PhotoStore,
 	logger *slog.Logger,
@@ -94,6 +102,7 @@ func NewAreaService(
 		photoStore:    photoStore,
 		itemStore:     itemStore,
 		itemEditStore: itemEditStore,
+		snapshotStore: snapshotStore,
 		visionAPI:     visionAPI,
 		photoStg:      photoStg,
 		logger:        logger,
@@ -256,6 +265,22 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 	}
 	defer func() { _ = tx.Rollback() }()
 
+	// Snapshot the existing inventory before replacing it.
+	existing, err := s.itemStore.ListByAreaID(ctx, areaID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing items: %w", err)
+	}
+	if len(existing) > 0 {
+		snapItems := make([]domain.SnapshotItem, len(existing))
+		for i, it := range existing {
+			snapItems[i] = domain.SnapshotItem{Name: it.Name, Quantity: it.Quantity}
+		}
+		if _, err := s.snapshotStore.Create(ctx, areaID, snapItems); err != nil {
+			s.logger.Error("failed to create inventory snapshot", "area_id", areaID, "error", err)
+			// Non-fatal: continue with the replacement even if snapshotting fails.
+		}
+	}
+
 	if _, err := tx.ExecContext(ctx, `DELETE FROM items WHERE area_id = ?`, areaID); err != nil {
 		return nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
@@ -389,4 +414,8 @@ func (s *AreaService) ReorderAreas(ctx context.Context, ids []int64) error {
 
 func (s *AreaService) SearchItems(ctx context.Context, query string) ([]*domain.Item, error) {
 	return s.itemStore.Search(ctx, query)
+}
+
+func (s *AreaService) ListSnapshots(ctx context.Context, areaID int64) ([]*domain.Snapshot, error) {
+	return s.snapshotStore.ListByAreaID(ctx, areaID)
 }

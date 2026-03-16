@@ -213,4 +213,32 @@ test.describe('Upload & Analysis', () => {
       try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
     }
   });
+
+  // Regression: after a second upload the photo <img> src must include a new
+  // cache-busting parameter so the browser fetches the new image without a
+  // page refresh. Without this fix the src URL is identical after replacement
+  // and the browser shows the stale cached image.
+  test('photo src changes after second upload (cache-bust)', async ({ page }) => {
+    const jpegFixture = createJpegFixture();
+
+    try {
+      const name = `E2E PhotoCacheBust ${Date.now()}`;
+      const areaID = await createArea(page, name);
+      const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+      const img = card.locator('.area-photo-img');
+
+      await uploadPhoto(page, areaID, jpegFixture);
+      await expect(img).toHaveAttribute('src', /\?v=/, { timeout: 5_000 });
+      const srcAfterFirst = await img.getAttribute('src');
+
+      await uploadPhoto(page, areaID, jpegFixture);
+      // Wait for the card reload to complete — src must change to a new cache-buster value.
+      await expect(img).not.toHaveAttribute('src', srcAfterFirst!, { timeout: 5_000 });
+      const srcAfterSecond = await img.getAttribute('src');
+
+      expect(srcAfterSecond).not.toBe(srcAfterFirst);
+    } finally {
+      try { fs.unlinkSync(jpegFixture); } catch { /* ignore */ }
+    }
+  });
 });

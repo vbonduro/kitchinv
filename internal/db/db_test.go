@@ -45,6 +45,10 @@ func TestMigrationsApply(t *testing.T) {
 	err = db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='item_edits'").Scan(&tableName)
 	assert.NoError(t, err)
 	assert.Equal(t, "item_edits", tableName)
+
+	err = db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='area_snapshots'").Scan(&tableName)
+	assert.NoError(t, err)
+	assert.Equal(t, "area_snapshots", tableName)
 }
 
 // TestMigrationsSchema verifies that all expected columns exist with the right
@@ -96,6 +100,13 @@ func TestMigrationsSchema(t *testing.T) {
 		{"old_value", "TEXT"},
 		{"new_value", "TEXT"},
 		{"edited_at", "DATETIME"},
+	})
+
+	checkColumns("area_snapshots", []col{
+		{"id", "INTEGER"},
+		{"area_id", "INTEGER"},
+		{"taken_at", "DATETIME"},
+		{"items", "TEXT"},
 	})
 }
 
