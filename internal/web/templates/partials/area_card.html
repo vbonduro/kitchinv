@@ -38,7 +38,7 @@
         {{if .Photo}}
         <div class="area-photo-section">
             <div class="photo-wrapper">
-                <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}" onload="fitBBoxOverlay({{.ID}})">
+                <img src="/areas/{{.ID}}/photo?v={{.Photo.ID}}" class="area-photo-img" alt="Photo of {{.Name}}" onload="fitBBoxOverlay({{.ID}})">
                 <svg class="bbox-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                     {{range .Items}}{{$id := .ID}}{{range .BBoxes}}
                     <rect class="bbox-rect" data-item-id="{{$id}}"
@@ -65,7 +65,7 @@
     {{else if .Photo}}
         <!-- Photo exists but no items yet — analyzing -->
         <div class="area-photo-section">
-            <img src="/areas/{{.ID}}/photo" class="area-photo-img" alt="Photo of {{.Name}}">
+            <img src="/areas/{{.ID}}/photo?v={{.Photo.ID}}" class="area-photo-img" alt="Photo of {{.Name}}">
             <div class="area-analysing-overlay" data-testid="analyzing-indicator-{{.ID}}">
                 <div class="spinner"></div>
                 <span class="area-analysing-text">Analyzing your space...</span>

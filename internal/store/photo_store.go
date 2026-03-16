@@ -52,7 +52,7 @@ func (s *PhotoStore) GetLatestByAreaID(ctx context.Context, areaID int64) (*doma
 	photo := &domain.Photo{}
 	err := s.db.QueryRowContext(ctx, `
 		SELECT id, area_id, storage_key, mime_type, uploaded_at FROM photos
-		WHERE area_id = ? ORDER BY uploaded_at DESC LIMIT 1
+		WHERE area_id = ? ORDER BY uploaded_at DESC, id DESC LIMIT 1
 	`, areaID).Scan(&photo.ID, &photo.AreaID, &photo.StorageKey, &photo.MimeType, &photo.UploadedAt)
 
 	if err == sql.ErrNoRows {
