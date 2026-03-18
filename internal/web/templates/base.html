@@ -513,7 +513,7 @@
         .add-item-row input {
             flex: 1;
             font-family: var(--font);
-            font-size: 0.8125rem;
+            font-size: 1rem;
             color: var(--text);
             background: #f8fafc;
             border: 1px solid var(--card-border);
@@ -531,7 +531,7 @@
         /* Inline edit */
         .inline-edit-input {
             font-family: var(--font);
-            font-size: 0.8125rem;
+            font-size: 1rem;
             color: var(--text);
             background: white;
             border: 1px solid var(--primary);
@@ -1297,6 +1297,7 @@
                 '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
                 '<td class="item-actions"><button class="btn btn-icon btn-icon-danger edit-only" onclick="event.stopPropagation();deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
             tbody.appendChild(tr);
+            tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             if (nameInput) nameInput.value = '';
             if (qtyInput) qtyInput.value = '';
             if (nameInput) nameInput.focus();
@@ -1460,6 +1461,7 @@
 
             // Optimistically update UI.
             revertCells(newName, newQty);
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             if (newName === origName && newQty === origQty) return;
 
