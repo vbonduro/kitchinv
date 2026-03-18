@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>kitchinv</title>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
             integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
@@ -428,7 +428,7 @@
             table-layout: fixed;
             border-collapse: separate;
             border-spacing: 0;
-            font-size: 0.8125rem;
+            font-size: 1rem;
         }
         /* Col 1: Name, Col 2: Qty, Col 3: Location, Col 4: Delete */
         .item-table th:nth-child(1),
@@ -513,7 +513,7 @@
         .add-item-row input {
             flex: 1;
             font-family: var(--font);
-            font-size: 0.8125rem;
+            font-size: 1rem;
             color: var(--text);
             background: #f8fafc;
             border: 1px solid var(--card-border);
@@ -531,7 +531,7 @@
         /* Inline edit */
         .inline-edit-input {
             font-family: var(--font);
-            font-size: 0.8125rem;
+            font-size: inherit;
             color: var(--text);
             background: white;
             border: 1px solid var(--primary);
@@ -1670,6 +1670,34 @@
 
     /* Re-measure after images load (photo changes area-sticky height). */
     window.addEventListener('load', updateAllStickyTheadTops);
+
+    /* ── Prevent Safari iOS scroll-jump on keyboard dismiss ────────────
+       When the soft keyboard opens, visualViewport shrinks. When it closes,
+       Safari scrolls the page unpredictably. We snapshot scrollY when any
+       input is focused (keyboard about to open) and restore it once the
+       viewport grows back to its original height (keyboard fully dismissed). */
+    (function() {
+        if (!window.visualViewport) return;
+        var savedScrollY = null;
+        var baseHeight = window.visualViewport.height;
+
+        document.addEventListener('focusin', function(e) {
+            var tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                savedScrollY = window.scrollY;
+                baseHeight = window.visualViewport.height;
+            }
+        });
+
+        window.visualViewport.addEventListener('resize', function() {
+            // Viewport grew back — keyboard dismissed.
+            if (savedScrollY !== null && window.visualViewport.height >= baseHeight) {
+                var y = savedScrollY;
+                savedScrollY = null;
+                window.scrollTo({ top: y, behavior: 'instant' });
+            }
+        });
+    }());
     </script>
 </body>
 </html>
