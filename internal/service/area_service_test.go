@@ -40,6 +40,9 @@ func (n *noopOverrideStore) ReorderSortOrder(_ context.Context, _ []int64) error
 func (n *noopOverrideStore) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
 	return nil, nil
 }
+func (n *noopOverrideStore) DismissSuggestion(_ context.Context, _ int64, _ string) error {
+	return nil
+}
 
 // stubVision is a minimal VisionAnalyzer for tests.
 type stubVision struct {

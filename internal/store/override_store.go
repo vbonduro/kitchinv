@@ -244,6 +244,10 @@ func (s *OverrideStore) ListEditSuggestions(ctx context.Context) ([]*domain.Edit
 		LEFT JOIN items i ON ie.item_id = i.id
 		LEFT JOIN areas a ON i.area_id = a.id
 		WHERE ie.field = 'name' AND i.id IS NOT NULL
+		  AND NOT EXISTS (
+		      SELECT 1 FROM dismissed_suggestions ds
+		      WHERE ds.item_id = ie.item_id AND ds.old_value = ie.old_value
+		  )
 		ORDER BY ie.edited_at DESC
 		LIMIT 50
 	`)
@@ -269,6 +273,18 @@ func (s *OverrideStore) ListEditSuggestions(ctx context.Context) ([]*domain.Edit
 		return nil, fmt.Errorf("error iterating edit suggestions: %w", err)
 	}
 	return suggestions, nil
+}
+
+// DismissSuggestion marks a suggestion as dismissed so it won't appear again.
+func (s *OverrideStore) DismissSuggestion(ctx context.Context, itemID int64, oldName string) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR IGNORE INTO dismissed_suggestions (item_id, old_value) VALUES (?, ?)`,
+		itemID, oldName,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to dismiss suggestion: %w", err)
+	}
+	return nil
 }
 
 // fetchAreaIDs returns the area IDs associated with a rule.

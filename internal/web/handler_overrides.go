@@ -117,6 +117,25 @@ func (s *Server) handleReorderOverrides(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleDismissSuggestion(w http.ResponseWriter, r *http.Request) {
+	itemID, err := strconv.ParseInt(r.PathValue("itemId"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid item id", http.StatusBadRequest)
+		return
+	}
+	oldName := r.URL.Query().Get("old_name")
+	if oldName == "" {
+		http.Error(w, "old_name is required", http.StatusBadRequest)
+		return
+	}
+	if err := s.service.DismissSuggestion(r.Context(), itemID, oldName); err != nil {
+		http.Error(w, "failed to dismiss suggestion", http.StatusInternalServerError)
+		s.logger.Error("dismiss suggestion failed", "item_id", itemID, "error", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // parseOverrideForm parses and validates the common override rule form fields.
 // Reports validation errors directly to w and returns false on failure.
 func (s *Server) parseOverrideForm(w http.ResponseWriter, r *http.Request) (domain.OverrideRule, bool) {

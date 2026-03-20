@@ -228,3 +228,40 @@ func TestOverrideStore_ListEditSuggestions_FiltersDeletedItems(t *testing.T) {
 	assert.Equal(t, "Orange Juice", suggestions[0].NewName)
 	assert.Equal(t, area.ID, suggestions[0].AreaID)
 }
+
+func TestOverrideStore_DismissSuggestion(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	defer func() { _ = d.Close() }()
+
+	overrideStore := NewOverrideStore(d)
+	areaStore := NewAreaStore(d)
+	itemStore := NewItemStore(d)
+	editStore := NewItemEditStore(d)
+	ctx := context.Background()
+
+	area, err := areaStore.Create(ctx, "Pantry")
+	require.NoError(t, err)
+	item, err := itemStore.Create(ctx, area.ID, nil, "Milk", "1", "user", nil)
+	require.NoError(t, err)
+	_, err = editStore.Create(ctx, item.ID, "name", "Milk", "Whole Milk")
+	require.NoError(t, err)
+
+	// Suggestion visible before dismiss.
+	suggestions, err := overrideStore.ListEditSuggestions(ctx)
+	require.NoError(t, err)
+	require.Len(t, suggestions, 1)
+
+	// Dismiss it.
+	err = overrideStore.DismissSuggestion(ctx, item.ID, "Milk")
+	require.NoError(t, err)
+
+	// No longer visible.
+	suggestions, err = overrideStore.ListEditSuggestions(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, suggestions)
+
+	// Idempotent — dismiss again should not error.
+	err = overrideStore.DismissSuggestion(ctx, item.ID, "Milk")
+	assert.NoError(t, err)
+}

@@ -155,14 +155,21 @@
                 </thead>
                 <tbody>
                     {{range .Suggestions}}
-                    <tr>
+                    <tr id="suggestion-{{.ItemID}}-{{.OldName | js}}">
                         <td data-label="Was"><code>{{.OldName}}</code></td>
                         <td data-label="Renamed to"><code>{{.NewName}}</code></td>
                         <td data-label="Area">{{.AreaName}}</td>
-                        <td>
+                        <td class="suggestion-actions">
                             <button class="btn btn-sm"
                                     onclick="prefillFromSuggestion({{.OldName | js}}, {{.NewName | js}})">
                                 Create Rule
+                            </button>
+                            <button class="btn btn-sm btn-ghost"
+                                    hx-delete="/overrides/suggestions/{{.ItemID}}?old_name={{.OldName | urlquery}}"
+                                    hx-target="closest tr"
+                                    hx-swap="outerHTML"
+                                    aria-label="Dismiss">
+                                Dismiss
                             </button>
                         </td>
                     </tr>
@@ -313,7 +320,7 @@
         grid-column: 1; grid-row: 3;
         font-size: 0.75rem; color: var(--text-muted);
     }
-    .override-suggestions-table tbody td:last-child { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+    .override-suggestions-table tbody td:last-child { grid-column: 2; grid-row: 1 / 4; align-self: center; flex-direction: column; }
 
     .override-suggestions-table tbody td[data-label="Renamed to"]::before {
         content: "→ ";
@@ -328,6 +335,9 @@
 .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
 .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
 .btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-ghost { background: none; color: var(--text-muted); border: 1px solid var(--card-border); }
+.btn-ghost:hover { background: var(--card-border); color: var(--text); }
+.suggestion-actions { display: flex; gap: 0.4rem; white-space: nowrap; align-items: center; }
 </style>
 
 <script>

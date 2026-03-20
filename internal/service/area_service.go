@@ -84,6 +84,7 @@ type overrideRepository interface {
 	Delete(ctx context.Context, id int64) error
 	ReorderSortOrder(ctx context.Context, ids []int64) error
 	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
+	DismissSuggestion(ctx context.Context, itemID int64, oldName string) error
 }
 
 type AreaService struct {
@@ -491,4 +492,9 @@ func (s *AreaService) ReorderOverrideRules(ctx context.Context, ids []int64) err
 // ListEditSuggestions returns recent name renames as override rule suggestions.
 func (s *AreaService) ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error) {
 	return s.overrideStore.ListEditSuggestions(ctx)
+}
+
+// DismissSuggestion permanently hides a suggestion from the overrides page.
+func (s *AreaService) DismissSuggestion(ctx context.Context, itemID int64, oldName string) error {
+	return s.overrideStore.DismissSuggestion(ctx, itemID, oldName)
 }

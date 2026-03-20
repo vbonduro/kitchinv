@@ -57,6 +57,9 @@ func (f *fakeOverrideService) ReorderOverrideRules(_ context.Context, _ []int64)
 func (f *fakeOverrideService) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
 	return f.suggestions, nil
 }
+func (f *fakeOverrideService) DismissSuggestion(_ context.Context, _ int64, _ string) error {
+	return nil
+}
 func (f *fakeOverrideService) ListAreas(_ context.Context) ([]*domain.Area, error) {
 	return f.areas, nil
 }
@@ -243,4 +246,40 @@ func TestHandleListOverrides_RendersHTML(t *testing.T) {
 	body, _ := io.ReadAll(rec.Body)
 	assert.Contains(t, string(body), "oj")
 	assert.Contains(t, string(body), "Orange Juice")
+}
+
+func TestHandleDismissSuggestion_OK(t *testing.T) {
+	svc := &fakeOverrideService{}
+	srv := newOverrideTestServer(svc)
+
+	req := httptest.NewRequest("DELETE", "/overrides/suggestions/42?old_name=Milk", nil)
+	req.SetPathValue("itemId", "42")
+	rec := httptest.NewRecorder()
+	srv.handleDismissSuggestion(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestHandleDismissSuggestion_InvalidID(t *testing.T) {
+	svc := &fakeOverrideService{}
+	srv := newOverrideTestServer(svc)
+
+	req := httptest.NewRequest("DELETE", "/overrides/suggestions/bad?old_name=Milk", nil)
+	req.SetPathValue("itemId", "bad")
+	rec := httptest.NewRecorder()
+	srv.handleDismissSuggestion(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestHandleDismissSuggestion_MissingOldName(t *testing.T) {
+	svc := &fakeOverrideService{}
+	srv := newOverrideTestServer(svc)
+
+	req := httptest.NewRequest("DELETE", "/overrides/suggestions/42", nil)
+	req.SetPathValue("itemId", "42")
+	rec := httptest.NewRecorder()
+	srv.handleDismissSuggestion(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
