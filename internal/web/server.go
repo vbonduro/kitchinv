@@ -35,6 +35,12 @@ type kitchenService interface {
 	ReorderAreas(ctx context.Context, ids []int64) error
 	SearchItems(ctx context.Context, query string) ([]*domain.Item, error)
 	ListSnapshots(ctx context.Context, areaID int64) ([]*domain.Snapshot, error)
+	ListOverrideRules(ctx context.Context) ([]*domain.OverrideRule, error)
+	CreateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
+	GetOverrideRule(ctx context.Context, id int64) (*domain.OverrideRule, error)
+	UpdateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
+	DeleteOverrideRule(ctx context.Context, id int64) error
+	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
 }
 
 type Server struct {
@@ -67,6 +73,16 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 				return m
 			},
 			"bboxDim": func(a, b float64) float64 { return b - a },
+			"not": func(v any) bool {
+				if v == nil {
+					return true
+				}
+				t, _ := template.IsTrue(v)
+				return !t
+			},
+			"areaName": func(m map[int64]string, id int64) string {
+				return m[id]
+			},
 		},
 	}
 	s.registerRoutes()
@@ -93,6 +109,10 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("DELETE /areas/{id}/items/{itemId}", s.handleDeleteItem)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 	s.mux.HandleFunc("GET /areas/{id}/snapshots", s.handleListSnapshots)
+	s.mux.HandleFunc("GET /overrides", s.handleListOverrides)
+	s.mux.HandleFunc("POST /overrides", s.handleCreateOverride)
+	s.mux.HandleFunc("PUT /overrides/{id}", s.handleUpdateOverride)
+	s.mux.HandleFunc("DELETE /overrides/{id}", s.handleDeleteOverride)
 }
 
 

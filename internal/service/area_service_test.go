@@ -17,6 +17,29 @@ import (
 	"github.com/vbonduro/kitchinv/internal/vision"
 )
 
+// noopOverrideStore satisfies overrideRepository with no-ops for tests.
+type noopOverrideStore struct{}
+
+func (n *noopOverrideStore) ListForArea(_ context.Context, _ int64) ([]*domain.OverrideRule, error) {
+	return nil, nil
+}
+func (n *noopOverrideStore) List(_ context.Context) ([]*domain.OverrideRule, error) {
+	return nil, nil
+}
+func (n *noopOverrideStore) Create(_ context.Context, r domain.OverrideRule) (*domain.OverrideRule, error) {
+	return &r, nil
+}
+func (n *noopOverrideStore) GetByID(_ context.Context, _ int64) (*domain.OverrideRule, error) {
+	return nil, nil
+}
+func (n *noopOverrideStore) Update(_ context.Context, r domain.OverrideRule) (*domain.OverrideRule, error) {
+	return &r, nil
+}
+func (n *noopOverrideStore) Delete(_ context.Context, _ int64) error { return nil }
+func (n *noopOverrideStore) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
+	return nil, nil
+}
+
 // stubVision is a minimal VisionAnalyzer for tests.
 type stubVision struct {
 	result *vision.AnalysisResult
@@ -88,6 +111,7 @@ func newTestService(t *testing.T) (*AreaService, func()) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -155,6 +179,7 @@ func TestAreaServiceUploadPhoto_StoresItemsFromVision(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -186,7 +211,7 @@ func TestAreaServiceUploadPhoto_ReplacesExistingItems(t *testing.T) {
 	firstVision := &stubVision{result: &vision.AnalysisResult{
 		Items: []vision.DetectedItem{{Name: "Old Item", Quantity: "1", Notes: ""}},
 	}}
-	svc := NewAreaService(areaStore, photoStore, itemStore, store.NewItemEditStore(d), store.NewSnapshotStore(d), firstVision, photoStg, slog.Default())
+	svc := NewAreaService(areaStore, photoStore, itemStore, store.NewItemEditStore(d), store.NewSnapshotStore(d), &noopOverrideStore{}, firstVision, photoStg, slog.Default())
 
 	area, err := svc.CreateArea(ctx, "Fridge")
 	require.NoError(t, err)
@@ -224,6 +249,7 @@ func TestAreaServiceUploadPhoto_VisionError(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{err: errors.New("vision unavailable")},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -249,6 +275,7 @@ func TestAreaServiceUploadPhoto_VisionError_RollsBackPhoto(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{err: errors.New("vision unavailable")},
 		photoStg,
 		slog.Default(),
@@ -286,6 +313,7 @@ func TestAreaServiceUploadPhoto_PhotoStorageError(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: &vision.AnalysisResult{}},
 		photoStg,
 		slog.Default(),
@@ -319,6 +347,7 @@ func TestAreaServiceSearchItems(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -381,6 +410,7 @@ func TestAreaServiceDeletePhoto(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -434,6 +464,7 @@ func TestAreaServiceUploadPhoto_ItemsHaveAISource(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -461,6 +492,7 @@ func TestAreaServiceUpdateItem_RecordsEdits(t *testing.T) {
 		store.NewItemStore(d),
 		editStore,
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -500,6 +532,7 @@ func TestAreaServiceUpdateItem_NoEditsWhenUnchanged(t *testing.T) {
 		store.NewItemStore(d),
 		editStore,
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: &vision.AnalysisResult{}},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -565,6 +598,7 @@ func TestAreaServiceUploadPhoto_ConcurrentSameArea_DoesNotCorruptItems(t *testin
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		cv,
 		newStubPhotoStore(),
 		slog.Default(),
@@ -613,6 +647,7 @@ func TestAreaServiceUploadPhoto_ConcurrentDifferentAreas_DoNotInterfere(t *testi
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		cv,
 		newStubPhotoStore(),
 		slog.Default(),
@@ -664,6 +699,7 @@ func TestAreaServiceListAreasWithItems(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		store.NewSnapshotStore(d),
+		&noopOverrideStore{},
 		&stubVision{result: visionResult},
 		newStubPhotoStore(),
 		slog.Default(),
@@ -716,6 +752,7 @@ func TestAreaService_SnapshotCreatedOnReupload(t *testing.T) {
 		store.NewItemStore(d),
 		store.NewItemEditStore(d),
 		snapshotStore,
+		&noopOverrideStore{},
 		vis,
 		newStubPhotoStore(),
 		slog.Default(),
@@ -746,4 +783,131 @@ func TestAreaService_SnapshotCreatedOnReupload(t *testing.T) {
 	require.Len(t, snap.Items, 2)
 	names := []string{snap.Items[0].Name, snap.Items[1].Name}
 	assert.ElementsMatch(t, []string{"Milk", "Eggs"}, names)
+}
+
+func TestAreaService_OverrideAppliedOnUpload(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	overrideStore := store.NewOverrideStore(d)
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
+		overrideStore,
+		&stubVision{result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{{Name: "Tropicana OJ", Quantity: "1"}},
+		}},
+		newStubPhotoStore(),
+		slog.Default(),
+	).WithDB(d)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	_, err = overrideStore.Create(ctx, domain.OverrideRule{
+		MatchPattern: "Tropicana OJ",
+		Replacement:  "Orange Juice",
+		MatchExact:   true,
+		Scope:        "global",
+	})
+	require.NoError(t, err)
+
+	_, items, err := svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+	assert.Equal(t, "Orange Juice", items[0].Name)
+}
+
+func TestAreaService_OverrideEmptyNameFiltered(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	overrideStore := store.NewOverrideStore(d)
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
+		overrideStore,
+		&stubVision{result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{
+				{Name: "Unwanted", Quantity: "1"},
+				{Name: "Milk", Quantity: "1"},
+			},
+		}},
+		newStubPhotoStore(),
+		slog.Default(),
+	).WithDB(d)
+	ctx := context.Background()
+
+	area, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+
+	// Rule maps "Unwanted" to empty string (remove it).
+	_, err = overrideStore.Create(ctx, domain.OverrideRule{
+		MatchPattern: "Unwanted",
+		Replacement:  "",
+		MatchExact:   true,
+		Scope:        "global",
+	})
+	require.NoError(t, err)
+
+	_, items, err := svc.UploadPhoto(ctx, area.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+	assert.Equal(t, "Milk", items[0].Name)
+}
+
+func TestAreaService_AreaScopedOverride_DoesNotApplyToOtherArea(t *testing.T) {
+	d, err := db.OpenForTesting()
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, d.Close()) })
+
+	overrideStore := store.NewOverrideStore(d)
+	svc := NewAreaService(
+		store.NewAreaStore(d),
+		store.NewPhotoStore(d),
+		store.NewItemStore(d),
+		store.NewItemEditStore(d),
+		store.NewSnapshotStore(d),
+		overrideStore,
+		&stubVision{result: &vision.AnalysisResult{
+			Items: []vision.DetectedItem{{Name: "OJ", Quantity: "1"}},
+		}},
+		newStubPhotoStore(),
+		slog.Default(),
+	).WithDB(d)
+	ctx := context.Background()
+
+	area1, err := svc.CreateArea(ctx, "Fridge")
+	require.NoError(t, err)
+	area2, err := svc.CreateArea(ctx, "Pantry")
+	require.NoError(t, err)
+
+	// Rule is scoped to area1 only.
+	_, err = overrideStore.Create(ctx, domain.OverrideRule{
+		MatchPattern: "OJ",
+		Replacement:  "Orange Juice",
+		MatchExact:   true,
+		Scope:        "area",
+		AreaIDs:      []int64{area1.ID},
+	})
+	require.NoError(t, err)
+
+	_, items1, err := svc.UploadPhoto(ctx, area1.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	require.Len(t, items1, 1)
+	assert.Equal(t, "Orange Juice", items1[0].Name, "override should apply in area1")
+
+	_, items2, err := svc.UploadPhoto(ctx, area2.ID, []byte{0xFF, 0xD8}, "image/jpeg")
+	require.NoError(t, err)
+	require.Len(t, items2, 1)
+	assert.Equal(t, "OJ", items2[0].Name, "override should NOT apply in area2")
 }

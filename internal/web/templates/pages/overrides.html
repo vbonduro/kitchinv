@@ -1,0 +1,334 @@
+{{define "content"}}
+<main class="page">
+    <p class="section-label">Override Rules</p>
+
+    <div class="overrides-layout">
+
+        <!-- ── New rule form ─────────────────────────────────── -->
+        <section class="override-form-section card" id="new-rule-section">
+            <h2 class="override-section-title">New Rule</h2>
+            <form method="POST" action="/overrides" id="new-rule-form">
+                <div class="override-form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Match pattern <span class="required">*</span></label>
+                        <input type="text" name="match_pattern" class="form-input" placeholder="e.g. Tropicana OJ" required id="new-match-pattern">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Replacement</label>
+                        <input type="text" name="replacement" class="form-input" placeholder="e.g. Orange Juice (leave blank to remove)" id="new-replacement">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Order</label>
+                        <input type="number" name="sort_order" class="form-input form-input-narrow" value="0" min="0" id="new-sort-order">
+                    </div>
+                    <div class="form-group form-group-checkboxes">
+                        <label class="form-label">Match mode <span class="required">*</span></label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="match_exact" value="on" id="new-match-exact"> Exact
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="match_case_insensitive" value="on" id="new-match-ci"> Case-insensitive
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="match_substring" value="on" id="new-match-substring"> Substring
+                        </label>
+                    </div>
+                    <div class="form-group form-group-scope">
+                        <label class="form-label">Scope</label>
+                        <label class="radio-label">
+                            <input type="radio" name="scope" value="global" checked id="new-scope-global"> Global
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="scope" value="area" id="new-scope-area"> Area-specific
+                        </label>
+                    </div>
+                    <div class="form-group form-group-areas" id="new-area-select" style="display:none">
+                        <label class="form-label">Areas</label>
+                        <select name="area_ids[]" multiple class="form-select">
+                            {{range .Areas}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+                <div class="override-form-actions">
+                    <button type="submit" class="btn btn-primary">Add Rule</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ── Rule list ─────────────────────────────────────── -->
+        <section class="override-list-section">
+            {{if .Rules}}
+            <table class="override-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Pattern</th>
+                        <th>Replacement</th>
+                        <th>Flags</th>
+                        <th>Scope</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Rules}}
+                    <tr id="rule-{{.ID}}"
+                        data-id="{{.ID}}"
+                        data-pattern="{{.MatchPattern}}"
+                        data-replacement="{{.Replacement}}"
+                        data-exact="{{.MatchExact}}"
+                        data-ci="{{.MatchCaseInsensitive}}"
+                        data-substring="{{.MatchSubstring}}"
+                        data-scope="{{.Scope}}"
+                        data-sort-order="{{.SortOrder}}"
+                        data-area-ids="{{range $i, $id := .AreaIDs}}{{if $i}},{{end}}{{$id}}{{end}}">
+                        <td>{{.SortOrder}}</td>
+                        <td><code>{{.MatchPattern}}</code></td>
+                        <td>
+                            {{if .Replacement}}
+                                <code>{{.Replacement}}</code>
+                            {{else}}
+                                <span class="text-faint">(remove)</span>
+                            {{end}}
+                        </td>
+                        <td class="override-flags">
+                            {{if .MatchExact}}<span class="flag-badge">exact</span>{{end}}
+                            {{if .MatchCaseInsensitive}}<span class="flag-badge">ci</span>{{end}}
+                            {{if .MatchSubstring}}<span class="flag-badge">substr</span>{{end}}
+                        </td>
+                        <td>
+                            {{if eq .Scope "global"}}
+                                <span class="scope-badge scope-global">Global</span>
+                            {{else}}
+                                <span class="scope-badge scope-area">
+                                    {{range $i, $id := .AreaIDs}}{{if $i}}, {{end}}{{areaName $.AreaMap $id}}{{end}}
+                                </span>
+                            {{end}}
+                        </td>
+                        <td class="override-actions">
+                            <button class="btn btn-sm" onclick="openEditDialog(this.closest('tr'))">Edit</button>
+                            <button class="btn btn-sm btn-danger"
+                                    hx-delete="/overrides/{{.ID}}"
+                                    hx-target="#rule-{{.ID}}"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Delete this override rule?">Delete</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/>
+                    </svg>
+                </div>
+                <div class="empty-state-text">No override rules yet.<br>Add one above to automatically rename items at upload time.</div>
+            </div>
+            {{end}}
+        </section>
+
+        <!-- ── Suggestions from edit history ─────────────────── -->
+        {{if .Suggestions}}
+        <section class="override-suggestions-section card">
+            <h2 class="override-section-title">Suggested from edit history</h2>
+            <p class="override-suggestions-hint">These are recent renames you made. Click "Create Rule" to auto-fill the form.</p>
+            <table class="override-table override-suggestions-table">
+                <thead>
+                    <tr>
+                        <th>Was</th>
+                        <th>Renamed to</th>
+                        <th>Area</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Suggestions}}
+                    <tr>
+                        <td><code>{{.OldName}}</code></td>
+                        <td><code>{{.NewName}}</code></td>
+                        <td>{{.AreaName}}</td>
+                        <td>
+                            <button class="btn btn-sm"
+                                    onclick="prefillFromSuggestion({{.OldName | js}}, {{.NewName | js}})">
+                                Create Rule
+                            </button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </section>
+        {{end}}
+
+    </div><!-- .overrides-layout -->
+
+    <!-- ── Edit dialog ───────────────────────────────────────── -->
+    <dialog id="edit-rule-dialog" class="override-dialog">
+        <h2 class="override-section-title">Edit Rule</h2>
+        <form id="edit-rule-form">
+            <div class="override-form-grid">
+                <div class="form-group">
+                    <label class="form-label">Match pattern <span class="required">*</span></label>
+                    <input type="text" name="match_pattern" class="form-input" placeholder="e.g. Tropicana OJ" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Replacement</label>
+                    <input type="text" name="replacement" class="form-input" placeholder="e.g. Orange Juice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <input type="number" name="sort_order" class="form-input form-input-narrow" value="0" min="0">
+                </div>
+                <div class="form-group form-group-checkboxes">
+                    <label class="form-label">Match mode <span class="required">*</span></label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="match_exact" value="on"> Exact
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="match_case_insensitive" value="on"> Case-insensitive
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="match_substring" value="on"> Substring
+                    </label>
+                </div>
+                <div class="form-group form-group-scope">
+                    <label class="form-label">Scope</label>
+                    <label class="radio-label">
+                        <input type="radio" name="scope" value="global" checked> Global
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="scope" value="area"> Area-specific
+                    </label>
+                </div>
+                <div class="form-group form-group-areas" id="edit-area-select" style="display:none">
+                    <label class="form-label">Areas</label>
+                    <select name="area_ids[]" multiple class="form-select">
+                        {{range .Areas}}
+                        <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+            <div class="override-form-actions">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn" onclick="document.getElementById('edit-rule-dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+</main>
+
+<style>
+.overrides-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.override-form-section, .override-suggestions-section { padding: 1.25rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--card-border); background: var(--card-bg); }
+.override-section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+.override-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
+@media (max-width: 600px) { .override-form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group-checkboxes, .form-group-scope, .form-group-areas { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.form-label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+.required { color: var(--danger); }
+.form-input { padding: 0.45rem 0.6rem; border: 1px solid var(--card-border); border-radius: var(--radius-sm); font-size: 0.9rem; width: 100%; background: var(--bg); color: var(--text); }
+.form-input-narrow { width: 6rem; }
+.form-select { padding: 0.45rem 0.6rem; border: 1px solid var(--card-border); border-radius: var(--radius-sm); font-size: 0.9rem; min-height: 6rem; background: var(--bg); color: var(--text); }
+.checkbox-label, .radio-label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; cursor: pointer; }
+.override-form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.override-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.override-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-weight: 500; }
+.override-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--card-border); vertical-align: middle; }
+.override-flags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.flag-badge { background: var(--primary-bg); color: var(--primary); border-radius: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 500; }
+.scope-badge { border-radius: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 500; }
+.scope-global { background: #f0fdf4; color: var(--success); }
+.scope-area { background: #fef9c3; color: #92400e; }
+.override-actions { display: flex; gap: 0.4rem; white-space: nowrap; }
+.override-suggestions-hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+.text-faint { color: var(--text-faint); font-style: italic; font-size: 0.85rem; }
+.override-dialog { border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-width: 560px; width: 90vw; }
+.override-dialog::backdrop { background: rgba(0,0,0,0.35); }
+.btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+.btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+</style>
+
+<script>
+(function() {
+    function wireScope(formEl, areaSelectId) {
+        var radios = formEl.querySelectorAll('input[name="scope"]');
+        var areaSelect = document.getElementById(areaSelectId);
+        function update() {
+            var val = formEl.querySelector('input[name="scope"]:checked');
+            if (areaSelect) areaSelect.style.display = (val && val.value === 'area') ? '' : 'none';
+        }
+        radios.forEach(function(r) { r.addEventListener('change', update); });
+        update();
+    }
+    wireScope(document.getElementById('new-rule-form'), 'new-area-select');
+    wireScope(document.getElementById('edit-rule-form'), 'edit-area-select');
+
+    window.openEditDialog = function(row) {
+        var dlg = document.getElementById('edit-rule-dialog');
+        var form = document.getElementById('edit-rule-form');
+        form.dataset.ruleId = row.dataset.id;
+
+        form.querySelector('[name="match_pattern"]').value = row.dataset.pattern || '';
+        form.querySelector('[name="replacement"]').value = row.dataset.replacement || '';
+        form.querySelector('[name="sort_order"]').value = row.dataset.sortOrder || '0';
+        form.querySelector('[name="match_exact"]').checked = row.dataset.exact === 'true';
+        form.querySelector('[name="match_case_insensitive"]').checked = row.dataset.ci === 'true';
+        form.querySelector('[name="match_substring"]').checked = row.dataset.substring === 'true';
+
+        var scopeVal = row.dataset.scope || 'global';
+        form.querySelectorAll('[name="scope"]').forEach(function(r) {
+            r.checked = r.value === scopeVal;
+        });
+
+        var areaSelect = form.querySelector('select[name="area_ids[]"]');
+        if (areaSelect) {
+            var ids = (row.dataset.areaIds || '').split(',').filter(Boolean);
+            Array.from(areaSelect.options).forEach(function(opt) {
+                opt.selected = ids.indexOf(opt.value) !== -1;
+            });
+        }
+
+        wireScope(form, 'edit-area-select');
+        dlg.showModal();
+    };
+
+    window.prefillFromSuggestion = function(oldName, newName) {
+        document.getElementById('new-match-pattern').value = oldName;
+        document.getElementById('new-replacement').value = newName;
+        document.getElementById('new-match-exact').checked = true;
+        document.getElementById('new-match-ci').checked = true;
+        document.getElementById('new-rule-section').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('new-match-pattern').focus();
+    };
+
+    document.getElementById('edit-rule-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var id = form.dataset.ruleId;
+        var data = new FormData(form);
+        var params = new URLSearchParams();
+        for (var pair of data.entries()) {
+            params.append(pair[0], pair[1]);
+        }
+        fetch('/overrides/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString(),
+            redirect: 'follow'
+        }).then(function(resp) {
+            if (resp.ok || resp.redirected) {
+                window.location.href = '/overrides';
+            } else {
+                resp.text().then(function(t) { alert('Error: ' + t); });
+            }
+        });
+    });
+})();
+</script>
+{{end}}
