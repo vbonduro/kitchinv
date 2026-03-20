@@ -17,10 +17,6 @@
                         <label class="form-label">Replacement</label>
                         <input type="text" name="replacement" class="form-input" placeholder="e.g. Orange Juice (leave blank to remove)" id="new-replacement">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Order</label>
-                        <input type="number" name="sort_order" class="form-input form-input-narrow" value="0" min="0" id="new-sort-order">
-                    </div>
                     <div class="form-group form-group-checkboxes">
                         <label class="form-label">Match mode <span class="required">*</span></label>
                         <label class="checkbox-label">
@@ -60,10 +56,10 @@
         <!-- ── Rule list ─────────────────────────────────────── -->
         <section class="override-list-section">
             {{if .Rules}}
-            <table class="override-table">
+            <table class="override-table" id="override-rules-table">
                 <thead>
                     <tr>
-                        <th>Order</th>
+                        <th class="col-order"></th>
                         <th>Pattern</th>
                         <th>Replacement</th>
                         <th>Flags</th>
@@ -71,7 +67,7 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="override-rules-body">
                     {{range .Rules}}
                     <tr id="rule-{{.ID}}"
                         data-id="{{.ID}}"
@@ -81,9 +77,21 @@
                         data-ci="{{.MatchCaseInsensitive}}"
                         data-substring="{{.MatchSubstring}}"
                         data-scope="{{.Scope}}"
-                        data-sort-order="{{.SortOrder}}"
                         data-area-ids="{{range $i, $id := .AreaIDs}}{{if $i}},{{end}}{{$id}}{{end}}">
-                        <td>{{.SortOrder}}</td>
+                        <td class="col-order">
+                            <div class="order-arrows">
+                                <button class="btn-move btn-move-up" onclick="moveRule(this,'up')" aria-label="Move up" title="Move up">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-move btn-move-down" onclick="moveRule(this,'down')" aria-label="Move down" title="Move down">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
                         <td><code>{{.MatchPattern}}</code></td>
                         <td>
                             {{if .Replacement}}
@@ -112,7 +120,8 @@
                                     hx-delete="/overrides/{{.ID}}"
                                     hx-target="#rule-{{.ID}}"
                                     hx-swap="outerHTML"
-                                    hx-confirm="Delete this override rule?">Delete</button>
+                                    hx-confirm="Delete this override rule?"
+                                    hx-on::after-request="updateMoveButtons()">Delete</button>
                         </td>
                     </tr>
                     {{end}}
@@ -178,10 +187,6 @@
                     <label class="form-label">Replacement</label>
                     <input type="text" name="replacement" class="form-input" placeholder="e.g. Orange Juice">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Order</label>
-                    <input type="number" name="sort_order" class="form-input form-input-narrow" value="0" min="0">
-                </div>
                 <div class="form-group form-group-checkboxes">
                     <label class="form-label">Match mode <span class="required">*</span></label>
                     <label class="checkbox-label">
@@ -232,13 +237,18 @@
 .form-label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
 .required { color: var(--danger); }
 .form-input { padding: 0.45rem 0.6rem; border: 1px solid var(--card-border); border-radius: var(--radius-sm); font-size: 0.9rem; width: 100%; background: var(--bg); color: var(--text); }
-.form-input-narrow { width: 6rem; }
 .form-select { padding: 0.45rem 0.6rem; border: 1px solid var(--card-border); border-radius: var(--radius-sm); font-size: 0.9rem; min-height: 6rem; background: var(--bg); color: var(--text); }
 .checkbox-label, .radio-label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; cursor: pointer; }
 .override-form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .override-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 .override-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-weight: 500; }
 .override-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--card-border); vertical-align: middle; }
+.col-order { width: 2.5rem; padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+.order-arrows { display: flex; flex-direction: column; gap: 1px; align-items: center; }
+.btn-move { display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 3px; color: var(--text-faint); line-height: 1; }
+.btn-move:hover { background: var(--primary-bg); color: var(--primary); }
+.btn-move:disabled { opacity: 0.2; cursor: default; }
+.btn-move:disabled:hover { background: none; color: var(--text-faint); }
 .override-flags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .flag-badge { background: var(--primary-bg); color: var(--primary); border-radius: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 500; }
 .scope-badge { border-radius: 0.25rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 500; }
@@ -256,6 +266,7 @@
 
 <script>
 (function() {
+    // ── Scope show/hide ───────────────────────────────────────
     function wireScope(formEl, areaSelectId) {
         var radios = formEl.querySelectorAll('input[name="scope"]');
         var areaSelect = document.getElementById(areaSelectId);
@@ -269,6 +280,48 @@
     wireScope(document.getElementById('new-rule-form'), 'new-area-select');
     wireScope(document.getElementById('edit-rule-form'), 'edit-area-select');
 
+    // ── Arrow-key reordering ──────────────────────────────────
+    window.updateMoveButtons = function() {
+        var tbody = document.getElementById('override-rules-body');
+        if (!tbody) return;
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.forEach(function(row, i) {
+            var up   = row.querySelector('.btn-move-up');
+            var down = row.querySelector('.btn-move-down');
+            if (up)   up.disabled   = (i === 0);
+            if (down) down.disabled = (i === rows.length - 1);
+        });
+    };
+
+    window.moveRule = function(btn, direction) {
+        var tbody = document.getElementById('override-rules-body');
+        var row = btn.closest('tr');
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        var idx = rows.indexOf(row);
+        var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= rows.length) return;
+
+        if (direction === 'up') {
+            tbody.insertBefore(row, rows[swapIdx]);
+        } else {
+            tbody.insertBefore(rows[swapIdx], row);
+        }
+
+        updateMoveButtons();
+
+        var ids = Array.from(tbody.querySelectorAll('tr')).map(function(r) {
+            return parseInt(r.dataset.id, 10);
+        }).filter(Boolean);
+        fetch('/overrides/reorder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids})
+        }).catch(function() { showToast('Failed to save order'); });
+    };
+
+    updateMoveButtons();
+
+    // ── Edit dialog ───────────────────────────────────────────
     window.openEditDialog = function(row) {
         var dlg = document.getElementById('edit-rule-dialog');
         var form = document.getElementById('edit-rule-form');
@@ -276,7 +329,6 @@
 
         form.querySelector('[name="match_pattern"]').value = row.dataset.pattern || '';
         form.querySelector('[name="replacement"]').value = row.dataset.replacement || '';
-        form.querySelector('[name="sort_order"]').value = row.dataset.sortOrder || '0';
         form.querySelector('[name="match_exact"]').checked = row.dataset.exact === 'true';
         form.querySelector('[name="match_case_insensitive"]').checked = row.dataset.ci === 'true';
         form.querySelector('[name="match_substring"]').checked = row.dataset.substring === 'true';
@@ -298,6 +350,7 @@
         dlg.showModal();
     };
 
+    // ── Suggestion prefill ────────────────────────────────────
     window.prefillFromSuggestion = function(oldName, newName) {
         document.getElementById('new-match-pattern').value = oldName;
         document.getElementById('new-replacement').value = newName;
@@ -307,6 +360,7 @@
         document.getElementById('new-match-pattern').focus();
     };
 
+    // ── Edit form submit (PUT via fetch) ──────────────────────
     document.getElementById('edit-rule-form').addEventListener('submit', function(e) {
         e.preventDefault();
         var form = this;

@@ -82,6 +82,7 @@ type overrideRepository interface {
 	GetByID(ctx context.Context, id int64) (*domain.OverrideRule, error)
 	Update(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
 	Delete(ctx context.Context, id int64) error
+	ReorderSortOrder(ctx context.Context, ids []int64) error
 	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
 }
 
@@ -480,6 +481,11 @@ func (s *AreaService) UpdateOverrideRule(ctx context.Context, r domain.OverrideR
 // DeleteOverrideRule deletes an override rule.
 func (s *AreaService) DeleteOverrideRule(ctx context.Context, id int64) error {
 	return s.overrideStore.Delete(ctx, id)
+}
+
+// ReorderOverrideRules sets sort_order based on the provided ID order.
+func (s *AreaService) ReorderOverrideRules(ctx context.Context, ids []int64) error {
+	return s.overrideStore.ReorderSortOrder(ctx, ids)
 }
 
 // ListEditSuggestions returns recent name renames as override rule suggestions.

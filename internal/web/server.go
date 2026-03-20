@@ -40,6 +40,7 @@ type kitchenService interface {
 	GetOverrideRule(ctx context.Context, id int64) (*domain.OverrideRule, error)
 	UpdateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
 	DeleteOverrideRule(ctx context.Context, id int64) error
+	ReorderOverrideRules(ctx context.Context, ids []int64) error
 	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
 }
 
@@ -113,6 +114,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("POST /overrides", s.handleCreateOverride)
 	s.mux.HandleFunc("PUT /overrides/{id}", s.handleUpdateOverride)
 	s.mux.HandleFunc("DELETE /overrides/{id}", s.handleDeleteOverride)
+	s.mux.HandleFunc("POST /overrides/reorder", s.handleReorderOverrides)
 }
 
 

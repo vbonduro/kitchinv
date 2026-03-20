@@ -204,6 +204,28 @@ func (s *OverrideStore) Update(ctx context.Context, r domain.OverrideRule) (*dom
 	return s.GetByID(ctx, r.ID)
 }
 
+// ReorderSortOrder sets each rule's sort_order to its 1-based position in ids.
+func (s *OverrideStore) ReorderSortOrder(ctx context.Context, ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	for i, id := range ids {
+		if _, err := tx.ExecContext(ctx, `UPDATE override_rules SET sort_order = ? WHERE id = ?`, i+1, id); err != nil {
+			return fmt.Errorf("failed to update sort_order for rule %d: %w", id, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit sort order update: %w", err)
+	}
+	return nil
+}
+
 // Delete removes an override rule (cascade deletes area associations).
 func (s *OverrideStore) Delete(ctx context.Context, id int64) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM override_rules WHERE id = ?`, id)

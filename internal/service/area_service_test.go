@@ -35,7 +35,8 @@ func (n *noopOverrideStore) GetByID(_ context.Context, _ int64) (*domain.Overrid
 func (n *noopOverrideStore) Update(_ context.Context, r domain.OverrideRule) (*domain.OverrideRule, error) {
 	return &r, nil
 }
-func (n *noopOverrideStore) Delete(_ context.Context, _ int64) error { return nil }
+func (n *noopOverrideStore) Delete(_ context.Context, _ int64) error          { return nil }
+func (n *noopOverrideStore) ReorderSortOrder(_ context.Context, _ []int64) error { return nil }
 func (n *noopOverrideStore) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
 	return nil, nil
 }

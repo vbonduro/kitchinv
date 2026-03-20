@@ -51,6 +51,9 @@ func (f *fakeOverrideService) UpdateOverrideRule(_ context.Context, r domain.Ove
 func (f *fakeOverrideService) DeleteOverrideRule(_ context.Context, _ int64) error {
 	return f.deleteErr
 }
+func (f *fakeOverrideService) ReorderOverrideRules(_ context.Context, _ []int64) error {
+	return nil
+}
 func (f *fakeOverrideService) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
 	return f.suggestions, nil
 }

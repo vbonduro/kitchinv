@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -97,6 +98,22 @@ func (s *Server) handleDeleteOverride(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleReorderOverrides(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []int64 `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	if err := s.service.ReorderOverrideRules(r.Context(), body.IDs); err != nil {
+		http.Error(w, "failed to reorder", http.StatusInternalServerError)
+		s.logger.Error("reorder override rules failed", "error", err)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
