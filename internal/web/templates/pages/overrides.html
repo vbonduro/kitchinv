@@ -92,20 +92,20 @@
                                 </button>
                             </div>
                         </td>
-                        <td><code>{{.MatchPattern}}</code></td>
-                        <td>
+                        <td data-label="Pattern"><code>{{.MatchPattern}}</code></td>
+                        <td data-label="Replacement">
                             {{if .Replacement}}
                                 <code>{{.Replacement}}</code>
                             {{else}}
                                 <span class="text-faint">(remove)</span>
                             {{end}}
                         </td>
-                        <td class="override-flags">
+                        <td data-label="Flags" class="override-flags">
                             {{if .MatchExact}}<span class="flag-badge">exact</span>{{end}}
                             {{if .MatchCaseInsensitive}}<span class="flag-badge">ci</span>{{end}}
                             {{if .MatchSubstring}}<span class="flag-badge">substr</span>{{end}}
                         </td>
-                        <td>
+                        <td data-label="Scope">
                             {{if eq .Scope "global"}}
                                 <span class="scope-badge scope-global">Global</span>
                             {{else}}
@@ -156,9 +156,9 @@
                 <tbody>
                     {{range .Suggestions}}
                     <tr>
-                        <td><code>{{.OldName}}</code></td>
-                        <td><code>{{.NewName}}</code></td>
-                        <td>{{.AreaName}}</td>
+                        <td data-label="Was"><code>{{.OldName}}</code></td>
+                        <td data-label="Renamed to"><code>{{.NewName}}</code></td>
+                        <td data-label="Area">{{.AreaName}}</td>
                         <td>
                             <button class="btn btn-sm"
                                     onclick="prefillFromSuggestion({{.OldName | js}}, {{.NewName | js}})">
@@ -240,9 +240,12 @@
 .form-select { padding: 0.45rem 0.6rem; border: 1px solid var(--card-border); border-radius: var(--radius-sm); font-size: 0.9rem; min-height: 6rem; background: var(--bg); color: var(--text); }
 .checkbox-label, .radio-label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; cursor: pointer; }
 .override-form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-.override-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-.override-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-weight: 500; }
+
+/* ── Rule table ── */
+.override-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; border-radius: var(--radius); border: 1px solid var(--card-border); background: var(--card-bg); overflow: hidden; }
+.override-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-weight: 500; background: var(--card-bg); }
 .override-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--card-border); vertical-align: middle; }
+.override-table tbody tr:last-child td { border-bottom: none; }
 .col-order { width: 2.5rem; padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
 .order-arrows { display: flex; flex-direction: column; gap: 1px; align-items: center; }
 .btn-move { display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 3px; color: var(--text-faint); line-height: 1; }
@@ -255,6 +258,69 @@
 .scope-global { background: #f0fdf4; color: var(--success); }
 .scope-area { background: #fef9c3; color: #92400e; }
 .override-actions { display: flex; gap: 0.4rem; white-space: nowrap; }
+
+/* ── Mobile card layout for tables ── */
+@media (max-width: 600px) {
+    /* Rules table */
+    .override-table thead { display: none; }
+    .override-table tbody tr {
+        display: grid;
+        grid-template-columns: 2rem 1fr auto;
+        grid-template-rows: auto auto auto auto;
+        gap: 0.2rem 0.5rem;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid var(--card-border);
+    }
+    .override-table tbody td { padding: 0; border: none; }
+
+    /* Arrow column: spans all rows on the left */
+    .col-order { grid-column: 1; grid-row: 1 / 5; align-self: center; }
+
+    /* Pattern: row 1, middle */
+    .override-table tbody td[data-label="Pattern"] { grid-column: 2; grid-row: 1; font-weight: 500; }
+
+    /* Replacement: row 2, middle */
+    .override-table tbody td[data-label="Replacement"] { grid-column: 2; grid-row: 2; color: var(--text-muted); }
+
+    /* Flags: row 3, middle */
+    .override-table tbody td[data-label="Flags"] { grid-column: 2; grid-row: 3; }
+
+    /* Scope: row 4, middle */
+    .override-table tbody td[data-label="Scope"] { grid-column: 2; grid-row: 4; }
+
+    /* Actions: spans rows 1-3 on the right */
+    .override-actions { grid-column: 3; grid-row: 1 / 4; flex-direction: column; align-self: center; gap: 0.3rem; }
+
+    /* Show arrow prefix for replacement */
+    .override-table tbody td[data-label="Replacement"]::before {
+        content: "→ ";
+        color: var(--text-muted);
+    }
+
+    /* Suggestions table */
+    .override-suggestions-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto auto;
+        gap: 0.2rem 0.5rem;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid var(--card-border);
+    }
+    .override-suggestions-table tbody td { padding: 0; border: none; }
+    .override-suggestions-table tbody td[data-label="Was"] { grid-column: 1; grid-row: 1; font-weight: 500; }
+    .override-suggestions-table tbody td[data-label="Renamed to"] { grid-column: 1; grid-row: 2; }
+    .override-suggestions-table tbody td[data-label="Area"] {
+        grid-column: 1; grid-row: 3;
+        font-size: 0.75rem; color: var(--text-muted);
+    }
+    .override-suggestions-table tbody td:last-child { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+
+    .override-suggestions-table tbody td[data-label="Renamed to"]::before {
+        content: "→ ";
+        color: var(--text-muted);
+    }
+}
+
 .override-suggestions-hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
 .text-faint { color: var(--text-faint); font-style: italic; font-size: 0.85rem; }
 .override-dialog { border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-width: 560px; width: 90vw; }
