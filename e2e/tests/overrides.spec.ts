@@ -56,9 +56,10 @@ test.describe('Override rules — auto-creation', () => {
     await renameItem(page, areaID, 'Orange Juice');
 
     await page.goto('/overrides');
-    await expect(page.locator('table')).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('td').filter({ hasText: 'Tropicana OJ' }).first()).toBeVisible();
-    await expect(page.locator('td').filter({ hasText: 'Orange Juice' }).first()).toBeVisible();
+    // New design uses .ov-card divs instead of a table.
+    await expect(page.locator('.ov-card').first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('.ov-field-value', { hasText: 'Tropicana OJ' }).first()).toBeVisible();
+    await expect(page.locator('.ov-field-value', { hasText: 'Orange Juice' }).first()).toBeVisible();
   });
 
   test('auto-created rule is area-scoped', async ({ page, appPort }) => {
@@ -69,10 +70,10 @@ test.describe('Override rules — auto-creation', () => {
 
     await page.goto('/overrides');
     // Scope badge should show the area name, not "Global".
-    const row = page.locator('tr', { hasText: 'Milk' });
-    await expect(row).toBeVisible({ timeout: 5_000 });
-    await expect(row.locator('.scope-area')).toBeVisible();
-    await expect(row.locator('.scope-area')).toContainText(areaName);
+    const card = page.locator('.ov-card', { hasText: 'Milk' });
+    await expect(card).toBeVisible({ timeout: 5_000 });
+    await expect(card.locator('.scope-area')).toBeVisible();
+    await expect(card.locator('.scope-area')).toContainText(areaName);
   });
 
   test('renaming same item again does not duplicate the rule', async ({ page, appPort }) => {
@@ -84,11 +85,11 @@ test.describe('Override rules — auto-creation', () => {
 
     await page.goto('/overrides');
     // Two renames → two rules (OJ→OrangeJuice, OrangeJuice→OJPremium), not three.
-    const rows = page.locator('#override-rules-body tr');
-    const count = await rows.count();
+    const cards = page.locator('#override-rules-body .ov-card');
+    const count = await cards.count();
     // Verify no duplicate "OJ" pattern exists.
-    const ojRows = await page.locator('td code', { hasText: /^OJ$/ }).count();
-    expect(ojRows).toBeLessThanOrEqual(1);
+    const ojCards = await page.locator('.ov-field-value', { hasText: /^OJ$/ }).count();
+    expect(ojCards).toBeLessThanOrEqual(1);
     expect(count).toBeGreaterThan(0);
   });
 
@@ -100,7 +101,7 @@ test.describe('Override rules — auto-creation', () => {
 
     // Verify rule exists.
     await page.goto('/overrides');
-    await expect(page.locator('td').filter({ hasText: 'Butter' }).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('.ov-field-value', { hasText: 'Butter' }).first()).toBeVisible({ timeout: 5_000 });
 
     // Delete the area.
     await page.goto('/areas');
@@ -112,8 +113,8 @@ test.describe('Override rules — auto-creation', () => {
 
     // Rule should be gone.
     await page.goto('/overrides');
-    const butterCells = page.locator('td code', { hasText: 'Butter' });
-    await expect(butterCells).toHaveCount(0, { timeout: 5_000 });
+    const butterCards = page.locator('.ov-field-value', { hasText: 'Butter' });
+    await expect(butterCards).toHaveCount(0, { timeout: 5_000 });
   });
 
   test('overrides page loads without errors', async ({ page }) => {
