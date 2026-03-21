@@ -18,15 +18,6 @@
 
     <div class="ov-body">
 
-        <!-- ── How it works card ────────────────────────────────── -->
-        <div class="ov-info-card">
-            <div class="ov-info-title">How Overrides Work</div>
-            <div class="ov-info-text">
-                When AI detects an item, overrides automatically rename it based on your preferences.
-                The first matching rule in the list is applied, so order matters — use the arrows to reorder.
-            </div>
-        </div>
-
         <!-- ── List header ──────────────────────────────────────── -->
         <div class="ov-list-header">
             <span class="ov-list-count">Active Rules ({{len .Rules}})</span>
@@ -310,25 +301,6 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-}
-
-/* ── Info card ────────────────────────────────────────────────── */
-.ov-info-card {
-    background: linear-gradient(135deg, #eff6ff, #eef2ff);
-    border: 1px solid rgba(99,102,241,0.15);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-}
-.ov-info-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text, #111827);
-    margin-bottom: 0.3rem;
-}
-.ov-info-text {
-    font-size: 0.875rem;
-    color: var(--text-muted, #6b7280);
-    line-height: 1.5;
 }
 
 /* ── List header ──────────────────────────────────────────────── */
