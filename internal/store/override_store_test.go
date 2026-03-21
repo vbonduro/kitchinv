@@ -193,75 +193,77 @@ func TestOverrideStore_Delete_CascadesAreas(t *testing.T) {
 	assert.Empty(t, ids)
 }
 
-func TestOverrideStore_ListEditSuggestions_FiltersDeletedItems(t *testing.T) {
+func TestOverrideStore_CreateFromEdit(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
 	defer func() { _ = d.Close() }()
 
-	overrideStore := NewOverrideStore(d)
+	s := NewOverrideStore(d)
 	areaStore := NewAreaStore(d)
-	itemStore := NewItemStore(d)
-	editStore := NewItemEditStore(d)
 	ctx := context.Background()
 
 	area, err := areaStore.Create(ctx, "Fridge")
 	require.NoError(t, err)
 
-	// Create item, record a name edit.
-	item, err := itemStore.Create(ctx, area.ID, nil, "OJ", "1", "user", nil)
-	require.NoError(t, err)
-	_, err = editStore.Create(ctx, item.ID, "name", "OJ", "Orange Juice")
+	// Creates a rule at the top.
+	err = s.CreateFromEdit(ctx, area.ID, "OJ", "Orange Juice")
 	require.NoError(t, err)
 
-	// Create another item that will be deleted.
-	ghost, err := itemStore.Create(ctx, area.ID, nil, "Ghost", "1", "user", nil)
+	rules, err := s.List(ctx)
 	require.NoError(t, err)
-	_, err = editStore.Create(ctx, ghost.ID, "name", "Ghost", "Spirit")
-	require.NoError(t, err)
-	err = itemStore.Delete(ctx, ghost.ID)
-	require.NoError(t, err)
+	require.Len(t, rules, 1)
+	assert.Equal(t, "OJ", rules[0].MatchPattern)
+	assert.Equal(t, "Orange Juice", rules[0].Replacement)
+	assert.True(t, rules[0].MatchExact)
+	assert.True(t, rules[0].MatchCaseInsensitive)
+	assert.False(t, rules[0].MatchSubstring)
+	assert.Equal(t, "area", rules[0].Scope)
+	assert.Equal(t, []int64{area.ID}, rules[0].AreaIDs)
 
-	suggestions, err := overrideStore.ListEditSuggestions(ctx)
+	// Second call with same pattern+area is idempotent.
+	err = s.CreateFromEdit(ctx, area.ID, "OJ", "OJ Updated")
 	require.NoError(t, err)
-	require.Len(t, suggestions, 1, "deleted item's edit should be filtered out")
-	assert.Equal(t, "OJ", suggestions[0].OldName)
-	assert.Equal(t, "Orange Juice", suggestions[0].NewName)
-	assert.Equal(t, area.ID, suggestions[0].AreaID)
+	rules, err = s.List(ctx)
+	require.NoError(t, err)
+	assert.Len(t, rules, 1, "duplicate rule should not be created")
+
+	// New rule sorts above the first.
+	err = s.CreateFromEdit(ctx, area.ID, "Milk", "Whole Milk")
+	require.NoError(t, err)
+	rules, err = s.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, rules, 2)
+	assert.Equal(t, "Milk", rules[0].MatchPattern, "newer rule should sort first")
 }
 
-func TestOverrideStore_DismissSuggestion(t *testing.T) {
+func TestOverrideStore_DeleteOrphanedAreaRules(t *testing.T) {
 	d, err := db.OpenForTesting()
 	require.NoError(t, err)
 	defer func() { _ = d.Close() }()
 
-	overrideStore := NewOverrideStore(d)
+	s := NewOverrideStore(d)
 	areaStore := NewAreaStore(d)
-	itemStore := NewItemStore(d)
-	editStore := NewItemEditStore(d)
 	ctx := context.Background()
 
 	area, err := areaStore.Create(ctx, "Pantry")
 	require.NoError(t, err)
-	item, err := itemStore.Create(ctx, area.ID, nil, "Milk", "1", "user", nil)
-	require.NoError(t, err)
-	_, err = editStore.Create(ctx, item.ID, "name", "Milk", "Whole Milk")
+
+	err = s.CreateFromEdit(ctx, area.ID, "Milk", "Whole Milk")
 	require.NoError(t, err)
 
-	// Suggestion visible before dismiss.
-	suggestions, err := overrideStore.ListEditSuggestions(ctx)
+	rules, err := s.List(ctx)
 	require.NoError(t, err)
-	require.Len(t, suggestions, 1)
+	require.Len(t, rules, 1)
 
-	// Dismiss it.
-	err = overrideStore.DismissSuggestion(ctx, item.ID, "Milk")
+	// Delete the area (cascades the override_rule_areas row).
+	err = areaStore.Delete(ctx, area.ID)
 	require.NoError(t, err)
 
-	// No longer visible.
-	suggestions, err = overrideStore.ListEditSuggestions(ctx)
+	// Rule is now orphaned — clean it up.
+	err = s.DeleteOrphanedAreaRules(ctx)
 	require.NoError(t, err)
-	assert.Empty(t, suggestions)
 
-	// Idempotent — dismiss again should not error.
-	err = overrideStore.DismissSuggestion(ctx, item.ID, "Milk")
-	assert.NoError(t, err)
+	rules, err = s.List(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, rules)
 }

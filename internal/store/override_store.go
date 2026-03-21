@@ -235,54 +235,69 @@ func (s *OverrideStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// ListEditSuggestions returns the 50 most recent name renames for items that still exist.
-func (s *OverrideStore) ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT ie.item_id, ie.old_value, ie.new_value,
-		       i.area_id, a.name AS area_name, ie.edited_at
-		FROM item_edits ie
-		LEFT JOIN items i ON ie.item_id = i.id
-		LEFT JOIN areas a ON i.area_id = a.id
-		WHERE ie.field = 'name' AND i.id IS NOT NULL
-		  AND NOT EXISTS (
-		      SELECT 1 FROM dismissed_suggestions ds
-		      WHERE ds.item_id = ie.item_id AND ds.old_value = ie.old_value
-		  )
-		ORDER BY ie.edited_at DESC
-		LIMIT 50
-	`)
+// CreateFromEdit creates an area-scoped, case-insensitive, exact-match override rule
+// automatically when a user renames an item. The rule is inserted at the top of the
+// list (sort_order = MIN(sort_order) - 1). If a rule with the same pattern already
+// exists for the same area it is left unchanged and no error is returned.
+func (s *OverrideStore) CreateFromEdit(ctx context.Context, areaID int64, oldName, newName string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list edit suggestions: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("failed to close rows", "error", err)
-		}
-	}()
+	defer func() { _ = tx.Rollback() }()
 
-	var suggestions []*domain.EditSuggestion
-	for rows.Next() {
-		s := &domain.EditSuggestion{}
-		if err := rows.Scan(&s.ItemID, &s.OldName, &s.NewName, &s.AreaID, &s.AreaName, &s.EditedAt); err != nil {
-			return nil, fmt.Errorf("failed to scan edit suggestion: %w", err)
-		}
-		suggestions = append(suggestions, s)
+	// Check if an identical rule already covers this area.
+	var count int
+	err = tx.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM override_rules r
+		JOIN override_rule_areas ora ON ora.rule_id = r.id
+		WHERE r.match_pattern = ? AND ora.area_id = ?
+	`, oldName, areaID).Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to check existing rule: %w", err)
+	}
+	if count > 0 {
+		return nil // already covered
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating edit suggestions: %w", err)
+	// Place at the top: MIN(sort_order) - 1, or 0 if no rules yet.
+	var minOrder int
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MIN(sort_order), 1) FROM override_rules`).Scan(&minOrder); err != nil {
+		return fmt.Errorf("failed to get min sort_order: %w", err)
 	}
-	return suggestions, nil
+	sortOrder := minOrder - 1
+
+	result, err := tx.ExecContext(ctx, `
+		INSERT INTO override_rules
+			(match_pattern, replacement, match_exact, match_case_insensitive, match_substring, scope, sort_order)
+		VALUES (?, ?, 1, 1, 0, 'area', ?)
+	`, oldName, newName, sortOrder)
+	if err != nil {
+		return fmt.Errorf("failed to insert override rule from edit: %w", err)
+	}
+
+	ruleID, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	if err := insertRuleAreas(ctx, tx, ruleID, []int64{areaID}); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
-// DismissSuggestion marks a suggestion as dismissed so it won't appear again.
-func (s *OverrideStore) DismissSuggestion(ctx context.Context, itemID int64, oldName string) error {
-	_, err := s.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO dismissed_suggestions (item_id, old_value) VALUES (?, ?)`,
-		itemID, oldName,
-	)
+// DeleteOrphanedAreaRules removes area-scoped rules that have no remaining area
+// associations (e.g. after their only associated area was deleted).
+func (s *OverrideStore) DeleteOrphanedAreaRules(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM override_rules
+		WHERE scope = 'area'
+		  AND id NOT IN (SELECT DISTINCT rule_id FROM override_rule_areas)
+	`)
 	if err != nil {
-		return fmt.Errorf("failed to dismiss suggestion: %w", err)
+		return fmt.Errorf("failed to delete orphaned area rules: %w", err)
 	}
 	return nil
 }

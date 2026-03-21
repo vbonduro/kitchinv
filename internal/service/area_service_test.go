@@ -37,12 +37,10 @@ func (n *noopOverrideStore) Update(_ context.Context, r domain.OverrideRule) (*d
 }
 func (n *noopOverrideStore) Delete(_ context.Context, _ int64) error          { return nil }
 func (n *noopOverrideStore) ReorderSortOrder(_ context.Context, _ []int64) error { return nil }
-func (n *noopOverrideStore) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
-	return nil, nil
-}
-func (n *noopOverrideStore) DismissSuggestion(_ context.Context, _ int64, _ string) error {
+func (n *noopOverrideStore) CreateFromEdit(_ context.Context, _ int64, _, _ string) error {
 	return nil
 }
+func (n *noopOverrideStore) DeleteOrphanedAreaRules(_ context.Context) error { return nil }
 
 // stubVision is a minimal VisionAnalyzer for tests.
 type stubVision struct {

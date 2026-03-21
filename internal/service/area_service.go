@@ -83,8 +83,8 @@ type overrideRepository interface {
 	Update(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
 	Delete(ctx context.Context, id int64) error
 	ReorderSortOrder(ctx context.Context, ids []int64) error
-	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
-	DismissSuggestion(ctx context.Context, itemID int64, oldName string) error
+	CreateFromEdit(ctx context.Context, areaID int64, oldName, newName string) error
+	DeleteOrphanedAreaRules(ctx context.Context) error
 }
 
 type AreaService struct {
@@ -186,7 +186,17 @@ func (s *AreaService) GetArea(ctx context.Context, areaID int64) (*domain.Area, 
 }
 
 func (s *AreaService) DeleteArea(ctx context.Context, areaID int64) error {
-	return s.areaStore.Delete(ctx, areaID)
+	if err := s.areaStore.Delete(ctx, areaID); err != nil {
+		return err
+	}
+	// The ON DELETE CASCADE on override_rule_areas removes the area association;
+	// now clean up any area-scoped rules that have no remaining areas.
+	if s.overrideStore != nil {
+		if err := s.overrideStore.DeleteOrphanedAreaRules(ctx); err != nil {
+			s.logger.Error("failed to delete orphaned area override rules", "area_id", areaID, "error", err)
+		}
+	}
+	return nil
 }
 
 // UploadPhoto saves the photo to storage and commits the DB record before running
@@ -419,6 +429,13 @@ func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quanti
 		}
 	}
 
+	// Auto-create an area-scoped override rule when the name changes.
+	if old.Name != name && s.overrideStore != nil {
+		if err := s.overrideStore.CreateFromEdit(ctx, old.AreaID, old.Name, name); err != nil {
+			s.logger.Error("failed to auto-create override rule from edit", "item_id", itemID, "error", err)
+		}
+	}
+
 	return s.itemStore.GetByID(ctx, itemID)
 }
 
@@ -489,12 +506,3 @@ func (s *AreaService) ReorderOverrideRules(ctx context.Context, ids []int64) err
 	return s.overrideStore.ReorderSortOrder(ctx, ids)
 }
 
-// ListEditSuggestions returns recent name renames as override rule suggestions.
-func (s *AreaService) ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error) {
-	return s.overrideStore.ListEditSuggestions(ctx)
-}
-
-// DismissSuggestion permanently hides a suggestion from the overrides page.
-func (s *AreaService) DismissSuggestion(ctx context.Context, itemID int64, oldName string) error {
-	return s.overrideStore.DismissSuggestion(ctx, itemID, oldName)
-}

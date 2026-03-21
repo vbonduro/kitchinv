@@ -140,45 +140,6 @@
         </section>
 
         <!-- ── Suggestions from edit history ─────────────────── -->
-        {{if .Suggestions}}
-        <section class="override-suggestions-section card">
-            <h2 class="override-section-title">Suggested from edit history</h2>
-            <p class="override-suggestions-hint">These are recent renames you made. Click "Create Rule" to auto-fill the form.</p>
-            <table class="override-table override-suggestions-table">
-                <thead>
-                    <tr>
-                        <th>Was</th>
-                        <th>Renamed to</th>
-                        <th>Area</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .Suggestions}}
-                    <tr id="suggestion-{{.ItemID}}-{{.OldName | js}}">
-                        <td data-label="Was"><code>{{.OldName}}</code></td>
-                        <td data-label="Renamed to"><code>{{.NewName}}</code></td>
-                        <td data-label="Area">{{.AreaName}}</td>
-                        <td class="suggestion-actions">
-                            <button class="btn btn-sm"
-                                    onclick="prefillFromSuggestion({{.OldName | js}}, {{.NewName | js}})">
-                                Create Rule
-                            </button>
-                            <button class="btn btn-sm btn-ghost"
-                                    hx-delete="/overrides/suggestions/{{.ItemID}}?old_name={{.OldName | urlquery}}"
-                                    hx-target="closest tr"
-                                    hx-swap="outerHTML"
-                                    aria-label="Dismiss">
-                                Dismiss
-                            </button>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </section>
-        {{end}}
-
     </div><!-- .overrides-layout -->
 
     <!-- ── Edit dialog ───────────────────────────────────────── -->
@@ -329,7 +290,6 @@
     }
 }
 
-.override-suggestions-hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
 .text-faint { color: var(--text-faint); font-style: italic; font-size: 0.85rem; }
 .override-dialog { border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-width: 560px; width: 90vw; }
 .override-dialog::backdrop { background: rgba(0,0,0,0.35); }
@@ -426,16 +386,6 @@
 
         wireScope(form, 'edit-area-select');
         dlg.showModal();
-    };
-
-    // ── Suggestion prefill ────────────────────────────────────
-    window.prefillFromSuggestion = function(oldName, newName) {
-        document.getElementById('new-match-pattern').value = oldName;
-        document.getElementById('new-replacement').value = newName;
-        document.getElementById('new-match-exact').checked = true;
-        document.getElementById('new-match-ci').checked = true;
-        document.getElementById('new-rule-section').scrollIntoView({behavior: 'smooth'});
-        document.getElementById('new-match-pattern').focus();
     };
 
     // ── Edit form submit (PUT via fetch) ──────────────────────

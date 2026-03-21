@@ -26,23 +26,16 @@ func (s *Server) handleListOverrides(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	suggestions, err := s.service.ListEditSuggestions(ctx)
-	if err != nil {
-		s.logger.Error("list edit suggestions failed", "error", err)
-		suggestions = nil // non-fatal
-	}
-
 	areaMap := make(map[int64]string, len(areas))
 	for _, a := range areas {
 		areaMap[a.ID] = a.Name
 	}
 
 	if err := s.renderPage(w, map[string]any{
-		"Rules":       rules,
-		"Areas":       areas,
-		"AreaMap":     areaMap,
-		"Suggestions": suggestions,
-		"ActiveNav":   "overrides",
+		"Rules":     rules,
+		"Areas":     areas,
+		"AreaMap":   areaMap,
+		"ActiveNav": "overrides",
 	}, "base.html", "pages/overrides.html"); err != nil {
 		s.logger.Error("render page failed", "error", err)
 	}
@@ -112,25 +105,6 @@ func (s *Server) handleReorderOverrides(w http.ResponseWriter, r *http.Request) 
 	if err := s.service.ReorderOverrideRules(r.Context(), body.IDs); err != nil {
 		http.Error(w, "failed to reorder", http.StatusInternalServerError)
 		s.logger.Error("reorder override rules failed", "error", err)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func (s *Server) handleDismissSuggestion(w http.ResponseWriter, r *http.Request) {
-	itemID, err := strconv.ParseInt(r.PathValue("itemId"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid item id", http.StatusBadRequest)
-		return
-	}
-	oldName := r.URL.Query().Get("old_name")
-	if oldName == "" {
-		http.Error(w, "old_name is required", http.StatusBadRequest)
-		return
-	}
-	if err := s.service.DismissSuggestion(r.Context(), itemID, oldName); err != nil {
-		http.Error(w, "failed to dismiss suggestion", http.StatusInternalServerError)
-		s.logger.Error("dismiss suggestion failed", "item_id", itemID, "error", err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

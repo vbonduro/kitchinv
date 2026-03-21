@@ -21,12 +21,11 @@ import (
 // fakeOverrideService implements kitchenService with no-ops for most methods
 // and configurable override-related behaviour for testing.
 type fakeOverrideService struct {
-	rules       []*domain.OverrideRule
-	suggestions []*domain.EditSuggestion
-	areas       []*domain.Area
-	createErr   error
-	updateErr   error
-	deleteErr   error
+	rules     []*domain.OverrideRule
+	areas     []*domain.Area
+	createErr error
+	updateErr error
+	deleteErr error
 }
 
 func (f *fakeOverrideService) ListOverrideRules(_ context.Context) ([]*domain.OverrideRule, error) {
@@ -52,12 +51,6 @@ func (f *fakeOverrideService) DeleteOverrideRule(_ context.Context, _ int64) err
 	return f.deleteErr
 }
 func (f *fakeOverrideService) ReorderOverrideRules(_ context.Context, _ []int64) error {
-	return nil
-}
-func (f *fakeOverrideService) ListEditSuggestions(_ context.Context) ([]*domain.EditSuggestion, error) {
-	return f.suggestions, nil
-}
-func (f *fakeOverrideService) DismissSuggestion(_ context.Context, _ int64, _ string) error {
 	return nil
 }
 func (f *fakeOverrideService) ListAreas(_ context.Context) ([]*domain.Area, error) {
@@ -248,38 +241,3 @@ func TestHandleListOverrides_RendersHTML(t *testing.T) {
 	assert.Contains(t, string(body), "Orange Juice")
 }
 
-func TestHandleDismissSuggestion_OK(t *testing.T) {
-	svc := &fakeOverrideService{}
-	srv := newOverrideTestServer(svc)
-
-	req := httptest.NewRequest("DELETE", "/overrides/suggestions/42?old_name=Milk", nil)
-	req.SetPathValue("itemId", "42")
-	rec := httptest.NewRecorder()
-	srv.handleDismissSuggestion(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-}
-
-func TestHandleDismissSuggestion_InvalidID(t *testing.T) {
-	svc := &fakeOverrideService{}
-	srv := newOverrideTestServer(svc)
-
-	req := httptest.NewRequest("DELETE", "/overrides/suggestions/bad?old_name=Milk", nil)
-	req.SetPathValue("itemId", "bad")
-	rec := httptest.NewRecorder()
-	srv.handleDismissSuggestion(rec, req)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}
-
-func TestHandleDismissSuggestion_MissingOldName(t *testing.T) {
-	svc := &fakeOverrideService{}
-	srv := newOverrideTestServer(svc)
-
-	req := httptest.NewRequest("DELETE", "/overrides/suggestions/42", nil)
-	req.SetPathValue("itemId", "42")
-	rec := httptest.NewRecorder()
-	srv.handleDismissSuggestion(rec, req)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}

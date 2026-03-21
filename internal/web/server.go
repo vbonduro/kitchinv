@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -42,8 +41,6 @@ type kitchenService interface {
 	UpdateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
 	DeleteOverrideRule(ctx context.Context, id int64) error
 	ReorderOverrideRules(ctx context.Context, ids []int64) error
-	ListEditSuggestions(ctx context.Context) ([]*domain.EditSuggestion, error)
-	DismissSuggestion(ctx context.Context, itemID int64, oldName string) error
 }
 
 type Server struct {
@@ -86,9 +83,6 @@ func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logg
 			"areaName": func(m map[int64]string, id int64) string {
 				return m[id]
 			},
-			"urlquery": func(s string) string {
-				return url.QueryEscape(s)
-			},
 		},
 	}
 	s.registerRoutes()
@@ -120,7 +114,6 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("PUT /overrides/{id}", s.handleUpdateOverride)
 	s.mux.HandleFunc("DELETE /overrides/{id}", s.handleDeleteOverride)
 	s.mux.HandleFunc("POST /overrides/reorder", s.handleReorderOverrides)
-	s.mux.HandleFunc("DELETE /overrides/suggestions/{itemId}", s.handleDismissSuggestion)
 }
 
 
