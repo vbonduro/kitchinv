@@ -143,7 +143,7 @@
         <h2 class="ov-dialog-title">Create New Rule</h2>
         <p class="ov-dialog-subtitle">Create a rule to automatically rename items at upload time.</p>
     </div>
-    <form method="POST" action="/overrides" id="create-rule-form">
+    <form id="create-rule-form">
         <div class="ov-dialog-body">
             <div class="ov-form-row">
                 <div class="ov-form-group">
@@ -181,6 +181,7 @@
                 </select>
             </div>
         </div>
+        <div id="create-rule-error" class="ov-dialog-error" style="display:none"></div>
         <div class="ov-dialog-footer">
             <button type="button" class="ov-btn-secondary" onclick="document.getElementById('create-rule-dialog').close()">Cancel</button>
             <button type="submit" class="ov-btn-primary">Create Rule</button>
@@ -232,6 +233,7 @@
                 </select>
             </div>
         </div>
+        <div id="edit-rule-error" class="ov-dialog-error" style="display:none"></div>
         <div class="ov-dialog-footer">
             <button type="button" class="ov-btn-secondary" onclick="document.getElementById('edit-rule-dialog').close()">Cancel</button>
             <button type="submit" class="ov-btn-primary">Save Changes</button>
@@ -581,6 +583,17 @@
     color: var(--text, #111827);
 }
 
+/* ── Dialog error ─────────────────────────────────────────────── */
+.ov-dialog-error {
+    margin: 0 1.5rem;
+    padding: 0.6rem 0.85rem;
+    background: #fef2f2;
+    border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #dc2626;
+}
+
 /* ── Mobile ───────────────────────────────────────────────────── */
 @media (max-width: 600px) {
     .ov-hero { padding: 1rem 0; }
@@ -604,7 +617,7 @@
 
 <script>
 (function() {
-    // ── Scope show/hide ──────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────
     function wireScope(formEl, areaSelectId) {
         var radios = formEl.querySelectorAll('input[name="scope"]');
         var areaSelect = document.getElementById(areaSelectId);
@@ -615,13 +628,56 @@
         radios.forEach(function(r) { r.addEventListener('change', update); });
         update();
     }
+
+    function showError(errEl, msg) {
+        errEl.textContent = msg;
+        errEl.style.display = '';
+    }
+
+    function clearError(errEl) {
+        errEl.style.display = 'none';
+        errEl.textContent = '';
+    }
+
+    function validateForm(form) {
+        var pattern = form.querySelector('[name="match_pattern"]').value.trim();
+        if (!pattern) return 'Match pattern is required.';
+        var exact = form.querySelector('[name="match_exact"]').checked;
+        var sub   = form.querySelector('[name="match_substring"]').checked;
+        if (!exact && !sub) return 'Select at least one match mode (Exact or Substring).';
+        return null;
+    }
+
     wireScope(document.getElementById('create-rule-form'), 'c-area-select');
     wireScope(document.getElementById('edit-rule-form'), 'e-area-select');
 
     // ── Open create dialog ───────────────────────────────────────
     window.openCreateDialog = function() {
+        clearError(document.getElementById('create-rule-error'));
         document.getElementById('create-rule-dialog').showModal();
     };
+
+    // ── Create form submit ───────────────────────────────────────
+    document.getElementById('create-rule-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var errEl = document.getElementById('create-rule-error');
+        clearError(errEl);
+        var err = validateForm(form);
+        if (err) { showError(errEl, err); return; }
+        var params = new URLSearchParams(new FormData(form));
+        fetch('/overrides', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString(),
+        }).then(function(resp) {
+            if (resp.ok || resp.redirected) {
+                window.location.href = '/overrides';
+            } else {
+                resp.text().then(function(t) { showError(errEl, t.trim()); });
+            }
+        }).catch(function() { showError(errEl, 'Network error. Please try again.'); });
+    });
 
     // ── Reorder ──────────────────────────────────────────────────
     window.updateMoveButtons = function() {
@@ -644,15 +700,12 @@
         var idx = cards.indexOf(card);
         var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
         if (swapIdx < 0 || swapIdx >= cards.length) return;
-
         if (direction === 'up') {
             body.insertBefore(card, cards[swapIdx]);
         } else {
             body.insertBefore(cards[swapIdx], card);
         }
-
         updateMoveButtons();
-
         var ids = Array.from(body.querySelectorAll('.ov-card')).map(function(c) {
             return parseInt(c.dataset.id, 10);
         }).filter(Boolean);
@@ -669,6 +722,7 @@
     window.openEditDialog = function(card) {
         var dlg = document.getElementById('edit-rule-dialog');
         var form = document.getElementById('edit-rule-form');
+        clearError(document.getElementById('edit-rule-error'));
         form.dataset.ruleId = card.dataset.id;
 
         form.querySelector('[name="match_pattern"]').value = card.dataset.pattern || '';
@@ -698,9 +752,12 @@
     document.getElementById('edit-rule-form').addEventListener('submit', function(e) {
         e.preventDefault();
         var form = this;
-        var id = form.dataset.ruleId;
+        var errEl = document.getElementById('edit-rule-error');
+        clearError(errEl);
+        var err = validateForm(form);
+        if (err) { showError(errEl, err); return; }
         var params = new URLSearchParams(new FormData(form));
-        fetch('/overrides/' + id, {
+        fetch('/overrides/' + form.dataset.ruleId, {
             method: 'PUT',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: params.toString(),
@@ -708,9 +765,9 @@
             if (resp.ok || resp.redirected) {
                 window.location.href = '/overrides';
             } else {
-                resp.text().then(function(t) { alert('Error: ' + t); });
+                resp.text().then(function(t) { showError(errEl, t.trim()); });
             }
-        });
+        }).catch(function() { showError(errEl, 'Network error. Please try again.'); });
     });
 })();
 </script>
