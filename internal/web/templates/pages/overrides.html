@@ -256,6 +256,7 @@
 .col-order { width: 2.5rem; padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
 .order-arrows { display: flex; flex-direction: column; gap: 1px; align-items: center; }
 .btn-move { display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 3px; color: var(--text-faint); line-height: 1; }
+.btn-move svg { pointer-events: none; }
 .btn-move:hover { background: var(--primary-bg); color: var(--primary); }
 .btn-move:disabled { opacity: 0.2; cursor: default; }
 .btn-move:disabled:hover { background: none; color: var(--text-faint); }
@@ -370,6 +371,7 @@
     };
 
     window.moveRule = function(btn, direction) {
+        if (btn.disabled) return;
         var tbody = document.getElementById('override-rules-body');
         var row = btn.closest('tr');
         var rows = Array.from(tbody.querySelectorAll('tr'));
