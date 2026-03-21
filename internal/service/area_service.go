@@ -74,12 +74,26 @@ type snapshotRepository interface {
 	ListByAreaID(ctx context.Context, areaID int64) ([]*domain.Snapshot, error)
 }
 
+// overrideRepository manages item name override rules.
+type overrideRepository interface {
+	ListForArea(ctx context.Context, areaID int64) ([]*domain.OverrideRule, error)
+	List(ctx context.Context) ([]*domain.OverrideRule, error)
+	Create(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
+	GetByID(ctx context.Context, id int64) (*domain.OverrideRule, error)
+	Update(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error)
+	Delete(ctx context.Context, id int64) error
+	ReorderSortOrder(ctx context.Context, ids []int64) error
+	CreateFromEdit(ctx context.Context, areaID int64, oldName, newName string) error
+	DeleteOrphanedAreaRules(ctx context.Context) error
+}
+
 type AreaService struct {
 	areaStore      areaRepository
 	photoStore     photoRepository
 	itemStore      itemRepository
 	itemEditStore  itemEditRepository
 	snapshotStore  snapshotRepository
+	overrideStore  overrideRepository
 	visionAPI      vision.VisionAnalyzer
 	photoStg       photostore.PhotoStore
 	logger         *slog.Logger
@@ -93,6 +107,7 @@ func NewAreaService(
 	itemStore itemRepository,
 	itemEditStore itemEditRepository,
 	snapshotStore snapshotRepository,
+	overrideStore overrideRepository,
 	visionAPI vision.VisionAnalyzer,
 	photoStg photostore.PhotoStore,
 	logger *slog.Logger,
@@ -103,6 +118,7 @@ func NewAreaService(
 		itemStore:     itemStore,
 		itemEditStore: itemEditStore,
 		snapshotStore: snapshotStore,
+		overrideStore: overrideStore,
 		visionAPI:     visionAPI,
 		photoStg:      photoStg,
 		logger:        logger,
@@ -170,7 +186,17 @@ func (s *AreaService) GetArea(ctx context.Context, areaID int64) (*domain.Area, 
 }
 
 func (s *AreaService) DeleteArea(ctx context.Context, areaID int64) error {
-	return s.areaStore.Delete(ctx, areaID)
+	if err := s.areaStore.Delete(ctx, areaID); err != nil {
+		return err
+	}
+	// The ON DELETE CASCADE on override_rule_areas removes the area association;
+	// now clean up any area-scoped rules that have no remaining areas.
+	if s.overrideStore != nil {
+		if err := s.overrideStore.DeleteOrphanedAreaRules(ctx); err != nil {
+			s.logger.Error("failed to delete orphaned area override rules", "area_id", areaID, "error", err)
+		}
+	}
+	return nil
 }
 
 // UploadPhoto saves the photo to storage and commits the DB record before running
@@ -246,6 +272,7 @@ func (s *AreaService) replaceItems(ctx context.Context, areaID, photoID int64, d
 		return nil, fmt.Errorf("failed to delete old items: %w", err)
 	}
 	merged := mergeDetectedItems(detected)
+	merged = s.applyOverridesToMerged(ctx, areaID, merged)
 	items := make([]*domain.Item, 0, len(merged))
 	for _, m := range merged {
 		item, err := s.itemStore.Create(ctx, areaID, &photoID, m.name, m.quantity, string(domain.ItemSourceAI), m.bboxes)
@@ -286,6 +313,7 @@ func (s *AreaService) replaceItemsTx(ctx context.Context, areaID, photoID int64,
 	}
 
 	merged := mergeDetectedItems(detected)
+	merged = s.applyOverridesToMerged(ctx, areaID, merged)
 	items := make([]*domain.Item, 0, len(merged))
 	for _, m := range merged {
 		bboxesJSON := encodeBBoxesJSON(m.bboxes)
@@ -401,6 +429,13 @@ func (s *AreaService) UpdateItem(ctx context.Context, itemID int64, name, quanti
 		}
 	}
 
+	// Auto-create an area-scoped override rule when the name changes.
+	if old.Name != name && s.overrideStore != nil {
+		if err := s.overrideStore.CreateFromEdit(ctx, old.AreaID, old.Name, name); err != nil {
+			s.logger.Error("failed to auto-create override rule from edit", "item_id", itemID, "error", err)
+		}
+	}
+
 	return s.itemStore.GetByID(ctx, itemID)
 }
 
@@ -419,3 +454,55 @@ func (s *AreaService) SearchItems(ctx context.Context, query string) ([]*domain.
 func (s *AreaService) ListSnapshots(ctx context.Context, areaID int64) ([]*domain.Snapshot, error) {
 	return s.snapshotStore.ListByAreaID(ctx, areaID)
 }
+
+// applyOverridesToMerged loads override rules for an area and applies them,
+// dropping items whose name becomes empty after substitution.
+func (s *AreaService) applyOverridesToMerged(ctx context.Context, areaID int64, merged []mergedItem) []mergedItem {
+	if s.overrideStore == nil {
+		return merged
+	}
+	rules, err := s.overrideStore.ListForArea(ctx, areaID)
+	if err != nil {
+		s.logger.Error("failed to load override rules", "area_id", areaID, "error", err)
+		return merged // non-fatal: proceed with original names
+	}
+	filtered := merged[:0]
+	for _, m := range merged {
+		m.name = applyOverrides(rules, m.name)
+		if strings.TrimSpace(m.name) != "" {
+			filtered = append(filtered, m)
+		}
+	}
+	return filtered
+}
+
+// ListOverrideRules returns all override rules.
+func (s *AreaService) ListOverrideRules(ctx context.Context) ([]*domain.OverrideRule, error) {
+	return s.overrideStore.List(ctx)
+}
+
+// CreateOverrideRule creates a new override rule.
+func (s *AreaService) CreateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error) {
+	return s.overrideStore.Create(ctx, r)
+}
+
+// GetOverrideRule fetches an override rule by ID.
+func (s *AreaService) GetOverrideRule(ctx context.Context, id int64) (*domain.OverrideRule, error) {
+	return s.overrideStore.GetByID(ctx, id)
+}
+
+// UpdateOverrideRule updates an existing override rule.
+func (s *AreaService) UpdateOverrideRule(ctx context.Context, r domain.OverrideRule) (*domain.OverrideRule, error) {
+	return s.overrideStore.Update(ctx, r)
+}
+
+// DeleteOverrideRule deletes an override rule.
+func (s *AreaService) DeleteOverrideRule(ctx context.Context, id int64) error {
+	return s.overrideStore.Delete(ctx, id)
+}
+
+// ReorderOverrideRules sets sort_order based on the provided ID order.
+func (s *AreaService) ReorderOverrideRules(ctx context.Context, ids []int64) error {
+	return s.overrideStore.ReorderSortOrder(ctx, ids)
+}
+

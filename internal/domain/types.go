@@ -60,3 +60,27 @@ type ItemEdit struct {
 	NewValue string
 	EditedAt time.Time
 }
+
+// OverrideRule defines a pattern-to-replacement mapping applied at upload time.
+type OverrideRule struct {
+	ID                   int64
+	MatchPattern         string
+	Replacement          string
+	MatchExact           bool
+	MatchCaseInsensitive bool
+	MatchSubstring       bool
+	Scope                string // "global" or "area"
+	AreaIDs              []int64
+	SortOrder            int
+	CreatedAt            time.Time
+}
+
+// EditSuggestion represents a user rename that can be turned into an override rule.
+type EditSuggestion struct {
+	ItemID   int64
+	OldName  string
+	NewName  string
+	AreaID   int64
+	AreaName string
+	EditedAt time.Time
+}

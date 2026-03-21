@@ -1,0 +1,768 @@
+{{define "content"}}
+<div class="ov-page">
+
+    <!-- ── Page header ─────────────────────────────────────────── -->
+    <div class="ov-hero">
+        <div class="ov-hero-inner">
+            <div class="ov-hero-top">
+                <div class="ov-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                    </svg>
+                </div>
+                <h1 class="ov-title section-label">Override Rules</h1>
+            </div>
+            <p class="ov-subtitle">Manage automatic item name corrections applied at upload time</p>
+        </div>
+    </div>
+
+    <div class="ov-body">
+
+        <!-- ── List header ──────────────────────────────────────── -->
+        <div class="ov-list-header">
+            <span class="ov-list-count">Active Rules ({{len .Rules}})</span>
+            <button class="ov-btn-primary" onclick="openCreateDialog()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Rule
+            </button>
+        </div>
+
+        <!-- ── Rule list ────────────────────────────────────────── -->
+        {{if .Rules}}
+        <div class="ov-list" id="override-rules-body">
+            {{range .Rules}}
+            <div class="ov-card" id="rule-{{.ID}}"
+                 data-id="{{.ID}}"
+                 data-pattern="{{.MatchPattern}}"
+                 data-replacement="{{.Replacement}}"
+                 data-exact="{{.MatchExact}}"
+                 data-ci="{{.MatchCaseInsensitive}}"
+                 data-substring="{{.MatchSubstring}}"
+                 data-scope="{{.Scope}}"
+                 data-area-ids="{{range $i, $id := .AreaIDs}}{{if $i}},{{end}}{{$id}}{{end}}">
+
+                <!-- Reorder arrows -->
+                <div class="ov-arrows">
+                    <button class="ov-arrow ov-arrow-up" onclick="moveRule(this,'up')" aria-label="Move up">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
+                            <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+                        </svg>
+                    </button>
+                    <button class="ov-arrow ov-arrow-down" onclick="moveRule(this,'down')" aria-label="Move down">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
+                            <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Rule content -->
+                <div class="ov-card-body">
+                    <div class="ov-card-row">
+                        <div class="ov-field">
+                            <span class="ov-field-label">From (AI Result)</span>
+                            <span class="ov-field-value">{{.MatchPattern}}</span>
+                        </div>
+                        <div class="ov-field">
+                            <span class="ov-field-label">To (Override)</span>
+                            <span class="ov-field-value ov-field-value--to">
+                                {{if .Replacement}}{{.Replacement}}{{else}}<em class="ov-remove">(remove)</em>{{end}}
+                            </span>
+                        </div>
+                        <div class="ov-field">
+                            <span class="ov-field-label">Scope</span>
+                            <span class="ov-field-value">
+                                {{if eq .Scope "global"}}
+                                    <span class="ov-scope-badge ov-scope-global">Global</span>
+                                {{else}}
+                                    <span class="ov-scope-badge ov-scope-area scope-area">
+                                        {{range $i, $id := .AreaIDs}}{{if $i}}, {{end}}{{areaName $.AreaMap $id}}{{end}}
+                                    </span>
+                                {{end}}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ov-flags">
+                        {{if .MatchExact}}<span class="ov-flag">exact</span>{{end}}
+                        {{if .MatchCaseInsensitive}}<span class="ov-flag">case-insensitive</span>{{end}}
+                        {{if .MatchSubstring}}<span class="ov-flag">substring</span>{{end}}
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="ov-card-actions">
+                    <button class="ov-icon-btn" onclick="openEditDialog(this.closest('.ov-card'))" title="Edit rule">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="ov-icon-btn ov-icon-btn--danger"
+                            hx-delete="/overrides/{{.ID}}"
+                            hx-target="#rule-{{.ID}}"
+                            hx-swap="outerHTML"
+                            hx-confirm="Delete this override rule?"
+                            hx-on::after-request="updateMoveButtons()"
+                            title="Delete rule">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        {{else}}
+        <!-- ── Empty state ─────────────────────────────────────── -->
+        <div class="ov-empty">
+            <div class="ov-empty-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+            </div>
+            <h3 class="ov-empty-title">No override rules yet</h3>
+            <p class="ov-empty-text">
+                Overrides are automatically created when you rename items,<br>or you can create them manually.
+            </p>
+        </div>
+        {{end}}
+
+    </div><!-- .ov-body -->
+</div><!-- .ov-page -->
+
+<!-- ── Create dialog ─────────────────────────────────────────────── -->
+<dialog id="create-rule-dialog" class="ov-dialog">
+    <div class="ov-dialog-header">
+        <h2 class="ov-dialog-title">Create New Rule</h2>
+        <p class="ov-dialog-subtitle">Create a rule to automatically rename items at upload time.</p>
+    </div>
+    <form id="create-rule-form">
+        <div class="ov-dialog-body">
+            <div class="ov-form-row">
+                <div class="ov-form-group">
+                    <label class="ov-label" for="c-match-pattern">From (AI Result) <span class="ov-required">*</span></label>
+                    <input type="text" name="match_pattern" id="c-match-pattern" class="ov-input" placeholder="e.g. Tropicana OJ" required>
+                    <span class="ov-hint">The item name that AI detects</span>
+                </div>
+                <div class="ov-form-group">
+                    <label class="ov-label" for="c-replacement">To (Override Name)</label>
+                    <input type="text" name="replacement" id="c-replacement" class="ov-input" placeholder="e.g. Orange Juice (blank to remove)">
+                    <span class="ov-hint">The name you want to use instead</span>
+                </div>
+            </div>
+            <div class="ov-form-group">
+                <label class="ov-label">Match mode <span class="ov-required">*</span></label>
+                <div class="ov-checks">
+                    <label class="ov-check-label"><input type="checkbox" name="match_exact" value="on" id="c-exact"> Exact</label>
+                    <label class="ov-check-label"><input type="checkbox" name="match_case_insensitive" value="on" id="c-ci"> Case-insensitive</label>
+                    <label class="ov-check-label"><input type="checkbox" name="match_substring" value="on" id="c-sub"> Substring</label>
+                </div>
+            </div>
+            <div class="ov-form-group">
+                <label class="ov-label">Scope</label>
+                <div class="ov-checks">
+                    <label class="ov-check-label"><input type="radio" name="scope" value="global" checked id="c-scope-global"> Global</label>
+                    <label class="ov-check-label"><input type="radio" name="scope" value="area" id="c-scope-area"> Area-specific</label>
+                </div>
+            </div>
+            <div class="ov-form-group" id="c-area-select" style="display:none">
+                <label class="ov-label">Areas</label>
+                <select name="area_ids[]" multiple class="ov-select">
+                    {{range .Areas}}
+                    <option value="{{.ID}}">{{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+        </div>
+        <div id="create-rule-error" class="ov-dialog-error" style="display:none"></div>
+        <div class="ov-dialog-footer">
+            <button type="button" class="ov-btn-secondary" onclick="document.getElementById('create-rule-dialog').close()">Cancel</button>
+            <button type="submit" class="ov-btn-primary">Create Rule</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- ── Edit dialog ──────────────────────────────────────────────── -->
+<dialog id="edit-rule-dialog" class="ov-dialog">
+    <div class="ov-dialog-header">
+        <h2 class="ov-dialog-title">Edit Rule</h2>
+        <p class="ov-dialog-subtitle">Update the override settings below.</p>
+    </div>
+    <form id="edit-rule-form">
+        <div class="ov-dialog-body">
+            <div class="ov-form-row">
+                <div class="ov-form-group">
+                    <label class="ov-label">From (AI Result) <span class="ov-required">*</span></label>
+                    <input type="text" name="match_pattern" class="ov-input" placeholder="e.g. Tropicana OJ" required>
+                    <span class="ov-hint">The item name that AI detects</span>
+                </div>
+                <div class="ov-form-group">
+                    <label class="ov-label">To (Override Name)</label>
+                    <input type="text" name="replacement" class="ov-input" placeholder="e.g. Orange Juice">
+                    <span class="ov-hint">The name you want to use instead</span>
+                </div>
+            </div>
+            <div class="ov-form-group">
+                <label class="ov-label">Match mode <span class="ov-required">*</span></label>
+                <div class="ov-checks">
+                    <label class="ov-check-label"><input type="checkbox" name="match_exact" value="on"> Exact</label>
+                    <label class="ov-check-label"><input type="checkbox" name="match_case_insensitive" value="on"> Case-insensitive</label>
+                    <label class="ov-check-label"><input type="checkbox" name="match_substring" value="on"> Substring</label>
+                </div>
+            </div>
+            <div class="ov-form-group">
+                <label class="ov-label">Scope</label>
+                <div class="ov-checks">
+                    <label class="ov-check-label"><input type="radio" name="scope" value="global" checked> Global</label>
+                    <label class="ov-check-label"><input type="radio" name="scope" value="area"> Area-specific</label>
+                </div>
+            </div>
+            <div class="ov-form-group" id="e-area-select" style="display:none">
+                <label class="ov-label">Areas</label>
+                <select name="area_ids[]" multiple class="ov-select">
+                    {{range .Areas}}
+                    <option value="{{.ID}}">{{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+        </div>
+        <div id="edit-rule-error" class="ov-dialog-error" style="display:none"></div>
+        <div class="ov-dialog-footer">
+            <button type="button" class="ov-btn-secondary" onclick="document.getElementById('edit-rule-dialog').close()">Cancel</button>
+            <button type="submit" class="ov-btn-primary">Save Changes</button>
+        </div>
+    </form>
+</dialog>
+
+<style>
+/* ── Page shell ─────────────────────────────────────────────────── */
+.ov-page {
+    min-height: calc(100vh - 60px);
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #eef2ff 100%);
+    padding-bottom: 5rem;
+}
+
+/* ── Hero header ──────────────────────────────────────────────── */
+.ov-hero {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(99,102,241,0.12);
+    box-shadow: 0 1px 4px rgba(99,102,241,0.06);
+    padding: 1.5rem 0 1.25rem;
+}
+.ov-hero-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+.ov-hero-top {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 0.35rem;
+}
+.ov-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+}
+.ov-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+.ov-subtitle {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.9rem;
+    margin: 0 0 0 3.4rem;
+}
+
+/* ── Body ─────────────────────────────────────────────────────── */
+.ov-body {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── List header ──────────────────────────────────────────────── */
+.ov-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.ov-list-count {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text, #111827);
+}
+
+/* ── Primary button ───────────────────────────────────────────── */
+.ov-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+    transition: opacity 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+}
+.ov-btn-primary:hover { opacity: 0.92; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+.ov-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--text-muted, #6b7280);
+    border: 1px solid var(--card-border, rgba(0,0,0,0.1));
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ov-btn-secondary:hover { background: var(--card-border, rgba(0,0,0,0.06)); }
+
+/* ── Rule cards ───────────────────────────────────────────────── */
+.ov-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+.ov-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s;
+}
+.ov-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+/* Reorder arrows */
+.ov-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.ov-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+    color: #9ca3af;
+    transition: background 0.12s, color 0.12s;
+}
+.ov-arrow:hover { background: #eff6ff; color: #2563eb; }
+.ov-arrow:disabled { opacity: 0.2; cursor: default; }
+.ov-arrow:disabled:hover { background: none; color: #9ca3af; }
+
+/* Card body */
+.ov-card-body { flex: 1; min-width: 0; }
+.ov-card-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.ov-field { display: flex; flex-direction: column; gap: 0.15rem; }
+.ov-field-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ov-field-value {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ov-field-value--to { color: #2563eb; }
+.ov-remove { color: #9ca3af; font-style: italic; font-weight: 400; }
+
+/* Flags */
+.ov-flags {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+.ov-flag {
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 4px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+/* Scope badges */
+.ov-scope-badge {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.ov-scope-global { background: #f0fdf4; color: #15803d; }
+.ov-scope-area { background: #fef9c3; color: #92400e; }
+
+/* Card action buttons */
+.ov-card-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.ov-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background 0.12s, color 0.12s;
+}
+.ov-icon-btn:hover { background: #eff6ff; color: #2563eb; }
+.ov-icon-btn--danger:hover { background: #fef2f2; color: #dc2626; }
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.ov-empty {
+    background: #fff;
+    border: 2px dashed rgba(0,0,0,0.1);
+    border-radius: 16px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+.ov-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+    color: #2563eb;
+    margin-bottom: 1rem;
+}
+.ov-empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text, #111827);
+    margin: 0 0 0.5rem;
+}
+.ov-empty-text {
+    font-size: 0.875rem;
+    color: var(--text-muted, #6b7280);
+    margin: 0 0 1.25rem;
+    line-height: 1.6;
+}
+
+/* ── Dialog ───────────────────────────────────────────────────── */
+.ov-dialog {
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    max-width: 520px;
+    width: 90vw;
+    overflow: hidden;
+}
+.ov-dialog::backdrop { background: rgba(0,0,0,0.4); }
+.ov-dialog-header {
+    padding: 1.5rem 1.5rem 0;
+}
+.ov-dialog-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text, #111827);
+    margin: 0 0 0.25rem;
+}
+.ov-dialog-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted, #6b7280);
+    margin: 0;
+}
+.ov-dialog-body {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.ov-dialog-footer {
+    padding: 1rem 1.5rem;
+    background: #f9fafb;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.ov-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.ov-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.ov-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted, #6b7280);
+}
+.ov-required { color: var(--danger, #dc2626); }
+.ov-input {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--bg, #fff);
+    color: var(--text, #111827);
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-size: 1rem; /* 16px prevents iOS zoom */
+}
+.ov-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+.ov-select {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    min-height: 6rem;
+    background: var(--bg, #fff);
+    color: var(--text, #111827);
+}
+.ov-hint { font-size: 0.75rem; color: #9ca3af; }
+.ov-checks { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+.ov-check-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--text, #111827);
+}
+
+/* ── Dialog error ─────────────────────────────────────────────── */
+.ov-dialog-error {
+    margin: 0 1.5rem;
+    padding: 0.6rem 0.85rem;
+    background: #fef2f2;
+    border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #dc2626;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .ov-hero { padding: 1rem 0; }
+    .ov-hero-top { gap: 0.625rem; }
+    .ov-icon-wrap { width: 36px; height: 36px; border-radius: 9px; }
+    .ov-title { font-size: 1.2rem; }
+    .ov-subtitle { margin-left: 0; font-size: 0.8rem; }
+
+    .ov-card { padding: 0.75rem; gap: 0.5rem; }
+    .ov-card-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    /* Scope moves to its own row */
+    .ov-card-row .ov-field:last-child {
+        grid-column: 1 / -1;
+    }
+    .ov-form-row { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+(function() {
+    // ── Helpers ──────────────────────────────────────────────────
+    function wireScope(formEl, areaSelectId) {
+        var radios = formEl.querySelectorAll('input[name="scope"]');
+        var areaSelect = document.getElementById(areaSelectId);
+        function update() {
+            var checked = formEl.querySelector('input[name="scope"]:checked');
+            if (areaSelect) areaSelect.style.display = (checked && checked.value === 'area') ? '' : 'none';
+        }
+        radios.forEach(function(r) { r.addEventListener('change', update); });
+        update();
+    }
+
+    function showError(errEl, msg) {
+        errEl.textContent = msg;
+        errEl.style.display = '';
+    }
+
+    function clearError(errEl) {
+        errEl.style.display = 'none';
+        errEl.textContent = '';
+    }
+
+    function validateForm(form) {
+        var pattern = form.querySelector('[name="match_pattern"]').value.trim();
+        if (!pattern) return 'Match pattern is required.';
+        var exact = form.querySelector('[name="match_exact"]').checked;
+        var sub   = form.querySelector('[name="match_substring"]').checked;
+        if (!exact && !sub) return 'Select at least one match mode (Exact or Substring).';
+        return null;
+    }
+
+    wireScope(document.getElementById('create-rule-form'), 'c-area-select');
+    wireScope(document.getElementById('edit-rule-form'), 'e-area-select');
+
+    // ── Open create dialog ───────────────────────────────────────
+    window.openCreateDialog = function() {
+        clearError(document.getElementById('create-rule-error'));
+        document.getElementById('create-rule-dialog').showModal();
+    };
+
+    // ── Create form submit ───────────────────────────────────────
+    document.getElementById('create-rule-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var errEl = document.getElementById('create-rule-error');
+        clearError(errEl);
+        var err = validateForm(form);
+        if (err) { showError(errEl, err); return; }
+        var params = new URLSearchParams(new FormData(form));
+        fetch('/overrides', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString(),
+        }).then(function(resp) {
+            if (resp.ok || resp.redirected) {
+                window.location.href = '/overrides';
+            } else {
+                resp.text().then(function(t) { showError(errEl, t.trim()); });
+            }
+        }).catch(function() { showError(errEl, 'Network error. Please try again.'); });
+    });
+
+    // ── Reorder ──────────────────────────────────────────────────
+    window.updateMoveButtons = function() {
+        var body = document.getElementById('override-rules-body');
+        if (!body) return;
+        var cards = Array.from(body.querySelectorAll('.ov-card'));
+        cards.forEach(function(card, i) {
+            var up   = card.querySelector('.ov-arrow-up');
+            var down = card.querySelector('.ov-arrow-down');
+            if (up)   up.disabled   = (i === 0);
+            if (down) down.disabled = (i === cards.length - 1);
+        });
+    };
+
+    window.moveRule = function(btn, direction) {
+        if (btn.disabled) return;
+        var body = document.getElementById('override-rules-body');
+        var card = btn.closest('.ov-card');
+        var cards = Array.from(body.querySelectorAll('.ov-card'));
+        var idx = cards.indexOf(card);
+        var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= cards.length) return;
+        if (direction === 'up') {
+            body.insertBefore(card, cards[swapIdx]);
+        } else {
+            body.insertBefore(cards[swapIdx], card);
+        }
+        updateMoveButtons();
+        var ids = Array.from(body.querySelectorAll('.ov-card')).map(function(c) {
+            return parseInt(c.dataset.id, 10);
+        }).filter(Boolean);
+        fetch('/overrides/reorder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids})
+        }).catch(function() {});
+    };
+
+    updateMoveButtons();
+
+    // ── Open edit dialog ─────────────────────────────────────────
+    window.openEditDialog = function(card) {
+        var dlg = document.getElementById('edit-rule-dialog');
+        var form = document.getElementById('edit-rule-form');
+        clearError(document.getElementById('edit-rule-error'));
+        form.dataset.ruleId = card.dataset.id;
+
+        form.querySelector('[name="match_pattern"]').value = card.dataset.pattern || '';
+        form.querySelector('[name="replacement"]').value = card.dataset.replacement || '';
+        form.querySelector('[name="match_exact"]').checked = card.dataset.exact === 'true';
+        form.querySelector('[name="match_case_insensitive"]').checked = card.dataset.ci === 'true';
+        form.querySelector('[name="match_substring"]').checked = card.dataset.substring === 'true';
+
+        var scopeVal = card.dataset.scope || 'global';
+        form.querySelectorAll('[name="scope"]').forEach(function(r) {
+            r.checked = r.value === scopeVal;
+        });
+
+        var areaSelect = form.querySelector('select[name="area_ids[]"]');
+        if (areaSelect) {
+            var ids = (card.dataset.areaIds || '').split(',').filter(Boolean);
+            Array.from(areaSelect.options).forEach(function(opt) {
+                opt.selected = ids.indexOf(opt.value) !== -1;
+            });
+        }
+
+        wireScope(form, 'e-area-select');
+        dlg.showModal();
+    };
+
+    // ── Edit form submit ─────────────────────────────────────────
+    document.getElementById('edit-rule-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var errEl = document.getElementById('edit-rule-error');
+        clearError(errEl);
+        var err = validateForm(form);
+        if (err) { showError(errEl, err); return; }
+        var params = new URLSearchParams(new FormData(form));
+        fetch('/overrides/' + form.dataset.ruleId, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString(),
+        }).then(function(resp) {
+            if (resp.ok || resp.redirected) {
+                window.location.href = '/overrides';
+            } else {
+                resp.text().then(function(t) { showError(errEl, t.trim()); });
+            }
+        }).catch(function() { showError(errEl, 'Network error. Please try again.'); });
+    });
+})();
+</script>
+{{end}}

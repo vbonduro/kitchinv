@@ -46,6 +46,7 @@ func main() {
 	itemStore := store.NewItemStore(database)
 	itemEditStore := store.NewItemEditStore(database)
 	snapshotStore := store.NewSnapshotStore(database)
+	overrideStore := store.NewOverrideStore(database)
 
 	visionAnalyzer, err := newVisionAnalyzer(cfg, logger)
 	if err != nil {
@@ -59,7 +60,7 @@ func main() {
 		return
 	}
 
-	areaService := service.NewAreaService(areaStore, photoStore, itemStore, itemEditStore, snapshotStore, visionAnalyzer, photoStg, logger).WithDB(database)
+	areaService := service.NewAreaService(areaStore, photoStore, itemStore, itemEditStore, snapshotStore, overrideStore, visionAnalyzer, photoStg, logger).WithDB(database)
 	server := web.NewServer(areaService, templates.FS, photoStg, logger)
 
 	if err := server.ListenAndServe(cfg.ListenAddr); err != nil {
