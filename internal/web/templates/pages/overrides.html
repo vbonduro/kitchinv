@@ -387,14 +387,16 @@
 .ov-arrow:disabled:hover { background: none; color: #9ca3af; }
 
 /* Card body */
-.ov-card-body { flex: 1; min-width: 0; }
+.ov-card-body { flex: 1; min-width: 0; overflow: hidden; }
 .ov-card-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.75rem;
     margin-bottom: 0.5rem;
 }
-.ov-field { display: flex; flex-direction: column; gap: 0.15rem; }
+/* Scope spans full width */
+.ov-card-row .ov-field:last-child { grid-column: 1 / -1; }
+.ov-field { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .ov-field-label {
     font-size: 0.7rem;
     font-weight: 500;
@@ -406,9 +408,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text, #111827);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
 }
 .ov-field-value--to { color: #2563eb; }
 .ov-remove { color: #9ca3af; font-style: italic; font-weight: 400; }
@@ -597,14 +597,6 @@
     .ov-subtitle { margin-left: 0; font-size: 0.8rem; }
 
     .ov-card { padding: 0.75rem; gap: 0.5rem; }
-    .ov-card-row {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-    }
-    /* Scope moves to its own row */
-    .ov-card-row .ov-field:last-child {
-        grid-column: 1 / -1;
-    }
     .ov-form-row { grid-template-columns: 1fr; }
 }
 </style>
@@ -681,8 +673,8 @@
         cards.forEach(function(card, i) {
             var up   = card.querySelector('.ov-arrow-up');
             var down = card.querySelector('.ov-arrow-down');
-            if (up)   up.disabled   = (i === 0);
-            if (down) down.disabled = (i === cards.length - 1);
+            if (up)   { up.disabled   = (i === 0);                    up.style.opacity   = (i === 0)                    ? '0.2' : '1'; }
+            if (down) { down.disabled = (i === cards.length - 1);     down.style.opacity = (i === cards.length - 1)     ? '0.2' : '1'; }
         });
     };
 
