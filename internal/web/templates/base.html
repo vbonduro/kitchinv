@@ -1113,6 +1113,12 @@
         });
         document.body.removeAttribute('data-edit-mode');
         localStorage.removeItem('edit-mode');
+        // Clear any tap-locked bbox highlights.
+        document.querySelectorAll('.area-card[data-bbox-locked]').forEach(function(card) {
+            var areaID = card.getAttribute('data-testid').replace('area-card-', '');
+            delete card.dataset.bboxLocked;
+            clearBBox(areaID);
+        });
     }
 
     function swapRowToInputs(row) {
@@ -1552,12 +1558,28 @@
     function clearBBox(areaID) {
         var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
         if (!card) return;
+        // Don't clear if there's a tap-locked item on this card.
+        if (card.dataset.bboxLocked) return;
         card.querySelectorAll('.bbox-rect').forEach(function(r) { r.classList.remove('bbox-active'); });
         var tbody = card.querySelector('.items-tbody');
         if (tbody) {
             tbody.classList.remove('bbox-hover');
             tbody.querySelectorAll('.item-row').forEach(function(row) { row.classList.remove('bbox-row-active'); });
         }
+    }
+
+    function toggleBBox(areaID, itemID) {
+        if (isEditMode()) return;
+        var card = document.querySelector('[data-testid="area-card-' + areaID + '"]');
+        if (!card) return;
+        // Tapping the already-locked item unlocks it.
+        if (card.dataset.bboxLocked === String(itemID)) {
+            delete card.dataset.bboxLocked;
+            clearBBox(areaID);
+            return;
+        }
+        card.dataset.bboxLocked = String(itemID);
+        highlightBBox(areaID, itemID);
     }
 
     /* ── Edit item inline ──────────────────────────────── */

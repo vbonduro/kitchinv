@@ -130,6 +130,81 @@ test.describe('BBox overlay', () => {
     }
   });
 
+  test('clicking an item row locks the bbox highlight', async ({ page }) => {
+    const areaID = await createAreaWithPhoto(page);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const rows = card.locator('[data-testid="item-row"]');
+    const svg = card.locator('.photo-wrapper .bbox-overlay');
+
+    // Exit edit mode so toggleBBox is active.
+    const body = page.locator('body');
+    if (await body.evaluate((el) => el.hasAttribute('data-edit-mode'))) {
+      await page.locator('[data-testid="edit-mode-btn"]').click();
+    }
+
+    const firstRow = rows.nth(0);
+    const itemID = await firstRow.getAttribute('data-item-id');
+
+
+    // Click the row.
+    await firstRow.click();
+
+    // Bbox should be locked — rect active, row active.
+    const activeRect = svg.locator(`.bbox-rect[data-item-id="${itemID}"]`).first();
+    await expect(activeRect).toHaveClass(/bbox-active/);
+    await expect(firstRow).toHaveClass(/bbox-row-active/);
+
+    // Move mouse away — highlight must STAY (tap-locked).
+    await card.locator('.area-card-header').hover();
+    await expect(activeRect).toHaveClass(/bbox-active/);
+  });
+
+  test('clicking the same item again unlocks the highlight', async ({ page }) => {
+    const areaID = await createAreaWithPhoto(page);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const rows = card.locator('[data-testid="item-row"]');
+    const svg = card.locator('.photo-wrapper .bbox-overlay');
+
+    const body = page.locator('body');
+    if (await body.evaluate((el) => el.hasAttribute('data-edit-mode'))) {
+      await page.locator('[data-testid="edit-mode-btn"]').click();
+    }
+
+    const firstRow = rows.nth(0);
+    const itemID = await firstRow.getAttribute('data-item-id');
+    const activeRect = svg.locator(`.bbox-rect[data-item-id="${itemID}"]`).first();
+
+    // Lock then unlock.
+    await firstRow.click();
+    await expect(activeRect).toHaveClass(/bbox-active/);
+    await firstRow.click();
+    await expect(activeRect).not.toHaveClass(/bbox-active/);
+  });
+
+  test('clicking a different item switches the lock', async ({ page }) => {
+    const areaID = await createAreaWithPhoto(page);
+    const card = page.locator(`[data-testid="area-card-${areaID}"]`);
+    const rows = card.locator('[data-testid="item-row"]');
+    const svg = card.locator('.photo-wrapper .bbox-overlay');
+
+    const body = page.locator('body');
+    if (await body.evaluate((el) => el.hasAttribute('data-edit-mode'))) {
+      await page.locator('[data-testid="edit-mode-btn"]').click();
+    }
+
+    const firstRow = rows.nth(0);
+    const secondRow = rows.nth(1);
+    const firstID = await firstRow.getAttribute('data-item-id');
+    const secondID = await secondRow.getAttribute('data-item-id');
+
+    await firstRow.click();
+    await secondRow.click();
+
+    // Second item should now be active, first should not.
+    await expect(svg.locator(`.bbox-rect[data-item-id="${secondID}"]`).first()).toHaveClass(/bbox-active/);
+    await expect(svg.locator(`.bbox-rect[data-item-id="${firstID}"]`).first()).not.toHaveClass(/bbox-active/);
+  });
+
   test('moving mouse off item row clears highlight', async ({ page }) => {
     const areaID = await createAreaWithPhoto(page);
     const card = page.locator(`[data-testid="area-card-${areaID}"]`);
