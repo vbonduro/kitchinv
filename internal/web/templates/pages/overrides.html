@@ -102,7 +102,7 @@
                             hx-target="#rule-{{.ID}}"
                             hx-swap="outerHTML"
                             hx-confirm="Delete this override rule?"
-                            hx-on::after-request="updateMoveButtons()"
+                            hx-on::after-request="updateOvMoveButtons()"
                             title="Delete rule">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -666,7 +666,7 @@
     });
 
     // ── Reorder ──────────────────────────────────────────────────
-    window.updateMoveButtons = function() {
+    window.updateOvMoveButtons = function() {
         var body = document.getElementById('override-rules-body');
         if (!body) return;
         var cards = Array.from(body.querySelectorAll('.ov-card'));
@@ -691,7 +691,7 @@
         } else {
             body.insertBefore(cards[swapIdx], card);
         }
-        updateMoveButtons();
+        window.updateOvMoveButtons();
         var ids = Array.from(body.querySelectorAll('.ov-card')).map(function(c) {
             return parseInt(c.dataset.id, 10);
         }).filter(Boolean);
@@ -702,7 +702,7 @@
         }).catch(function() {});
     };
 
-    updateMoveButtons();
+    updateOvMoveButtons();
 
     // ── Open edit dialog ─────────────────────────────────────────
     window.openEditDialog = function(card) {
