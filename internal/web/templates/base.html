@@ -284,7 +284,7 @@
         .btn-nav-icon:focus { outline: none; }
         .btn-nav-icon:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
         /* In edit mode, item rows show a pointer to signal they're clickable */
-        body[data-edit-mode] .item-row { cursor: pointer; }
+        body[data-edit-mode] .item-row { cursor: default; }
 
         /* ── Pin toggle button ─────────────────────────────── */
         .area-card[data-pinned] .btn-pin-toggle {
@@ -544,18 +544,22 @@
         }
         .add-item-row input::placeholder { color: var(--text-faint); }
 
-        /* Inline edit */
+        /* Inline edit — looks like plain text, reveals on focus */
         .inline-edit-input {
             font-family: var(--font);
             font-size: inherit;
             color: var(--text);
-            background: white;
-            border: 1px solid var(--primary);
-            border-radius: var(--radius-sm);
-            padding: 0.25rem 0.375rem;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid transparent;
+            border-radius: 0;
+            padding: 0.25rem 0;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
             width: 100%;
+            transition: border-color 0.12s;
+        }
+        .inline-edit-input:focus {
+            border-bottom-color: var(--primary);
         }
 
         /* ── Buttons ───────────────────────────────────────── */
@@ -1082,17 +1086,150 @@
     function toggleEditMode() {
         var active = isEditMode();
         if (active) {
-            document.body.removeAttribute('data-edit-mode');
-            localStorage.removeItem('edit-mode');
+            exitEditMode();
         } else {
-            document.body.setAttribute('data-edit-mode', '');
-            localStorage.setItem('edit-mode', '1');
-            updateMoveButtons();
+            enterEditMode();
         }
         var iconOff = document.querySelector('.icon-edit-off');
         var iconOn  = document.querySelector('.icon-edit-on');
         if (iconOff) iconOff.style.display = active ? '' : 'none';
         if (iconOn)  iconOn.style.display  = active ? 'none' : '';
+    }
+
+    function enterEditMode() {
+        document.body.setAttribute('data-edit-mode', '');
+        localStorage.setItem('edit-mode', '1');
+        updateMoveButtons();
+        // Swap all item cells to transparent inputs.
+        document.querySelectorAll('.item-row').forEach(function(row) {
+            swapRowToInputs(row);
+        });
+    }
+
+    function exitEditMode() {
+        // Save any dirty inputs, revert all to text.
+        document.querySelectorAll('.item-row').forEach(function(row) {
+            saveAndRevertRow(row);
+        });
+        document.body.removeAttribute('data-edit-mode');
+        localStorage.removeItem('edit-mode');
+    }
+
+    function swapRowToInputs(row) {
+        if (row.querySelector('.inline-edit-input')) return; // already swapped
+        var nameCell = row.querySelector('.item-name-cell');
+        var qtyBadge = row.querySelector('.item-qty-badge');
+        var origName = nameCell ? nameCell.textContent.trim() : '';
+        var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
+        var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
+
+        row.dataset.origName = origName;
+        row.dataset.origQty = origQty;
+
+        if (nameCell) {
+            nameCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origName) + '" data-field="name">';
+        }
+        if (qtyCell) {
+            qtyCell.innerHTML = '<input type="number" min="1" class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
+        }
+
+        // Wire up keyboard shortcuts on each input.
+        var areaID = getRowAreaID(row);
+        var itemID = row.dataset.itemId;
+        row.querySelectorAll('.inline-edit-input').forEach(function(inp) {
+            inp.addEventListener('click', function(e) { e.stopPropagation(); });
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveAndRevertRow(row);
+                    swapRowToInputs(row); // re-swap so it stays editable
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    inp.blur();
+                }
+            });
+            inp.addEventListener('blur', function() {
+                // Auto-save on blur if value changed (delay to allow focus to sibling input).
+                setTimeout(function() {
+                    if (row.contains(document.activeElement) && document.activeElement.classList.contains('inline-edit-input')) return;
+                    if (!isEditMode()) return;
+                    saveRowIfDirty(row);
+                }, 100);
+            });
+        });
+    }
+
+    function getRowAreaID(row) {
+        var card = row.closest('.area-card');
+        if (!card) return null;
+        var testid = card.getAttribute('data-testid') || '';
+        var m = testid.match(/area-card-(\d+)/);
+        return m ? m[1] : null;
+    }
+
+    function saveRowIfDirty(row) {
+        var ni = row.querySelector('[data-field="name"]');
+        var qi = row.querySelector('[data-field="qty"]');
+        var newName = ni ? ni.value.trim() : '';
+        var newQty = qi ? qi.value.trim() : '';
+        var origName = row.dataset.origName || '';
+        var origQty = row.dataset.origQty || '';
+        if (newName === origName && newQty === origQty) return;
+        if (!newName) return; // don't save empty name
+        var areaID = getRowAreaID(row);
+        var itemID = row.dataset.itemId;
+        // Update originals so next blur doesn't re-save.
+        row.dataset.origName = newName;
+        row.dataset.origQty = newQty;
+        fetch('/areas/' + areaID + '/items/' + itemID, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName, quantity: newQty}),
+        }).then(function(resp) {
+            if (!resp.ok) throw new Error('Failed');
+            showToast('Item updated');
+        }).catch(function() {
+            showToast('Failed to update item');
+        });
+    }
+
+    function saveAndRevertRow(row) {
+        var ni = row.querySelector('[data-field="name"]');
+        var qi = row.querySelector('[data-field="qty"]');
+        if (!ni && !qi) return; // not in input mode
+        var newName = ni ? ni.value.trim() : (row.dataset.origName || '');
+        var newQty = qi ? qi.value.trim() : (row.dataset.origQty || '');
+        var origName = row.dataset.origName || '';
+        var origQty = row.dataset.origQty || '';
+        if (!newName) newName = origName;
+
+        // Revert cells to text.
+        var nameCell = ni ? ni.parentElement : row.cells[0];
+        if (nameCell) {
+            nameCell.innerHTML = esc(newName);
+            nameCell.className = 'item-name-cell';
+        }
+        var qtyCell = qi ? qi.parentElement : row.cells[1];
+        if (qtyCell) {
+            qtyCell.innerHTML = newQty ? '<span class="item-qty-badge">' + esc(newQty) + '</span>' : '';
+        }
+
+        // Save to server if changed.
+        if (newName !== origName || newQty !== origQty) {
+            var areaID = getRowAreaID(row);
+            var itemID = row.dataset.itemId;
+            fetch('/areas/' + areaID + '/items/' + itemID, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: newName, quantity: newQty}),
+            }).then(function(resp) {
+                if (!resp.ok) throw new Error('Failed');
+                showToast('Item updated');
+            }).catch(function() {
+                showToast('Failed to update item');
+            });
+        }
     }
 
     function togglePin(areaID) {
@@ -1314,12 +1451,13 @@
             tr.className = 'item-row item-row-entering';
             tr.setAttribute('data-testid', 'item-row');
             tr.setAttribute('data-item-id', item.ID);
-            tr.onclick = function(e) { if(isEditMode()) startEditItem(areaID, item.ID, e); };
             tr.innerHTML =
                 '<td class="item-name-cell">' + esc(item.Name) + '</td>' +
                 '<td>' + (item.Quantity ? '<span class="item-qty-badge">' + esc(item.Quantity) + '</span>' : '') + '</td>' +
                 '<td class="item-actions"><button class="btn btn-icon btn-icon-danger edit-only" onclick="event.stopPropagation();deleteItem(' + areaID + ',' + item.ID + ')" aria-label="Delete item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></td>';
             tbody.appendChild(tr);
+            // If in edit mode, immediately swap the new row to inputs.
+            if (isEditMode()) swapRowToInputs(tr);
             if (nameInput) nameInput.value = '';
             if (qtyInput) qtyInput.value = '';
             if (nameInput) nameInput.focus();
@@ -1423,99 +1561,7 @@
     }
 
     /* ── Edit item inline ──────────────────────────────── */
-    function startEditItem(areaID, itemID, evt) {
-        var row = document.querySelector('tr[data-item-id="' + itemID + '"]');
-        if (!row || row.classList.contains('editing')) return;
-        row.classList.add('editing');
-
-        var nameCell = row.querySelector('.item-name-cell');
-        var qtyBadge = row.querySelector('.item-qty-badge');
-
-        // Determine which cell was clicked so we can focus its input.
-        var clickedCell = evt && evt.target ? evt.target.closest('td') : null;
-        var focusField = 'name';
-        if (clickedCell) {
-            if (clickedCell === (qtyBadge ? qtyBadge.parentElement : row.cells[1])) focusField = 'qty';
-        }
-
-        var origName = nameCell ? nameCell.textContent.trim() : '';
-        var origQty = qtyBadge ? qtyBadge.textContent.trim() : '';
-
-        if (nameCell) {
-            nameCell.innerHTML = '<input class="inline-edit-input" value="' + esc(origName) + '" data-field="name">';
-        }
-        var qtyCell = qtyBadge ? qtyBadge.parentElement : row.cells[1];
-        if (qtyCell) {
-            qtyCell.innerHTML = '<input type="number" min="1" class="inline-edit-input" value="' + esc(origQty) + '" data-field="qty" style="max-width:80px">';
-        }
-
-        var focusInput = row.querySelector('[data-field="' + focusField + '"]');
-        if (!focusInput) focusInput = row.querySelector('[data-field="name"]');
-        if (focusInput) { focusInput.focus(); focusInput.select(); }
-
-        var inputs = row.querySelectorAll('.inline-edit-input');
-        inputs.forEach(function(inp) {
-            inp.addEventListener('click', function(e) { e.stopPropagation(); });
-            inp.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
-                if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
-            });
-            inp.addEventListener('blur', function() {
-                // Delay to allow focus to move to another input in the same row.
-                setTimeout(function() {
-                    if (!row.contains(document.activeElement) || !document.activeElement.classList.contains('inline-edit-input')) {
-                        saveEdit();
-                    }
-                }, 100);
-            });
-        });
-
-        function saveEdit() {
-            if (!row.classList.contains('editing')) return;
-            row.classList.remove('editing');
-
-            var ni = row.querySelector('[data-field="name"]');
-            var qi = row.querySelector('[data-field="qty"]');
-            var newName = ni ? ni.value.trim() : origName;
-            var newQty = qi ? qi.value.trim() : origQty;
-
-            if (!newName) newName = origName;
-
-            // Optimistically update UI.
-            revertCells(newName, newQty);
-
-            if (newName === origName && newQty === origQty) return;
-
-            fetch('/areas/' + areaID + '/items/' + itemID, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: newName, quantity: newQty}),
-            }).then(function(resp) {
-                if (!resp.ok) throw new Error('Failed');
-                showToast('Item updated');
-            }).catch(function() {
-                revertCells(origName, origQty);
-                showToast('Failed to update item');
-            });
-        }
-
-        function cancelEdit() {
-            row.classList.remove('editing');
-            revertCells(origName, origQty);
-        }
-
-        function revertCells(name, qty) {
-            if (nameCell || row.cells[0]) {
-                var nc = nameCell || row.cells[0];
-                nc.innerHTML = esc(name);
-                nc.className = 'item-name-cell';
-            }
-            var qc = qtyCell || row.cells[1];
-            if (qc) {
-                qc.innerHTML = qty ? '<span class="item-qty-badge">' + esc(qty) + '</span>' : '';
-            }
-        }
-    }
+    // (Handled by enterEditMode/exitEditMode — items are always inputs while in edit mode)
 
     /* ── Search / filter ───────────────────────────────── */
     (function() {
@@ -1574,6 +1620,10 @@
 
                 rows.forEach(function(row) {
                     var text = row.textContent.toLowerCase();
+                    // Also check input values (edit mode swaps cells to inputs).
+                    row.querySelectorAll('input.inline-edit-input').forEach(function(inp) {
+                        text += ' ' + inp.value.toLowerCase();
+                    });
                     if (text.indexOf(q) >= 0) {
                         row.style.display = '';
                         cardHasMatch = true;
@@ -1676,6 +1726,10 @@
             if (iconOff) iconOff.style.display = 'none';
             if (iconOn)  iconOn.style.display  = '';
             updateMoveButtons();
+            // Swap all item cells to transparent inputs.
+            document.querySelectorAll('.item-row').forEach(function(row) {
+                swapRowToInputs(row);
+            });
         }
 
         document.querySelectorAll('.area-card').forEach(function(card) {

@@ -37,15 +37,15 @@ async function createAreaWithItem(page: Page, appPort: number, areaName: string,
 async function renameItem(page: Page, areaID: string, newName: string) {
   const card = page.locator(`[data-testid="area-card-${areaID}"]`);
   const row = card.locator('[data-testid="item-row"]').first();
-  await row.click();
+  // In edit mode, inputs are already visible — just click to focus.
   const nameInput = row.locator('input[data-field="name"]');
   await nameInput.waitFor({ state: 'visible', timeout: 5_000 });
   await nameInput.click({ clickCount: 3 });
   await nameInput.fill(newName);
-  // Submit by pressing Enter.
+  // Submit by pressing Enter — input stays visible in edit mode.
   await nameInput.press('Enter');
-  // Wait for the row to leave edit mode.
-  await expect(nameInput).toBeHidden({ timeout: 5_000 });
+  // Wait for the save to complete (value should reflect the new name).
+  await expect(nameInput).toHaveValue(newName, { timeout: 5_000 });
 }
 
 test.describe('Override rules — auto-creation', () => {
