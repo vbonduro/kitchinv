@@ -35,6 +35,12 @@ async function setupAreaWithItems(page: Page, appPort: number): Promise<string> 
 
   await page.reload();
 
+  // Exit edit mode so items render as text (not inputs) for search tests.
+  const body = page.locator('body');
+  if (await body.evaluate((el) => el.hasAttribute('data-edit-mode'))) {
+    await page.locator('[data-testid="edit-mode-btn"]').click();
+  }
+
   const card = page.locator(`[data-testid="area-card-${areaID}"]`);
   await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 15_000 });
 
