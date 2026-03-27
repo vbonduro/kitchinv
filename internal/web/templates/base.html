@@ -781,6 +781,7 @@
                 </div>
             </a>
 
+            {{if ne .ActiveNav "overrides"}}
             <button class="btn-edit-mode" data-testid="edit-mode-btn" onclick="toggleEditMode()" aria-label="Toggle edit mode" title="Toggle edit mode">
                 <!-- Pencil icon (view mode) -->
                 <svg class="icon-edit-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -791,6 +792,7 @@
                     <path d="M20 6 9 17l-5-5"/>
                 </svg>
             </button>
+            {{end}}
 
             <a class="btn-nav-icon{{if eq .ActiveNav "overrides"}} btn-nav-icon-active{{end}}"
                href="{{if eq .ActiveNav "overrides"}}/{{else}}/overrides{{end}}" aria-label="Override rules" title="{{if eq .ActiveNav "overrides"}}Back to home{{else}}Override rules{{end}}">
