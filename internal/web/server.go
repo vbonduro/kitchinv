@@ -107,6 +107,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("POST /areas/{id}/items", s.handleCreateItem)
 	s.mux.HandleFunc("PUT /areas/{id}/items/{itemId}", s.handleUpdateItem)
 	s.mux.HandleFunc("DELETE /areas/{id}/items/{itemId}", s.handleDeleteItem)
+	s.mux.HandleFunc("GET /api/areas", s.handleAPIListAreas)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 	s.mux.HandleFunc("GET /areas/{id}/snapshots", s.handleListSnapshots)
 	s.mux.HandleFunc("GET /overrides", s.handleListOverrides)
