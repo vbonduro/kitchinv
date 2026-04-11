@@ -318,6 +318,27 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleAPIListAreas(w http.ResponseWriter, r *http.Request) {
+	areas, err := s.service.ListAreas(r.Context())
+	if err != nil {
+		http.Error(w, "failed to list areas", http.StatusInternalServerError)
+		s.logger.Error("api list areas failed", "error", err)
+		return
+	}
+
+	type areaResponse struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	}
+	resp := make([]areaResponse, len(areas))
+	for i, a := range areas {
+		resp[i] = areaResponse{ID: a.ID, Name: a.Name}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
 func (s *Server) handleReorderAreas(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		IDs []int64 `json:"ids"`
