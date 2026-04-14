@@ -149,7 +149,7 @@ func newTestServer(t *testing.T, vis vision.VisionAnalyzer) (*httptest.Server, f
 		newMemPhotoStore(),
 		slog.Default(),
 	).WithDB(database)
-	srv := httptest.NewServer(web.NewServer(svc, templates.FS, newMemPhotoStore(), slog.Default()))
+	srv := httptest.NewServer(web.NewServer(svc, templates.FS, newMemPhotoStore(), slog.Default(), ""))
 	return srv, func() {
 		srv.Close()
 		_ = database.Close()
