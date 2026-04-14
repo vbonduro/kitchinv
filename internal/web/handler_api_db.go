@@ -16,7 +16,7 @@ func (s *Server) handleAPIDBHash(w http.ResponseWriter, r *http.Request) {
 		s.logger.Error("api db hash: open db", "error", err)
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
@@ -55,7 +55,7 @@ func (s *Server) handleAPIDB(w http.ResponseWriter, r *http.Request) {
 		for j, it := range s.Items {
 			items[j] = itemResponse{Name: it.Name, Quantity: it.Quantity}
 		}
-		areas[i] = areaResponse{ID: s.Area.ID, Name: s.Area.Name, Items: items}
+		areas[i] = areaResponse{ID: s.ID, Name: s.Name, Items: items}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

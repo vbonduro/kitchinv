@@ -87,7 +87,7 @@ func TestHandleAPIDBHash_OK(t *testing.T) {
 	require.NoError(t, err)
 	_, err = tmp.Write(content)
 	require.NoError(t, err)
-	tmp.Close()
+	require.NoError(t, tmp.Close())
 
 	want := sha256.Sum256(content)
 	wantHex := hex.EncodeToString(want[:])
