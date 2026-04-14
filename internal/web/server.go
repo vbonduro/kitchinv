@@ -50,15 +50,17 @@ type Server struct {
 	mux        *http.ServeMux
 	tmplFuncs  template.FuncMap
 	logger     *slog.Logger
+	dbPath     string
 }
 
-func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger) *Server {
+func NewServer(svc kitchenService, tmpl embed.FS, ps photostore.PhotoStore, logger *slog.Logger, dbPath string) *Server {
 	s := &Server{
 		service:    svc,
 		templates:  tmpl,
 		photoStore: ps,
 		mux:        http.NewServeMux(),
 		logger:     logger,
+		dbPath:     dbPath,
 		tmplFuncs: template.FuncMap{
 			"inc": func(i int) int { return i + 1 },
 			"sub": func(a, b int) int { return a - b },
@@ -108,6 +110,8 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("PUT /areas/{id}/items/{itemId}", s.handleUpdateItem)
 	s.mux.HandleFunc("DELETE /areas/{id}/items/{itemId}", s.handleDeleteItem)
 	s.mux.HandleFunc("GET /api/areas", s.handleAPIListAreas)
+	s.mux.HandleFunc("GET /api/db", s.handleAPIDB)
+	s.mux.HandleFunc("GET /api/db/hash", s.handleAPIDBHash)
 	s.mux.HandleFunc("GET /search", s.handleSearch)
 	s.mux.HandleFunc("GET /areas/{id}/snapshots", s.handleListSnapshots)
 	s.mux.HandleFunc("GET /overrides", s.handleListOverrides)

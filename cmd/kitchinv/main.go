@@ -61,7 +61,7 @@ func main() {
 	}
 
 	areaService := service.NewAreaService(areaStore, photoStore, itemStore, itemEditStore, snapshotStore, overrideStore, visionAnalyzer, photoStg, logger).WithDB(database)
-	server := web.NewServer(areaService, templates.FS, photoStg, logger)
+	server := web.NewServer(areaService, templates.FS, photoStg, logger, cfg.DBPath)
 
 	if err := server.ListenAndServe(cfg.ListenAddr); err != nil {
 		logger.Error("server error", "error", err)

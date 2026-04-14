@@ -94,7 +94,7 @@ func (f *fakeOverrideService) ListSnapshots(_ context.Context, _ int64) ([]*doma
 }
 
 func newOverrideTestServer(svc kitchenService) *Server {
-	return NewServer(svc, templates.FS, nil, slog.Default())
+	return NewServer(svc, templates.FS, nil, slog.Default(), "")
 }
 
 func TestHandleListOverrides_OK(t *testing.T) {

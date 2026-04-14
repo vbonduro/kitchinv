@@ -79,7 +79,7 @@ func (f *fakeAreaAPIService) ReorderOverrideRules(_ context.Context, _ []int64) 
 }
 
 func newAreaAPITestServer(svc kitchenService) *Server {
-	return NewServer(svc, templates.FS, nil, slog.Default())
+	return NewServer(svc, templates.FS, nil, slog.Default(), "")
 }
 
 func TestHandleAPIListAreas_OK(t *testing.T) {

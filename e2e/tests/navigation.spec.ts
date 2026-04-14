@@ -92,6 +92,7 @@ test.describe('Navigation', () => {
         card = page.locator(`[data-testid="area-card-${areaID}"]`);
         const count = await card.locator('[data-testid="item-row"]').count();
         if (count === 3) break;
+        await page.waitForTimeout(1_000);
       }
       await expect(card.locator('[data-testid="item-row"]')).toHaveCount(3, { timeout: 5_000 });
     } finally {
